@@ -2,32 +2,31 @@
 import sys
 import getopt
 import string
+from typing import Tuple, Iterable
+
 from PIL import ImageFont
 from itertools import chain
 
 
-def find_max_height(font, glyphs):
-    max_height = 0
-    for g in glyphs:
-        bitmap = font.getmask(g, "1")
-        bbox = bitmap.getbbox()
+def find_max_dimensions(font: ImageFont, glyphs: Iterable[str]) -> Tuple[int, int]:
+    """
+    Get the size of the tile that will fit every glyph requested
+
+    :param font: The font to evaluate
+    :param glyphs: which glyphs to use
+    :return: the max glyph width and max glyph height for the font
+    """
+    max_width, max_height = 0, 0
+    for glyph in glyphs:
+        bbox = font.getbbox(glyph, "1")
 
         if bbox is not None:
+
             x1, y1, x2, y2 = bbox
             max_height = max(y2-y1, max_height)
-    return max_height
-
-
-def find_max_width(font, glyphs):
-    max_width = 0
-    for g in glyphs:
-        bitmap = font.getmask(g, "1")
-        bbox = bitmap.getbbox()
-
-        if bbox is not None:
-            x1, y1, x2, y2 = bbox
             max_width = max(x2-x1, max_width)
-    return max_width
+
+    return max_width, max_height
 
 
 def print_character(font, glyph, max_height, alignments):
@@ -122,9 +121,7 @@ def main(prog, argv):
 
     font = ImageFont.truetype(font_file, font_points)
 
-    max_height = find_max_height(font, font_glyphs)
-    max_width = find_max_height(font, font_glyphs)
-
+    max_width, max_height = find_max_dimensions(font, font_glyphs)
     print("# " + font_file + ", " + str(font_points) + " points, height " + str(max_height) + " px, widest " + str(max_width) + " px")
     print("# Exporting: " + font_glyphs)
     print("FONT: " + str(max_width) + " " + str(max_height))
