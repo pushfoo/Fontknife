@@ -6,9 +6,33 @@ from typing import Tuple, Iterable
 
 from PIL import ImageFont
 from itertools import chain
+from functools import cache
 
 
-def find_max_dimensions(font: ImageFont, glyphs: Iterable[str]) -> Tuple[int, int]:
+class CachingFontWrapper:
+    """
+    Caches conversions to avoid recreating masks and bboxes
+
+    :param text:
+    :return:
+    """
+    def __init__(self, font: ImageFont):
+        self._font = font
+
+    @property
+    def font(self) -> ImageFont:
+        return self._font
+
+    @cache
+    def getmask(self, text: str, mode: str = "1"):
+        return self._font.getmask(text, mode)
+
+    @cache
+    def getbbox(self, text: str, mode: str = "1") -> Tuple[int, int, int, int]:
+        return self.getmask(text, mode).getbbox()
+
+
+def find_max_dimensions(font: CachingFontWrapper, glyphs: Iterable[str]) -> Tuple[int, int]:
     """
     Get the size of the tile that will fit every glyph requested
 
@@ -18,7 +42,7 @@ def find_max_dimensions(font: ImageFont, glyphs: Iterable[str]) -> Tuple[int, in
     """
     max_width, max_height = 0, 0
     for glyph in glyphs:
-        bbox = font.getbbox(glyph, "1")
+        bbox = font.getbbox(glyph)
 
         if bbox is not None:
 
@@ -30,8 +54,8 @@ def find_max_dimensions(font: ImageFont, glyphs: Iterable[str]) -> Tuple[int, in
 
 
 def print_character(font, glyph, max_height, alignments):
-    bitmap = font.getmask(glyph, "1")
-    bbox = bitmap.getbbox()
+    bitmap = font.getmask(glyph)
+    bbox = font.getbbox(glyph)
 
     comment = f"# {glyph} (ASCII: {ord(glyph)})"
 
@@ -119,7 +143,7 @@ def main(prog, argv):
 
     alignments = {"top": vert_top, "center": vert_center}
 
-    font = ImageFont.truetype(font_file, font_points)
+    font = CachingFontWrapper(ImageFont.truetype(font_file, font_points))
 
     max_width, max_height = find_max_dimensions(font, font_glyphs)
     print("# " + font_file + ", " + str(font_points) + " points, height " + str(max_height) + " px, widest " + str(max_width) + " px")
