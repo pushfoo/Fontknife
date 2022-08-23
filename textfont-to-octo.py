@@ -1,25 +1,23 @@
 #!/usr/bin/python
 import fileinput
-import sys, getopt
+import sys
+import getopt
 from math import log
 
 
-
-
 def main(prog, argv):
-
     help = prog + ' <textfont-file>'
     try:
-      opts, args = getopt.getopt(argv,"h")
+        opts, args = getopt.getopt(argv, "h")
     except getopt.GetoptError:
-      print help
-      sys.exit(2)
+        print(help)
+        sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print help
+            print(help)
             sys.exit()
     if len(args) != 1:
-        print help
+        print(help)
         sys.exit(2)
 
 #    input_filename = args[0]
@@ -28,9 +26,7 @@ def main(prog, argv):
 #        infile = std
     #infile = open(input_filename, "r")
 
-
     infile = fileinput.input()
-
 
     font_x = 0
     font_y = 0
@@ -47,10 +43,12 @@ def main(prog, argv):
         l = l.replace("\n", "")
         l = l.replace("\r", "")
         words = l.split(' ')
+
         #print words
         if words[0].upper() == "FONT:":
             font_x = int(words[1])
             font_y = int(words[2])
+
         elif words[0].upper() == "GLYPH:":
             glyph_num = int(words[1])
             first_glyph = min(glyph_num, first_glyph)
@@ -68,15 +66,14 @@ def main(prog, argv):
 
 
     if font_x == 0 or font_y == 0:
-        print "Did not find font dimensions"
+        print("Did not find font dimensions")
         sys.exit(2)
     if font_x > 8:
-        print "Font width larger than 8 pixels, not yet supported"
+        print("Font width larger than 8 pixels, not yet supported")
         sys.exit(2)
     if font_y > 8:
-        print "Font height larger than 8 pixels, not yet supported"
+        print("Font height larger than 8 pixels, not yet supported")
         sys.exit(2)
-
 
     compact_glyphtable = True
 
@@ -99,18 +96,18 @@ def main(prog, argv):
     glyphtable_name = prefix + "_glyph_table"
 
     # header
-    print
-    print "# Font: " + prefix + "  Available characters: " + ''.join(chr(i) if i in glyphs else "" for i in range(255))
+    print()
+    print("# Font: " + prefix + "  Available characters: " + ''.join(chr(i) if i in glyphs else "" for i in range(255)))
 
     # glyph drawing routine
-    print
-    print "# Call with " + draw_char_reg + " = ASCII character, " + draw_x_reg + " = x, " + draw_y_reg + " = y"
-    print "# Returns with " + draw_x_reg + " incremented by the width of the glyph plus " + str(kern_px)
-    print "# Clobbers vF, I" + "" if draw_char_reg == width_char_reg else ", " + width_char_reg
-    print "# Must not be called with " + draw_char_reg + " < " + str(first_glyph) + " or " + draw_char_reg + " > " + str(last_glyph) + "!"
-    print ": " + draw_func_name
-    print "  " + draw_char_reg + " += " + str(256-offset)
-    print "  i := " + glyphtable_name
+    print()
+    print("# Call with " + draw_char_reg + " = ASCII character, " + draw_x_reg + " = x, " + draw_y_reg + " = y")
+    print("# Returns with " + draw_x_reg + " incremented by the width of the glyph plus " + str(kern_px))
+    print("# Clobbers vF, I" + "" if draw_char_reg == width_char_reg else ", " + width_char_reg)
+    print("# Must not be called with " + draw_char_reg + " < " + str(first_glyph) + " or " + draw_char_reg + " > " + str(last_glyph) + "!")
+    print(": " + draw_func_name)
+    print("  " + draw_char_reg + " += " + str(256-offset))
+    print("  i := " + glyphtable_name)
     #for i in range(font_y):
 
     n_shift = int(log(font_y, 2))
@@ -119,36 +116,36 @@ def main(prog, argv):
         n_shift = 0
         remainder = font_y
     if n_shift > 0:
-        print ("  i += " + draw_char_reg) * remainder
-        print ("  " + draw_char_reg + " <<= " + draw_char_reg) * n_shift
-        print "  i += " + draw_char_reg
-        print ("  " + draw_char_reg + " >>= " + draw_char_reg) * n_shift
+        print(("  i += " + draw_char_reg) * remainder)
+        print(("  " + draw_char_reg + " <<= " + draw_char_reg) * n_shift)
+        print("  i += " + draw_char_reg)
+        print(("  " + draw_char_reg + " >>= " + draw_char_reg) * n_shift)
     else:
-        print ("  i += " + draw_char_reg) * remainder
-    print "  sprite " + draw_x_reg + " " + draw_y_reg + " " + str(font_y)
+        print(("  i += " + draw_char_reg) * remainder)
+    print("  sprite " + draw_x_reg + " " + draw_y_reg + " " + str(font_y))
     if draw_char_reg != width_char_reg:
-        print "  " + width_char_reg + " := " + draw_char_reg
-    print "  " + width_func_name + "_no_offset"
-    print "  " + draw_x_reg + " += " + width_char_reg
-    print "  " + draw_x_reg + " += 1"
-    print "  return"
+        print("  " + width_char_reg + " := " + draw_char_reg)
+    print("  " + width_func_name + "_no_offset")
+    print("  " + draw_x_reg + " += " + width_char_reg)
+    print("  " + draw_x_reg + " += 1")
+    print("  return")
 
     # returns width of a particular glyph
-    print
-    print "# Call with " + width_char_reg + " = ASCII character"
-    print "# Returns " + width_char_reg + " = width of glyph in pixels"
-    print "# Clobbers vF, I"
-    print "# Must not be called with " + width_char_reg + " < " + str(first_glyph) + " or " + width_char_reg + " > " + str(last_glyph) + "!"
-    print ": " + width_func_name
-    print "  " + width_char_reg + " += " + str(256-offset)
-    print ": " + width_func_name + "_no_offset"
-    print "  i := " + widthtable_name
-    print "  i += " + width_char_reg
-    print "  load " + width_char_reg
-    print "  return"
+    print()
+    print("# Call with " + width_char_reg + " = ASCII character")
+    print("# Returns " + width_char_reg + " = width of glyph in pixels")
+    print("# Clobbers vF, I")
+    print("# Must not be called with " + width_char_reg + " < " + str(first_glyph) + " or " + width_char_reg + " > " + str(last_glyph) + "!")
+    print(": " + width_func_name)
+    print("  " + width_char_reg + " += " + str(256-offset))
+    print(": " + width_func_name + "_no_offset")
+    print("  i := " + widthtable_name)
+    print("  i += " + width_char_reg)
+    print("  load " + width_char_reg)
+    print("  return")
 
     # string drawing routine
-    print ": " + prefix + "draw_str"
+    print(": " + prefix + "draw_str")
 
 
     # print glyph width table
@@ -157,7 +154,7 @@ def main(prog, argv):
         if glyphs[i] == 0:
             w = 0
         else:
-            w = len(glyphs[i]) / font_y
+            w = len(glyphs[i]) // font_y
         width_str += "0x" + hex(w)[2:].zfill(2)
 
         if i != last_glyph:
@@ -165,7 +162,7 @@ def main(prog, argv):
         if i % 16 == 0:
             width_str += "\n" + " " * (len(widthtable_name) + 3)
 
-    print ": " + widthtable_name + " " + width_str
+    print(": " + widthtable_name + " " + width_str)
 
 
     # print glyph table
@@ -176,7 +173,7 @@ def main(prog, argv):
             w = 0
             s = ""
         else:
-            w = len(glyphs[i]) / font_y
+            w = len(glyphs[i]) // font_y
             s = glyphs[i]
 
         if not compact_glyphtable:
@@ -201,7 +198,7 @@ def main(prog, argv):
         #if i % 16 == 0:
         #    glyph_str += "\n" + " " * (len(widthtable_name) + 3)
 
-    print ": " + glyphtable_name + " " + glyph_str
+    print(": " + glyphtable_name + " " + glyph_str)
 
 
 #    print "# " + font_file + ", " + str(font_points) + " points, height " + str(max_height) + " px, widest " + str(max_width) + " px"

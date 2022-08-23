@@ -10,46 +10,49 @@ def find_max_height(font, glyphs):
     for g in glyphs:
         bitmap = font.getmask(g, "1")
         bbox = bitmap.getbbox()
-        if bbox != None:
+
+        if bbox is not None:
             x1, y1, x2, y2 = bbox
             max_height = max(y2-y1, max_height)
     return max_height
+
 
 def find_max_width(font, glyphs):
     max_width = 0
     for g in glyphs:
         bitmap = font.getmask(g, "1")
         bbox = bitmap.getbbox()
-        if bbox != None:
+
+        if bbox is not None:
             x1, y1, x2, y2 = bbox
             max_width = max(x2-x1, max_width)
     return max_width
 
 
-
 def print_character(font, glyph, max_height, alignments):
     bitmap = font.getmask(glyph, "1")
     bbox = bitmap.getbbox()
-    comment = "# " + glyph + " (ASCII: " + str(ord(glyph)) + ")"
 
-    if bbox == None:
-        print comment, "skipping empty glyph"
-        print
+    comment = f"# {glyph} (ASCII: {ord(glyph)})"
+
+    if bbox is None:
+        print(comment, "skipping empty glyph")
+        print()
         return
 
     x1, y1, x2, y2 = bbox
 
-    pre = 0
-    post = 0
+    pre, post = 0, 0
 
     extra = max_height - (y2-y1)
     if glyph in alignments["center"]:
         comment += " (centered)"
-        post = extra / 2
+        post = extra // 2
         pre = extra - post
     elif glyph in alignments["top"]:
         comment += " (align-top)"
         post = extra
+
         # Move one pixel down from the top if the glyph is really short
         if post > (y2 - y1):
             post -= 1
@@ -60,22 +63,22 @@ def print_character(font, glyph, max_height, alignments):
 
     #print comment
 
-    print "GLYPH: " + str(ord(glyph)) + " " + str(x2-x1) + " " + str(max_height) + "   " + comment
+    print(f"GLYPH: {ord(glyph)} {x2-x1} {max_height} {comment}")
 
     for i in range(pre):
-        print "." * (x2-x1)
+        print("." * (x2-x1))
 
     for y in range(y1, y2):
         s = ""
         for x in range(x1, x2):
-            if bitmap.getpixel((x,y)) > 0:
+            if bitmap.getpixel((x, y)) > 0:
                 s += "X"
             else:
                 s += "."
-        print s
-    for i in range(post):
-        print "." * (x2-x1)
+        print(s)
 
+    for i in range(post):
+        print("." * (x2-x1))
 
 
 def main(prog, argv):
@@ -85,17 +88,15 @@ def main(prog, argv):
     font_points = 8
     font_glyphs = string.printable
 
-
-
     help = prog + '[-p <point-size>] [-g <glyphs-to-extract>] [-c <glyphs-to-center>] [-t <glyphs-to-align-top>] <fontfile>'
     try:
       opts, args = getopt.getopt(argv,"hg:p:c:t:")
     except getopt.GetoptError:
-      print help
+      print(help)
       sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
-            print help
+            print(help)
             sys.exit()
         elif opt == '-g':
             font_glyphs = arg
@@ -105,8 +106,9 @@ def main(prog, argv):
             vert_center = arg
         elif opt == '-t':
             vert_top = arg
+
     if len(args) != 1:
-        print help
+        print(help)
         sys.exit(2)
 
     font_file = args[0]
@@ -115,17 +117,16 @@ def main(prog, argv):
     exclude = set(chr(i) for i in chain(range(0, 31), range(128, 255)))
     font_glyphs = ''.join(ch for ch in font_glyphs if ch not in exclude)
 
-    alignments = { "top": vert_top, "center": vert_center }
+    alignments = {"top": vert_top, "center": vert_center}
 
     font = ImageFont.truetype(font_file, font_points)
 
     max_height = find_max_height(font, font_glyphs)
     max_width = find_max_height(font, font_glyphs)
 
-
-    print "# " + font_file + ", " + str(font_points) + " points, height " + str(max_height) + " px, widest " + str(max_width) + " px"
-    print "# Exporting: " + font_glyphs
-    print "FONT: " + str(max_width) + " " + str(max_height)
+    print("# " + font_file + ", " + str(font_points) + " points, height " + str(max_height) + " px, widest " + str(max_width) + " px")
+    print("# Exporting: " + font_glyphs)
+    print("FONT: " + str(max_width) + " " + str(max_height))
 
     for glyph in font_glyphs:
         print_character(font, glyph, max_height, alignments)
