@@ -1,7 +1,8 @@
 #!/usr/bin/python
-import sys, getopt
+import sys
+import getopt
 import string
-from PIL import ImageFont, ImageDraw
+from PIL import ImageFont
 from itertools import chain
 
 
@@ -90,10 +91,10 @@ def main(prog, argv):
 
     help = prog + '[-p <point-size>] [-g <glyphs-to-extract>] [-c <glyphs-to-center>] [-t <glyphs-to-align-top>] <fontfile>'
     try:
-      opts, args = getopt.getopt(argv,"hg:p:c:t:")
+        opts, args = getopt.getopt(argv,"hg:p:c:t:")
     except getopt.GetoptError:
-      print(help)
-      sys.exit(2)
+        print(help)
+        sys.exit(2)
     for opt, arg in opts:
         if opt == '-h':
             print(help)
