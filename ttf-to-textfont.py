@@ -106,8 +106,8 @@ def print_character(font, glyph, max_height, alignments):
 
 
 def main(prog, argv):
-    vert_center = "~=%!#$()*+/<>@[]\{\}|"
-    vert_top = "^\"\'`"
+    vert_center = set("~=%!#$()*+/<>@[]\{\}|")
+    vert_top = set("^\"\'`")
 
     font_points = 8
     font_glyphs = string.printable
