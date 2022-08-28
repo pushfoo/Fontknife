@@ -57,52 +57,58 @@ def print_character(font, glyph, max_height, alignments):
     bitmap = font.getmask(glyph)
     bbox = font.getbbox(glyph)
 
-    comment = f"# {glyph} (ASCII: {ord(glyph)})"
+    comment = [f"# {glyph} (ASCII: {ord(glyph)})"]
 
     if bbox is None:
-        print(comment, "skipping empty glyph")
+        print(comment[0], "skipping empty glyph")
         print()
         return
 
     x1, y1, x2, y2 = bbox
+    data_width = x2 - x1
+    data_height = y2 - y1
 
     pre, post = 0, 0
 
-    extra = max_height - (y2-y1)
+    extra = max_height - data_height
     if glyph in alignments["center"]:
-        comment += " (centered)"
+        comment.append(" (centered)")
         post = extra // 2
         pre = extra - post
     elif glyph in alignments["top"]:
-        comment += " (align-top)"
+        comment.append(" (align-top)")
         post = extra
 
         # Move one pixel down from the top if the glyph is really short
-        if post > (y2 - y1):
+        if post > data_height:
             post -= 1
             pre = 1
     else:
-        comment += " (align-bot)"
+        comment.append(" (align-bot)")
         pre = extra
 
     #print comment
 
-    print(f"GLYPH: {ord(glyph)} {x2-x1} {max_height} {comment}")
+    print(f"GLYPH: {ord(glyph)} {data_width} {max_height} {''.join(comment)}")
 
+    pad_line = "." * data_width
     for i in range(pre):
-        print("." * (x2-x1))
+        print(pad_line)
 
+    line_raw = []
     for y in range(y1, y2):
-        s = ""
+        line_raw.clear()
+
         for x in range(x1, x2):
             if bitmap.getpixel((x, y)) > 0:
-                s += "X"
+                char = "X"
             else:
-                s += "."
-        print(s)
+                char = "."
+            line_raw.append(char)
+        print(''.join(line_raw))
 
     for i in range(post):
-        print("." * (x2-x1))
+        print(pad_line)
 
 
 def main(prog, argv):
