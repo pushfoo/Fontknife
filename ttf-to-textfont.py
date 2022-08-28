@@ -137,6 +137,7 @@ def main(prog, argv):
         elif opt == '-t':
             vert_top = arg
 
+
     if len(args) != 1:
         print(help)
         sys.exit(2)
@@ -152,9 +153,9 @@ def main(prog, argv):
     font = CachingFontWrapper(ImageFont.truetype(font_file, font_points))
 
     max_width, max_height = find_max_dimensions(font, font_glyphs)
-    print("# " + font_file + ", " + str(font_points) + " points, height " + str(max_height) + " px, widest " + str(max_width) + " px")
-    print("# Exporting: " + font_glyphs)
-    print("FONT: " + str(max_width) + " " + str(max_height))
+    print(f"# {font_file}, {font_points} points, height {max_height} px, widest {max_width} px")
+    print(f"# Exporting: {font_glyphs}")
+    print(f"FONT: {max_width} {max_height}")
 
     for glyph in font_glyphs:
         print_character(font, glyph, max_height, alignments)
