@@ -38,6 +38,7 @@ def main(prog, argv):
 
     glyphs = dict()
 
+    # parse the textfont file to extract metadata & glyphs
     for l in infile:
         #print l
         l = l.replace("\n", "")
@@ -89,7 +90,7 @@ def main(prog, argv):
 
     offset = first_glyph
 
-    # figure out what to do
+    # generate label names
     draw_func_name = prefix + "_draw_glyph"
     width_func_name = prefix + "_glyph_width"
     widthtable_name = prefix + "_width_table"
@@ -97,34 +98,41 @@ def main(prog, argv):
 
     # header
     print()
-    print("# Font: " + prefix + "  Available characters: " + ''.join(chr(i) if i in glyphs else "" for i in range(255)))
+    available_chars = ''.join(chr(i) if i in glyphs else '' for i in range(255))
+    print(f"# Font: {prefix}  Available characters: {available_chars}")
 
-    # glyph drawing routine
+    # generate glyph drawing routine
     print()
-    print("# Call with " + draw_char_reg + " = ASCII character, " + draw_x_reg + " = x, " + draw_y_reg + " = y")
-    print("# Returns with " + draw_x_reg + " incremented by the width of the glyph plus " + str(kern_px))
-    print("# Clobbers vF, I" + "" if draw_char_reg == width_char_reg else ", " + width_char_reg)
-    print("# Must not be called with " + draw_char_reg + " < " + str(first_glyph) + " or " + draw_char_reg + " > " + str(last_glyph) + "!")
-    print(": " + draw_func_name)
+    print(f"# Call with {draw_char_reg}  = ASCII character, {draw_x_reg} = x, {draw_y_reg} = y")
+    print(f"# Returns with {draw_x_reg} incremented by the width of the glyph plus {kern_px}")
+    print(f"# Clobbers vF, I{'' if draw_char_reg == width_char_reg else ', ' + width_char_reg}")
+    print(f"# Must not be called with {draw_char_reg} < {first_glyph} or {draw_char_reg}  > {last_glyph} !")
+    print(f": {draw_func_name}")
     print("  " + draw_char_reg + " += " + str(256-offset))
     print("  i := " + glyphtable_name)
     #for i in range(font_y):
 
     n_shift = int(log(font_y, 2))
     remainder = font_y - int(pow(n_shift, 2))
+
     if (n_shift * 2 + remainder + 1) >= font_y:
         n_shift = 0
         remainder = font_y
+
     if n_shift > 0:
         print(("  i += " + draw_char_reg) * remainder)
         print(("  " + draw_char_reg + " <<= " + draw_char_reg) * n_shift)
         print("  i += " + draw_char_reg)
         print(("  " + draw_char_reg + " >>= " + draw_char_reg) * n_shift)
+
     else:
         print(("  i += " + draw_char_reg) * remainder)
+
     print("  sprite " + draw_x_reg + " " + draw_y_reg + " " + str(font_y))
+
     if draw_char_reg != width_char_reg:
         print("  " + width_char_reg + " := " + draw_char_reg)
+
     print("  " + width_func_name + "_no_offset")
     print("  " + draw_x_reg + " += " + width_char_reg)
     print("  " + draw_x_reg + " += 1")
@@ -132,10 +140,10 @@ def main(prog, argv):
 
     # returns width of a particular glyph
     print()
-    print("# Call with " + width_char_reg + " = ASCII character")
-    print("# Returns " + width_char_reg + " = width of glyph in pixels")
+    print(f"# Call with {width_char_reg} = ASCII character")
+    print(f"# Returns {width_char_reg} = width of glyph in pixels")
     print("# Clobbers vF, I")
-    print("# Must not be called with " + width_char_reg + " < " + str(first_glyph) + " or " + width_char_reg + " > " + str(last_glyph) + "!")
+    print(f"# Must not be called with {width_char_reg} < {first_glyph} or {width_char_reg} > {last_glyph}!")
     print(": " + width_func_name)
     print("  " + width_char_reg + " += " + str(256-offset))
     print(": " + width_func_name + "_no_offset")
@@ -183,7 +191,9 @@ def main(prog, argv):
             val = 0
             byte = s[0:w]
             s = s[w:]
+
             for i in range(8):
+
                 if len(byte) > i:
                     val = (val << 1) | (1 if byte[i] == 'X' else 0)
                 else:
