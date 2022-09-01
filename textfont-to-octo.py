@@ -2,10 +2,151 @@
 import fileinput
 import sys
 import getopt
+from dataclasses import dataclass, field
 from math import log
+from typing import Dict, Tuple, List, Optional
+
+
+@dataclass
+class FontData:
+
+    max_width: int
+    max_height: int
+    first_glyph: int = None
+    last_glyph: int = None
+
+    glyphs: Dict = field(default_factory=dict)
+
+    @property
+    def max_bbox(self) -> Tuple[int, int]:
+        return self.max_width, self.max_height
+
+    def __repr__(self):
+        return f"<FontData {self.max_bbox!r}>"
+
+
+class FontParseError(BaseException):
+
+    def __init__(self, message, filename: str, lineno: int):
+        super().__init__(f"{filename}, line {lineno}: {message}")
+        self.raw_message = message
+        self.filename = filename
+        self.lineno = lineno
+
+    @classmethod
+    def from_stream_state(cls, message, stream):
+        return cls(message, stream.filename(), stream.lineno())
+
+
+def split_tokens(line: str) -> Optional[List[str]]:
+
+    if line == '':
+        return None
+
+    return line.rstrip().split(' ')
+
+
+def strip_end_comments(line: str) -> str:
+    comment_start_index = line.find("#")
+
+    if comment_start_index < 0:
+        return line
+
+    return line[:comment_start_index]
+
+
+def readline_and_split(stream, skip_comment_lines=True) -> Optional[List[str]]:
+
+    if skip_comment_lines:
+        raw_line = "#"
+        while raw_line and (raw_line.startswith("#") or raw_line[0] == "\n"):
+            raw_line = stream.readline()
+    else:
+        raw_line = stream.readline()
+    line = strip_end_comments(raw_line)
+
+    return split_tokens(line)
+
+
+FONT_HEADER = "FONT"
+GLYPH_HEADER = "GLYPH"
+
+
+def parse_header_and_values(stream, expected_header: str = None) -> Optional[Tuple[str, Tuple[int, ...]]]:
+    """
+    Return None if empty line, otherwise a string + ints after it
+
+    :param stream:
+    :param expected_header:
+    :return:
+    """
+    values = readline_and_split(stream)
+
+    # exit early because we reached the end of the file
+    if values is None:
+        return None
+
+    header = values[0]
+
+    if expected_header is not None and header != f"{expected_header}:":
+        raise FontParseError.from_stream_state(
+            f"Expected header {expected_header}, but got {header}", stream
+        )
+
+    int_values = tuple(map(int, values[1:]))
+    return header, int_values
+
+
+# this will be refactored later...
+def parse_glyph(stream, glyph_width, glyph_height):
+    """
+
+    Extract the data for this glyph from the font
+
+    :param stream:
+    :param font_data:
+    :param ascii_code:
+    :param glyph_width:
+    :param glyph_height:
+    :return:
+    """
+    raw_font_data = []
+
+    for i in range(glyph_height):
+        row_chars = stream.readline().rstrip()
+        row_len = len(row_chars)
+        if row_len != glyph_width:
+            raise FontParseError.from_stream_state(
+                f"Expected glyph row of width {glyph_width}, but got {row_len}"
+            )
+        raw_font_data.append(row_chars)
+
+    return ''.join(raw_font_data)
+
+
+def parse_textfont_file(stream) -> FontData:
+    file_header, bounds = parse_header_and_values(stream, FONT_HEADER)
+
+    font_data = FontData(*bounds)
+
+    first_glyph = 255
+    last_glyph = 0
+
+    while glyph_header := parse_header_and_values(stream, GLYPH_HEADER):
+        ascii_code, glyph_width, glyph_height = glyph_header[1]
+        font_data.glyphs[ascii_code] = parse_glyph(stream, glyph_width, glyph_height)
+
+        first_glyph = min(ascii_code, first_glyph)
+        last_glyph = max(ascii_code, last_glyph)
+
+    font_data.first_glyph = first_glyph
+    font_data.last_glyph = last_glyph
+
+    return font_data
 
 
 def main(prog, argv):
+
     help = prog + ' <textfont-file>'
     try:
         opts, args = getopt.getopt(argv, "h")
@@ -28,51 +169,30 @@ def main(prog, argv):
 
     infile = fileinput.input()
 
-    font_x = 0
-    font_y = 0
-    glyph_num = 0
-    glyph_line = 0
+    font_data = parse_textfont_file(infile)
+#    print(f)
+#    print(f.glyphs)
+#    return
 
-    first_glyph = 255
-    last_glyph = 0
+    # get the max height and max width of the font?
+    # is this really needed? just reparse from it?
+    # user COULD edit a font to be bigger...
+    font_width = font_data.max_width
+    font_height = font_data.max_height
 
-    glyphs = dict()
-
-    # parse the textfont file to extract metadata & glyphs
-    for l in infile:
-        #print l
-        l = l.replace("\n", "")
-        l = l.replace("\r", "")
-        words = l.split(' ')
-
-        #print words
-        if words[0].upper() == "FONT:":
-            font_x = int(words[1])
-            font_y = int(words[2])
-
-        elif words[0].upper() == "GLYPH:":
-            glyph_num = int(words[1])
-            first_glyph = min(glyph_num, first_glyph)
-            last_glyph = max(glyph_num, last_glyph)
-            glyph_x = int(words[2])
-            glyph_y = int(words[3])
-            glyph_line = 0
-            glyphs[glyph_num] = ""
-        elif glyph_num != 0:
-            line_dots = words[0]
-            glyphs[glyph_num] += line_dots
-            glyph_line += 1
-
+    first_glyph = font_data.first_glyph
+    last_glyph = font_data.last_glyph
+    glyphs = font_data.glyphs
     #print glyphs
 
 
-    if font_x == 0 or font_y == 0:
+    if font_width == 0 or font_height == 0:
         print("Did not find font dimensions")
         sys.exit(2)
-    if font_x > 8:
+    if font_width > 8:
         print("Font width larger than 8 pixels, not yet supported")
         sys.exit(2)
-    if font_y > 8:
+    if font_height > 8:
         print("Font height larger than 8 pixels, not yet supported")
         sys.exit(2)
 
@@ -88,7 +208,8 @@ def main(prog, argv):
 
     prefix = "smallfont"
 
-    offset = first_glyph
+
+    offset = font_data.first_glyph
 
     # generate label names
     draw_func_name = prefix + "_draw_glyph"
@@ -103,21 +224,21 @@ def main(prog, argv):
 
     # generate glyph drawing routine
     print()
-    print(f"# Call with {draw_char_reg}  = ASCII character, {draw_x_reg} = x, {draw_y_reg} = y")
+    print(f"# Call with {draw_char_reg} = ASCII character, {draw_x_reg} = x, {draw_y_reg} = y")
     print(f"# Returns with {draw_x_reg} incremented by the width of the glyph plus {kern_px}")
     print(f"# Clobbers vF, I{'' if draw_char_reg == width_char_reg else ', ' + width_char_reg}")
-    print(f"# Must not be called with {draw_char_reg} < {first_glyph} or {draw_char_reg}  > {last_glyph} !")
+    print(f"# Must not be called with {draw_char_reg} < {first_glyph} or {draw_char_reg} > {last_glyph}!")
     print(f": {draw_func_name}")
     print("  " + draw_char_reg + " += " + str(256-offset))
     print("  i := " + glyphtable_name)
     #for i in range(font_y):
 
-    n_shift = int(log(font_y, 2))
-    remainder = font_y - int(pow(n_shift, 2))
+    n_shift = int(log(font_height, 2))
+    remainder = font_height - int(pow(n_shift, 2))
 
-    if (n_shift * 2 + remainder + 1) >= font_y:
+    if (n_shift * 2 + remainder + 1) >= font_height:
         n_shift = 0
-        remainder = font_y
+        remainder = font_height
 
     if n_shift > 0:
         print(("  i += " + draw_char_reg) * remainder)
@@ -128,7 +249,7 @@ def main(prog, argv):
     else:
         print(("  i += " + draw_char_reg) * remainder)
 
-    print("  sprite " + draw_x_reg + " " + draw_y_reg + " " + str(font_y))
+    print("  sprite " + draw_x_reg + " " + draw_y_reg + " " + str(font_height))
 
     if draw_char_reg != width_char_reg:
         print("  " + width_char_reg + " := " + draw_char_reg)
@@ -162,7 +283,7 @@ def main(prog, argv):
         if glyphs[i] == 0:
             w = 0
         else:
-            w = len(glyphs[i]) // font_y
+            w = len(glyphs[i]) // font_height
         width_str += "0x" + hex(w)[2:].zfill(2)
 
         if i != last_glyph:
@@ -181,13 +302,13 @@ def main(prog, argv):
             w = 0
             s = ""
         else:
-            w = len(glyphs[i]) // font_y
+            w = len(glyphs[i]) // font_height
             s = glyphs[i]
 
         if not compact_glyphtable:
             glyph_str += "\n" + " " * (len(widthtable_name) + 3) + "# " + str(i) + " \'" + chr(i) + "\'\n" + ": " + "gl" + str(i) + " " + " " * (len(widthtable_name) + 3)
 
-        for i in range(font_y):
+        for i in range(font_height):
             val = 0
             byte = s[0:w]
             s = s[w:]
