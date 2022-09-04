@@ -1,7 +1,8 @@
 from io import TextIOBase
 from typing import Optional, List, Tuple, TypeVar
 
-from octofont3.textfont import FontData, FONT_HEADER, GLYPH_HEADER
+from octofont3.textfont import FONT_HEADER, GLYPH_HEADER
+from octofont3 import FontData
 
 
 class FontParseError(BaseException):

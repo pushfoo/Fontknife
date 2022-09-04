@@ -7,7 +7,7 @@ from math import log
 from typing import Optional, Iterable
 
 from octofont3.iohelpers import OutputHelper, S
-from octofont3.textfont import FontData
+from octofont3 import FontData
 
 from octofont3.textfont.parser import parse_textfont_file
 

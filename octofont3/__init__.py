@@ -1,0 +1,94 @@
+from dataclasses import dataclass, field
+from functools import cache
+from typing import Dict, Tuple, Iterable, Optional
+
+from PIL import ImageFont
+
+
+def calculate_alignments(vert_center: Iterable[str] = None, vert_top: Iterable[str] = None) -> Dict:
+    alignments = {}
+    vert_center = set(vert_center) if vert_center else set("~=%!#$()*+/<>@[]\{\}|")
+    alignments["center"] = vert_center
+
+    vert_top = set(vert_top) if vert_top else set("^\"\'`")
+    alignments["top"] = vert_top
+
+    return alignments
+
+
+class CachingFontWrapper:
+    """
+    Mimics font object API & caches returns for certain calls
+
+    Currently used in Textfont generation.
+
+    :param font: The font object wrapped
+    :param size: An optional override for storing size
+    :param alignments: Overriding alignment data, if any
+    :return:
+    """
+    def __init__(
+        self,
+        font: ImageFont,
+        size: Optional[int] = None,
+        alignments: Optional[Dict] = None
+    ):
+        self._font = font
+        self._size = size
+
+        if alignments is not None:
+            self._alignments = alignments
+        else:
+            self._alignments = calculate_alignments()
+
+    @property
+    def path(self):
+        return self._font.path
+
+    @property
+    def size(self):
+
+        if self._size:
+            return self._size
+
+        return self._font.size
+
+    @property
+    def alignments(self) -> Dict:
+        return self._alignments
+
+    @property
+    def font(self) -> ImageFont:
+        return self._font
+
+    @cache
+    def getmask(self, text: str, mode: str = "1"):
+        return self._font.getmask(text, mode)
+
+    @cache
+    def getbbox(self, text: str, mode: str = "1") -> Tuple[int, int, int, int]:
+        return self.getmask(text, mode).getbbox()
+
+
+@dataclass
+class FontData:
+    """
+    Font metadata that gets read from a TextFont
+    """
+
+    max_width: int
+    max_height: int
+    first_glyph: int = None
+    last_glyph: int = None
+
+    glyphs: Dict = field(default_factory=dict)
+
+    @property
+    def max_bbox(self) -> Tuple[int, int]:
+        return self.max_width, self.max_height
+
+    def __repr__(self):
+        return f"<FontData {self.max_bbox!r}>"
+
+
+
