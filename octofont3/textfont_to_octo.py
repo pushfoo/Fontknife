@@ -8,6 +8,8 @@ from io import TextIOBase
 from math import log
 from typing import Dict, Tuple, List, Optional, Iterable, TypeVar
 
+from src.octofont3.iohelpers import OutputHelper
+
 
 @dataclass
 class FontData:
@@ -150,7 +152,7 @@ def parse_textfont_file(stream) -> FontData:
 S = TypeVar("S", bound=TextIOBase)
 
 
-class OctoStream:
+class OctoStream(OutputHelper)
     """
     A helper for printing octo-related statements
     """
@@ -179,11 +181,6 @@ class OctoStream:
         return self._indent_chars * self._indent_level
 
     def write(self, s: str) -> None:
-        """
-        indent the
-        :param s:
-        :return:
-        """
         self._stream.write(s)
 
     def print(self, *objects, sep: str = ' ', end: str = '\n') -> None:
@@ -201,9 +198,6 @@ class OctoStream:
             self.write(str(object_))
 
         self.write(end)
-
-    def comment(self, message: str):
-        self.print(f"# {message}")
 
     def label(self, label_name: str, end: str = "\n"):
         self.print(f": {label_name}", end=end)
