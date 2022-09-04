@@ -23,8 +23,6 @@ class OutputHelper:
         self._stream.write("\n")
 
     def print(self, *objects, sep: str = ' ', end: str = '\n') -> None:
-        self.write(self.get_indent_prefix(self._indent_level))
-
         first = True
 
         for object_ in objects:

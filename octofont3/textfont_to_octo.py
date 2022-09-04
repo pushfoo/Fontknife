@@ -163,6 +163,10 @@ class OctoStream(OutputHelper):
         self._indent_level = 0
         self._indent_chars = indent_chars
 
+    def print(self, *objects, sep: str = ' ', end: str = '\n') -> None:
+        self.write(self.get_indent_prefix(self._indent_level))
+        super().print(*objects, sep=sep, end=end)
+
     @property
     def indent_level(self) -> int:
         return self._indent_level
