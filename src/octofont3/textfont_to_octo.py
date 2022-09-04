@@ -417,7 +417,9 @@ def emit_octo(stream, font_data: FontData):
 #        print_character(font, glyph, max_height, alignments)
 
 
-def main(prog, argv):
+def main():
+
+    prog, argv = sys.argv[0], sys.argv[1:]
 
     help = prog + ' <textfont-file>'
     try:
@@ -449,4 +451,4 @@ def main(prog, argv):
     emit_octo(sys.stdout, font_data)
 
 if __name__ == "__main__":
-   main(sys.argv[0], sys.argv[1:])
+   main()

@@ -111,7 +111,9 @@ def print_character(font, glyph, max_height, alignments):
         print(pad_line)
 
 
-def main(prog, argv):
+def main():
+    prog, argv = sys.argv[0], sys.argv[1:]
+
     vert_center = set("~=%!#$()*+/<>@[]\{\}|")
     vert_top = set("^\"\'`")
 
@@ -162,4 +164,4 @@ def main(prog, argv):
 
 
 if __name__ == "__main__":
-   main(sys.argv[0], sys.argv[1:])
+   main()
