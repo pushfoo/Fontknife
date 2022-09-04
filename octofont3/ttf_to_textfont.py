@@ -8,6 +8,8 @@ from PIL import ImageFont
 from itertools import chain
 from functools import cache
 
+from octofont3.iohelpers import OutputHelper
+
 
 def calculate_alignments(vert_center: Iterable[str] = None, vert_top: Iterable[str] = None) -> Dict:
     alignments = {}
@@ -93,15 +95,26 @@ def find_max_dimensions(font: CachingFontWrapper, glyphs: Iterable[str]) -> Tupl
     return max_width, max_height
 
 
-def emit_character(font, glyph, max_height):
+class TextfontStream(OutputHelper):
+
+    def __init__(self, stream):
+        super().__init__(stream)
+
+    def header(self, header: str, *objects, sep=" ", end="\n"):
+        self.print(f"{header}: ", end="")
+        self.print(*objects, sep=sep, end=end)
+
+
+def emit_character(stream, font, glyph, max_height):
+
     bitmap = font.getmask(glyph)
     bbox = font.getbbox(glyph)
 
     comment = [f"# {glyph} (ASCII: {ord(glyph)})"]
 
     if bbox is None:
-        print(comment[0], "skipping empty glyph")
-        print()
+        stream.print(comment[0], "skipping empty glyph")
+        stream.print()
         return
 
     x1, y1, x2, y2 = bbox
@@ -111,10 +124,12 @@ def emit_character(font, glyph, max_height):
     pre, post = 0, 0
 
     extra = max_height - data_height
+
     if glyph in font.alignments["center"]:
         comment.append(" (centered)")
         post = extra // 2
         pre = extra - post
+
     elif glyph in font.alignments["top"]:
         comment.append(" (align-top)")
         post = extra
@@ -129,11 +144,11 @@ def emit_character(font, glyph, max_height):
 
     #print comment
 
-    print(f"GLYPH: {ord(glyph)} {data_width} {max_height} {''.join(comment)}")
+    stream.header("GLYPH", ord(glyph), data_width, max_height, ''.join(comment))
 
     pad_line = "." * data_width
     for i in range(pre):
-        print(pad_line)
+        stream.print(pad_line)
 
     line_raw = []
     for y in range(y1, y2):
@@ -145,21 +160,21 @@ def emit_character(font, glyph, max_height):
             else:
                 char = "."
             line_raw.append(char)
-        print(''.join(line_raw))
+        stream.print(''.join(line_raw))
 
     for i in range(post):
-        print(pad_line)
+        stream.print(pad_line)
 
 
-def emit_textfont(font: CachingFontWrapper, font_glyphs: Iterable[str]):
-
+def emit_textfont(stream, font: CachingFontWrapper, font_glyphs: Iterable[str]):
+    s = stream
     max_width, max_height = find_max_dimensions(font, font_glyphs)
-    print(f"# {font.path}, {font.size} points, height {max_height} px, widest {max_width} px")
-    print(f"# Exporting: {font_glyphs}")
-    print(f"FONT: {max_width} {max_height}")
+    s.comment(f"{font.path}, {font.size} points, height {max_height} px, widest {max_width} px")
+    s.comment(f"Exporting: {font_glyphs}")
+    s.header("FONT", max_width, max_height)
 
     for glyph in font_glyphs:
-        emit_character(font, glyph, max_height)
+        emit_character(stream, font, glyph, max_height)
 
 
 def main():
@@ -208,7 +223,8 @@ def main():
         ImageFont.truetype(font_file, font_points),
         alignments=alignments
     )
-    emit_textfont(font, font_glyphs)
+    stream = TextfontStream(sys.stdout)
+    emit_textfont(stream, font, font_glyphs)
 
 
 if __name__ == "__main__":
