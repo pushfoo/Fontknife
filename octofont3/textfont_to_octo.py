@@ -8,7 +8,7 @@ from io import TextIOBase
 from math import log
 from typing import Dict, Tuple, List, Optional, Iterable, TypeVar
 
-from src.octofont3.iohelpers import OutputHelper
+from octofont3.iohelpers import OutputHelper
 
 
 @dataclass
@@ -152,13 +152,13 @@ def parse_textfont_file(stream) -> FontData:
 S = TypeVar("S", bound=TextIOBase)
 
 
-class OctoStream(OutputHelper)
+class OctoStream(OutputHelper):
     """
     A helper for printing octo-related statements
     """
 
     def __init__(self, stream: S, indent_chars="  "):
-        self._stream = stream
+        super().__init__(stream)
 
         self._indent_level = 0
         self._indent_chars = indent_chars
@@ -173,31 +173,9 @@ class OctoStream(OutputHelper)
             raise ValueError("indent_level must be 0 or greater")
         self._indent_level = new_level
 
-    def newline(self):
-        self._stream.write("\n")
-
     @cache
     def get_indent_prefix(self, level: int) -> str:
         return self._indent_chars * self._indent_level
-
-    def write(self, s: str) -> None:
-        self._stream.write(s)
-
-    def print(self, *objects, sep: str = ' ', end: str = '\n') -> None:
-        self.write(self.get_indent_prefix(self._indent_level))
-
-        first = True
-
-        for object_ in objects:
-
-            if first:
-                first = False
-            else:
-                self.write(sep)
-
-            self.write(str(object_))
-
-        self.write(end)
 
     def label(self, label_name: str, end: str = "\n"):
         self.print(f": {label_name}", end=end)
