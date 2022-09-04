@@ -1,3 +1,4 @@
+from fileinput import FileInput
 from io import TextIOBase
 from typing import Optional, List, Tuple, TypeVar
 
@@ -73,14 +74,12 @@ def parse_header_and_values(stream, expected_header: str = None) -> Optional[Tup
     return header, int_values
 
 
-def parse_glyph(stream, glyph_width, glyph_height):
+def parse_glyph(stream: FileInput, glyph_width, glyph_height):
     """
 
     Extract the data for this glyph from the font
 
-    :param stream:
-    :param font_data:
-    :param ascii_code:
+    :param stream: a FileInput-like object that provides filename() and lineno()
     :param glyph_width:
     :param glyph_height:
     :return:
@@ -92,7 +91,8 @@ def parse_glyph(stream, glyph_width, glyph_height):
         row_len = len(row_chars)
         if row_len != glyph_width:
             raise FontParseError.from_stream_state(
-                f"Expected glyph row of width {glyph_width}, but got {row_len}"
+                f"Expected glyph row of width {glyph_width}, but got {row_len}",
+                stream
             )
         raw_font_data.append(row_chars)
 
