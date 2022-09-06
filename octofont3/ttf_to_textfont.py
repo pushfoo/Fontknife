@@ -6,30 +6,9 @@ from typing import Tuple, Iterable
 
 from PIL import ImageFont
 from itertools import chain
-from functools import cache
 
-
-class CachingFontWrapper:
-    """
-    Caches conversions to avoid recreating masks and bboxes
-
-    :param text:
-    :return:
-    """
-    def __init__(self, font: ImageFont):
-        self._font = font
-
-    @property
-    def font(self) -> ImageFont:
-        return self._font
-
-    @cache
-    def getmask(self, text: str, mode: str = "1"):
-        return self._font.getmask(text, mode)
-
-    @cache
-    def getbbox(self, text: str, mode: str = "1") -> Tuple[int, int, int, int]:
-        return self.getmask(text, mode).getbbox()
+from octofont3 import calculate_alignments, CachingFontWrapper
+from octofont3.iohelpers import OutputHelper
 
 
 def find_max_dimensions(font: CachingFontWrapper, glyphs: Iterable[str]) -> Tuple[int, int]:
@@ -53,15 +32,26 @@ def find_max_dimensions(font: CachingFontWrapper, glyphs: Iterable[str]) -> Tupl
     return max_width, max_height
 
 
-def print_character(font, glyph, max_height, alignments):
+class TextfontStream(OutputHelper):
+
+    def __init__(self, stream):
+        super().__init__(stream)
+
+    def header(self, header: str, *objects, sep=" ", end="\n"):
+        self.print(f"{header}: ", end="")
+        self.print(*objects, sep=sep, end=end)
+
+
+def emit_character(stream, font, glyph, max_height):
+
     bitmap = font.getmask(glyph)
     bbox = font.getbbox(glyph)
 
     comment = [f"# {glyph} (ASCII: {ord(glyph)})"]
 
     if bbox is None:
-        print(comment[0], "skipping empty glyph")
-        print()
+        stream.print(comment[0], "skipping empty glyph")
+        stream.print()
         return
 
     x1, y1, x2, y2 = bbox
@@ -71,11 +61,13 @@ def print_character(font, glyph, max_height, alignments):
     pre, post = 0, 0
 
     extra = max_height - data_height
-    if glyph in alignments["center"]:
+
+    if glyph in font.alignments["center"]:
         comment.append(" (centered)")
         post = extra // 2
         pre = extra - post
-    elif glyph in alignments["top"]:
+
+    elif glyph in font.alignments["top"]:
         comment.append(" (align-top)")
         post = extra
 
@@ -89,11 +81,11 @@ def print_character(font, glyph, max_height, alignments):
 
     #print comment
 
-    print(f"GLYPH: {ord(glyph)} {data_width} {max_height} {''.join(comment)}")
+    stream.header("GLYPH", ord(glyph), data_width, max_height, ''.join(comment))
 
     pad_line = "." * data_width
     for i in range(pre):
-        print(pad_line)
+        stream.print(pad_line)
 
     line_raw = []
     for y in range(y1, y2):
@@ -105,20 +97,32 @@ def print_character(font, glyph, max_height, alignments):
             else:
                 char = "."
             line_raw.append(char)
-        print(''.join(line_raw))
+        stream.print(''.join(line_raw))
 
     for i in range(post):
-        print(pad_line)
+        stream.print(pad_line)
+
+
+def emit_textfont(stream, font: CachingFontWrapper, font_glyphs: Iterable[str]):
+    s = stream
+    max_width, max_height = find_max_dimensions(font, font_glyphs)
+    s.comment(f"{font.path}, {font.size} points, height {max_height} px, widest {max_width} px")
+    s.comment(f"Exporting: {font_glyphs}")
+    s.header("FONT", max_width, max_height)
+
+    for glyph in font_glyphs:
+        emit_character(stream, font, glyph, max_height)
 
 
 def main():
     prog, argv = sys.argv[0], sys.argv[1:]
 
-    vert_center = set("~=%!#$()*+/<>@[]\{\}|")
-    vert_top = set("^\"\'`")
 
     font_points = 8
     font_glyphs = string.printable
+
+    vert_center = None
+    vert_top = None
 
     help = prog + '[-p <point-size>] [-g <glyphs-to-extract>] [-c <glyphs-to-center>] [-t <glyphs-to-align-top>] <fontfile>'
     try:
@@ -139,7 +143,6 @@ def main():
         elif opt == '-t':
             vert_top = arg
 
-
     if len(args) != 1:
         print(help)
         sys.exit(2)
@@ -150,17 +153,15 @@ def main():
     exclude = set(chr(i) for i in chain(range(0, 31), range(128, 255)))
     font_glyphs = ''.join(ch for ch in font_glyphs if ch not in exclude)
 
-    alignments = {"top": vert_top, "center": vert_center}
+    # keep this here because someone might override it?
+    alignments = calculate_alignments(vert_center=vert_center, vert_top=vert_top)
 
-    font = CachingFontWrapper(ImageFont.truetype(font_file, font_points))
-
-    max_width, max_height = find_max_dimensions(font, font_glyphs)
-    print(f"# {font_file}, {font_points} points, height {max_height} px, widest {max_width} px")
-    print(f"# Exporting: {font_glyphs}")
-    print(f"FONT: {max_width} {max_height}")
-
-    for glyph in font_glyphs:
-        print_character(font, glyph, max_height, alignments)
+    font = CachingFontWrapper(
+        ImageFont.truetype(font_file, font_points),
+        alignments=alignments
+    )
+    stream = TextfontStream(sys.stdout)
+    emit_textfont(stream, font, font_glyphs)
 
 
 if __name__ == "__main__":

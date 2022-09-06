@@ -2,164 +2,30 @@
 import fileinput
 import sys
 import getopt
-from dataclasses import dataclass, field
 from functools import cache
-from io import TextIOBase
 from math import log
-from typing import Dict, Tuple, List, Optional, Iterable, TypeVar
+from typing import Optional, Iterable
+
+from octofont3.iohelpers import OutputHelper, S
+from octofont3 import FontData
+
+from octofont3.textfont.parser import parse_textfont_file
 
 
-@dataclass
-class FontData:
-
-    max_width: int
-    max_height: int
-    first_glyph: int = None
-    last_glyph: int = None
-
-    glyphs: Dict = field(default_factory=dict)
-
-    @property
-    def max_bbox(self) -> Tuple[int, int]:
-        return self.max_width, self.max_height
-
-    def __repr__(self):
-        return f"<FontData {self.max_bbox!r}>"
-
-
-class FontParseError(BaseException):
-
-    def __init__(self, message, filename: str, lineno: int):
-        super().__init__(f"{filename}, line {lineno}: {message}")
-        self.raw_message = message
-        self.filename = filename
-        self.lineno = lineno
-
-    @classmethod
-    def from_stream_state(cls, message, stream):
-        return cls(message, stream.filename(), stream.lineno())
-
-
-def split_tokens(line: str) -> Optional[List[str]]:
-
-    if line == '':
-        return None
-
-    return line.rstrip().split(' ')
-
-
-def strip_end_comments(line: str) -> str:
-    comment_start_index = line.find("#")
-
-    if comment_start_index < 0:
-        return line
-
-    return line[:comment_start_index]
-
-
-def readline_and_split(stream, skip_comment_lines=True) -> Optional[List[str]]:
-
-    if skip_comment_lines:
-        raw_line = "#"
-        while raw_line and (raw_line.startswith("#") or raw_line[0] == "\n"):
-            raw_line = stream.readline()
-    else:
-        raw_line = stream.readline()
-    line = strip_end_comments(raw_line)
-
-    return split_tokens(line)
-
-
-FONT_HEADER = "FONT"
-GLYPH_HEADER = "GLYPH"
-
-
-def parse_header_and_values(stream, expected_header: str = None) -> Optional[Tuple[str, Tuple[int, ...]]]:
-    """
-    Return None if empty line, otherwise a string + ints after it
-
-    :param stream:
-    :param expected_header:
-    :return:
-    """
-    values = readline_and_split(stream)
-
-    # exit early because we reached the end of the file
-    if values is None:
-        return None
-
-    header = values[0]
-
-    if expected_header is not None and header != f"{expected_header}:":
-        raise FontParseError.from_stream_state(
-            f"Expected header {expected_header}, but got {header}", stream
-        )
-
-    int_values = tuple(map(int, values[1:]))
-    return header, int_values
-
-
-# this will be refactored later...
-def parse_glyph(stream, glyph_width, glyph_height):
-    """
-
-    Extract the data for this glyph from the font
-
-    :param stream:
-    :param font_data:
-    :param ascii_code:
-    :param glyph_width:
-    :param glyph_height:
-    :return:
-    """
-    raw_font_data = []
-
-    for i in range(glyph_height):
-        row_chars = stream.readline().rstrip()
-        row_len = len(row_chars)
-        if row_len != glyph_width:
-            raise FontParseError.from_stream_state(
-                f"Expected glyph row of width {glyph_width}, but got {row_len}"
-            )
-        raw_font_data.append(row_chars)
-
-    return ''.join(raw_font_data)
-
-
-def parse_textfont_file(stream) -> FontData:
-    file_header, bounds = parse_header_and_values(stream, FONT_HEADER)
-
-    font_data = FontData(*bounds)
-
-    first_glyph = 255
-    last_glyph = 0
-
-    while glyph_header := parse_header_and_values(stream, GLYPH_HEADER):
-        ascii_code, glyph_width, glyph_height = glyph_header[1]
-        font_data.glyphs[ascii_code] = parse_glyph(stream, glyph_width, glyph_height)
-
-        first_glyph = min(ascii_code, first_glyph)
-        last_glyph = max(ascii_code, last_glyph)
-
-    font_data.first_glyph = first_glyph
-    font_data.last_glyph = last_glyph
-
-    return font_data
-
-
-S = TypeVar("S", bound=TextIOBase)
-
-
-class OctoStream:
+class OctoStream(OutputHelper):
     """
     A helper for printing octo-related statements
     """
 
     def __init__(self, stream: S, indent_chars="  "):
-        self._stream = stream
+        super().__init__(stream)
 
         self._indent_level = 0
         self._indent_chars = indent_chars
+
+    def print(self, *objects, sep: str = ' ', end: str = '\n') -> None:
+        self.write(self.get_indent_prefix(self._indent_level))
+        super().print(*objects, sep=sep, end=end)
 
     @property
     def indent_level(self) -> int:
@@ -171,39 +37,9 @@ class OctoStream:
             raise ValueError("indent_level must be 0 or greater")
         self._indent_level = new_level
 
-    def newline(self):
-        self._stream.write("\n")
-
     @cache
     def get_indent_prefix(self, level: int) -> str:
         return self._indent_chars * self._indent_level
-
-    def write(self, s: str) -> None:
-        """
-        indent the
-        :param s:
-        :return:
-        """
-        self._stream.write(s)
-
-    def print(self, *objects, sep: str = ' ', end: str = '\n') -> None:
-        self.write(self.get_indent_prefix(self._indent_level))
-
-        first = True
-
-        for object_ in objects:
-
-            if first:
-                first = False
-            else:
-                self.write(sep)
-
-            self.write(str(object_))
-
-        self.write(end)
-
-    def comment(self, message: str):
-        self.print(f"# {message}")
 
     def label(self, label_name: str, end: str = "\n"):
         self.print(f": {label_name}", end=end)

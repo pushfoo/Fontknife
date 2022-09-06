@@ -4,7 +4,6 @@ setup(
     name='octofont3',
     version='0.1',
     install_requires=['pillow'],
-    package_dir={"": "src"},
     packages=find_packages(include=['octofont3', 'octofont3.*']),
     entry_points={
         "console_scripts": [
