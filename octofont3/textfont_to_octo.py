@@ -245,12 +245,12 @@ def emit_octo(stream, font_data: FontData):
     label(glyphtable_name, end=" ")
     print(glyph_str)
 
-#    print "# " + font_file + ", " + str(font_points) + " points, height " + str(max_height) + " px, widest " + str(max_width) + " px"
+#    print "# " + font_file + ", " + str(font_points) + " points, height " + str(height) + " px, widest " + str(max_width) + " px"
 #    print "# Exporting: " + font_glyphs
 #    print
 
 #    for glyph in font_glyphs:
-#        print_character(font, glyph, max_height, alignments)
+#        print_character(font, glyph, height, alignments)
 
 
 def main():
@@ -280,8 +280,8 @@ def main():
     infile = fileinput.input()
 
     font_data = parse_textfont_file(infile)
-#    print(f)
-#    print(f.glyphs)
+#    print(file_input)
+#    print(file_input.glyphs)
 #    return
 
     emit_octo(sys.stdout, font_data)

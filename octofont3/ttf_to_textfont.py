@@ -155,9 +155,9 @@ def main():
 
     # keep this here because someone might override it?
     alignments = calculate_alignments(vert_center=vert_center, vert_top=vert_top)
-
+    raw_font = ImageFont.truetype(font_file, font_points)
     font = CachingFontWrapper(
-        ImageFont.truetype(font_file, font_points),
+        raw_font,
         alignments=alignments
     )
     stream = TextfontStream(sys.stdout)

@@ -2,7 +2,7 @@ from io import TextIOBase
 from typing import TypeVar
 
 
-S = TypeVar("S", bound=TextIOBase)
+TextIOBaseSubclass = TypeVar("TextIOBaseSubclass", bound=TextIOBase)
 
 
 class OutputHelper:
@@ -11,7 +11,7 @@ class OutputHelper:
 
     Subclasses should be made for specific languages.
     """
-    def __init__(self, stream: S):
+    def __init__(self, stream: TextIOBaseSubclass):
         super().__init__()
         self._stream = stream
         self._indent_level = 0

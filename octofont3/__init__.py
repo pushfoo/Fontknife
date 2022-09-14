@@ -1,8 +1,27 @@
 from dataclasses import dataclass, field
 from functools import cache
-from typing import Dict, Tuple, Iterable, Optional
+from typing import Dict, Tuple, Iterable, Optional, Protocol
 
-from PIL import ImageFont
+from PIL import ImageFont, Image
+
+Size = Tuple[int, int]
+BoundingBox = Tuple[int, int, int, int]
+
+
+class ImageFontLike(Protocol):
+    """
+    Something that behaves like a pillow ImageFont.
+
+    """
+    def getmask(self, text: str) -> Image:
+        ...
+
+    def getbbox(self, text: str) -> BoundingBox:
+        ...
+
+    @property
+    def size(self) -> int:
+        ...
 
 
 def calculate_alignments(vert_center: Iterable[str] = None, vert_top: Iterable[str] = None) -> Dict:
@@ -29,12 +48,13 @@ class CachingFontWrapper:
     """
     def __init__(
         self,
-        font: ImageFont,
+        font: ImageFontLike,
         size: Optional[int] = None,
         alignments: Optional[Dict] = None
     ):
         self._font = font
         self._size = size
+        self._path = getattr(font, 'path', None)
 
         if alignments is not None:
             self._alignments = alignments
@@ -43,7 +63,7 @@ class CachingFontWrapper:
 
     @property
     def path(self):
-        return self._font.path
+        return self._path
 
     @property
     def size(self):
@@ -88,7 +108,7 @@ class FontData:
         return self.max_width, self.max_height
 
     def __repr__(self):
-        return f"<FontData {self.max_bbox!r}>"
+        return f"<FontData bbox={self.max_bbox!r}>"
 
 
 
