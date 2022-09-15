@@ -2,14 +2,18 @@
 import fileinput
 import sys
 import getopt
+from collections import deque
 from functools import cache
 from math import log
 from typing import Optional, Iterable
 
-from octofont3.iohelpers import OutputHelper, S
-from octofont3 import FontData
+from octofont3.iohelpers import OutputHelper, TextIOBaseSubclass
 
-from octofont3.textfont.parser import parse_textfont_file
+from octofont3.textfont.parser import TextFontFile
+
+
+def padded_hex(value: int, num_digits: int = 2) -> str:
+    return f"0x{hex(value)[2:].zfill(num_digits)}"
 
 
 class OctoStream(OutputHelper):
@@ -17,11 +21,12 @@ class OctoStream(OutputHelper):
     A helper for printing octo-related statements
     """
 
-    def __init__(self, stream: S, indent_chars="  "):
+    def __init__(self, stream: TextIOBaseSubclass, indent_chars="  "):
         super().__init__(stream)
 
         self._indent_level = 0
         self._indent_chars = indent_chars
+        self.byte_queue = deque()
 
     def print(self, *objects, sep: str = ' ', end: str = '\n') -> None:
         self.write(self.get_indent_prefix(self._indent_level))
@@ -65,8 +70,29 @@ class OctoStream(OutputHelper):
         self.print("return")
         self.indent_level -= 1
 
+    @cache
+    def pad_for_label_name(self, label_name) -> str:
+        return f"{' ' * (len(label_name) + 3)}"
 
-def emit_octo(stream, font_data: FontData):
+    def queue_data(self, byte_source: Iterable[int]):
+        self.byte_queue.extend(byte_source)
+
+    def write_queued_data_with_label(self, label_name: str, max_bytes_per_line: int = 16):
+        self.label(label_name, end=' ')
+        label_pad = self.pad_for_label_name(label_name)
+
+        byte_queue = self.byte_queue
+        line = 0
+        num_to_pop = max_bytes_per_line
+        while byte_queue:
+            num_to_pop = min(max_bytes_per_line, len(byte_queue))
+            self.print(' '.join((padded_hex(byte_queue.popleft()) for i in range(num_to_pop))))
+            self.print()
+            if byte_queue:
+                self.print(label_pad, end='')
+
+
+def emit_octo(stream, font_data: TextFontFile):
     # get the max height and max width of the font?
     # is this really needed? just reparse from it?
     # user COULD edit a font to be bigger...
@@ -75,7 +101,7 @@ def emit_octo(stream, font_data: FontData):
 
     first_glyph = font_data.first_glyph
     last_glyph = font_data.last_glyph
-    glyphs = font_data.glyphs
+    glyphs = font_data.glyph
     # print glyphs
 
     if font_width == 0 or font_height == 0:
@@ -97,6 +123,7 @@ def emit_octo(stream, font_data: FontData):
     print = octo.print
     comment = octo.comment
     label = octo.label
+    pad_for_label = octo.pad_for_label_name
     multi_statement_line = octo.multi_statement_line
     begin_indented_func = octo.begin_indented_func
     end_indented_func = octo.end_indented_func
@@ -190,60 +217,39 @@ def emit_octo(stream, font_data: FontData):
     # string drawing routine
     label(f"{prefix}draw_str")
 
-    # print glyph width table
-    width_str = ""
+    # calculate and output the width table
     for i in range(first_glyph, last_glyph + 1):
-        if glyphs[i] == 0:
-            w = 0
-        else:
-            w = len(glyphs[i]) // font_height
-        width_str += "0x" + hex(w)[2:].zfill(2)
+        glyph_width = len(glyphs[i]) // font_height
+        octo.byte_queue.append(glyph_width)
+    octo.write_queued_data_with_label(widthtable_name)
 
-        if i != last_glyph:
-            width_str += " "
-        if i % 16 == 0:
-            width_str += "\n" + " " * (len(widthtable_name) + 3)
-
-    label(widthtable_name, end=' ')
-    print(width_str)
-
-    # print glyph table
-    glyph_str = ""
-    count = 0
-    for i in range(first_glyph, last_glyph + 1):
-        if glyphs[i] == 0:
-            w = 0
-            s = ""
-        else:
-            w = len(glyphs[i]) // font_height
-            s = glyphs[i]
+    # calculate and output the glyph data
+    for glyph_code in range(first_glyph, last_glyph + 1):
+        glyph = glyphs[glyph_code]
+        glyph_width, glyph_height = glyph.size
+        pixels = bytes(glyph)
 
         if not compact_glyphtable:
-            glyph_str += "\n" + " " * (len(widthtable_name) + 3) + "# " + str(i) + " \'" + chr(
-                i) + "\'\n" + ": " + "gl" + str(i) + " " + " " * (len(widthtable_name) + 3)
+            print()
+            pad = pad_for_label(widthtable_name)
+            print(f" {pad}# {glyph_code} \'{chr(glyph_code)}\': gl{glyph_code}  {pad}", end='')
 
-        for i in range(font_height):
-            val = 0
-            byte = s[0:w]
-            s = s[w:]
+        # only supports up to eight right now
+        char_size = 8
+        for row_start_index in range(0, len(pixels), glyph_width):
+            pixels_from_image = pixels[row_start_index:row_start_index + glyph_width]
+            packed_row_data = 0
 
-            for i in range(8):
+            # use the binary mask to pad the
+            for pixel in pixels_from_image:
+                packed_row_data = (packed_row_data  << 1) | (1 if pixel else 0)
 
-                if len(byte) > i:
-                    val = (val << 1) | (1 if byte[i] == 'X' else 0)
-                else:
-                    val = val << 1
-            glyph_str += "0x" + hex(val)[2:].zfill(2) + " "
-            count += 1
-            if compact_glyphtable and count % 16 == 0:
-                glyph_str += '\n' + " " * (len(widthtable_name) + 3)
+            # align to the left
+            packed_row_data  <<= char_size - glyph_width
 
-        # if i != last_glyph:
-        #    glyph_str += "\n"
-        # if i % 16 == 0:
-        #    glyph_str += "\n" + " " * (len(widthtable_name) + 3)
-    label(glyphtable_name, end=" ")
-    print(glyph_str)
+            octo.byte_queue.append(packed_row_data)
+
+    octo.write_queued_data_with_label(glyphtable_name)
 
 #    print "# " + font_file + ", " + str(font_points) + " points, height " + str(height) + " px, widest " + str(max_width) + " px"
 #    print "# Exporting: " + font_glyphs
@@ -279,7 +285,8 @@ def main():
 
     infile = fileinput.input()
 
-    font_data = parse_textfont_file(infile)
+    # font_data = parse_textfont_file(infile)
+    font_data = TextFontFile(infile)
 #    print(file_input)
 #    print(file_input.glyphs)
 #    return

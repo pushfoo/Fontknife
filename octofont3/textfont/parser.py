@@ -4,7 +4,7 @@ from typing import Optional, List, Tuple, Union
 
 from PIL import Image
 
-from octofont3 import FontData, BoundingBox, Size
+from octofont3 import BoundingBox, Size
 from octofont3.iohelpers import TextIOBaseSubclass
 from octofont3.textfont import FONT_HEADER, GLYPH_HEADER
 
@@ -75,52 +75,6 @@ def parse_header_and_values(stream, expected_header: str = None) -> Optional[Tup
 
     int_values = tuple(map(int, values[1:]))
     return header, int_values
-
-
-def parse_glyph(stream: FileInput, glyph_width, glyph_height):
-    """
-
-    Extract the data for this glyph from the font
-
-    :param stream: a FileInput-like object that provides filename() and lineno()
-    :param glyph_width:
-    :param glyph_height:
-    :return:
-    """
-    raw_font_data = []
-
-    for i in range(glyph_height):
-        row_chars = stream.readline().rstrip()
-        row_len = len(row_chars)
-        if row_len != glyph_width:
-            raise FontParseError.from_stream_state(
-                f"Expected glyph row of width {glyph_width}, but got {row_len}",
-                stream
-            )
-        raw_font_data.append(row_chars)
-
-    return ''.join(raw_font_data)
-
-
-def parse_textfont_file(stream) -> FontData:
-    file_header, bounds = parse_header_and_values(stream, FONT_HEADER)
-
-    font_data = FontData(*bounds)
-
-    first_glyph = 255
-    last_glyph = 0
-
-    while glyph_header := parse_header_and_values(stream, GLYPH_HEADER):
-        ascii_code, glyph_width, glyph_height = glyph_header[1]
-        font_data.glyphs[ascii_code] = parse_glyph(stream, glyph_width, glyph_height)
-
-        first_glyph = min(ascii_code, first_glyph)
-        last_glyph = max(ascii_code, last_glyph)
-
-    font_data.first_glyph = first_glyph
-    font_data.last_glyph = last_glyph
-
-    return font_data
 
 
 class TextFontFile:
@@ -206,6 +160,7 @@ class TextFontFile:
         """
         # Not currently used, but nice to have for debugging
         file_header, bounds = parse_header_and_values(stream, FONT_HEADER)
+        self.max_width, self.max_height = bounds
 
         # Temp local variables for faster access
         first_glyph = None
@@ -232,6 +187,10 @@ class TextFontFile:
         # Partially backward compatible glyph table, theoretically
         # supporting more than the original boring 255 characters.
         self.glyph: defaultdict[int, Optional[Image.Image]] = defaultdict(lambda: None)
+
+        # these should really be recalculated from the font itself instead of the header
+        self.max_width: Optional[int] = None
+        self.max_height: Optional[int] = None
 
         # expected in octo emissions
         first_glyph: Optional[int] = None
@@ -308,15 +267,17 @@ class TextFontFile:
         return 0, 0, width, height
 
 
+
 if __name__ == "__main__":
     import sys
     name, *argv = sys.argv
 
     if len(argv) != 2:
-        print(f"ERROR: usage is {name} \"Text to print\" textfont_fileath.txt")
+        print(f"ERROR: usage is {name} \"Text to print\" textfont/file/path.txt")
         exit(1)
 
     test_text, file_path = argv
+    text_font_file = None
 
     try:
         file_input = FileInput(files=argv[1])

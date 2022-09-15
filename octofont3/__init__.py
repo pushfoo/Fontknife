@@ -89,26 +89,3 @@ class CachingFontWrapper:
     def getbbox(self, text: str, mode: str = "1") -> Tuple[int, int, int, int]:
         return self.getmask(text, mode).getbbox()
 
-
-@dataclass
-class FontData:
-    """
-    Font metadata that gets read from a TextFont
-    """
-
-    max_width: int
-    max_height: int
-    first_glyph: int = None
-    last_glyph: int = None
-
-    glyphs: Dict = field(default_factory=dict)
-
-    @property
-    def max_bbox(self) -> Tuple[int, int]:
-        return self.max_width, self.max_height
-
-    def __repr__(self):
-        return f"<FontData bbox={self.max_bbox!r}>"
-
-
-
