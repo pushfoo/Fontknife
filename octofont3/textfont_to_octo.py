@@ -1,15 +1,20 @@
 #!/usr/bin/python3
 import fileinput
+import string
 import sys
 import getopt
 from collections import deque
 from functools import cache
 from math import log
-from typing import Optional, Iterable
+from typing import Optional, Iterable, Sequence
 
+from PIL import ImageFont
+
+from octofont3.font_adapter import CachingFontAdapter, pair_iterator_for_font
 from octofont3.iohelpers import OutputHelper, TextIOBaseSubclass
 
 from octofont3.textfont.parser import TextFontFile
+from octofont3.utils import find_max_dimensions, guess_glyphs_to_check, get_bbox_size
 
 
 def padded_hex(value: int, num_digits: int = 2) -> str:
@@ -87,36 +92,44 @@ class OctoStream(OutputHelper):
         while byte_queue:
             num_to_pop = min(max_bytes_per_line, len(byte_queue))
             self.print(' '.join((padded_hex(byte_queue.popleft()) for i in range(num_to_pop))))
-            self.print()
+            #self.print()
             if byte_queue:
                 self.print(label_pad, end='')
 
 
-def emit_octo(stream, font_data: TextFontFile):
-    # get the max height and max width of the font?
-    # is this really needed? just reparse from it?
-    # user COULD edit a font to be bigger...
-    font_width = font_data.max_width
-    font_height = font_data.max_height
+def exit_error(message: str, code=2):
+    print(f"ERROR: {message}")
+    sys.exit(code)
 
-    first_glyph = font_data.first_glyph
-    last_glyph = font_data.last_glyph
-    glyphs = font_data.glyph
-    # print glyphs
+
+def emit_octo(
+    out_file,
+    font_data: CachingFontAdapter,
+):
+
+    # if glyphs is None:
+    #     try:
+    #         glyphs = guess_glyphs_to_check(font_data)
+    #     except ValueError as e:
+    #         glyphs = [c for c in string.printable]
+
+    #font_width, font_height = find_max_dimensions(font_data, glyphs_to_check=glyphs)
+    font_width, font_height = font_data.max_glyph_size
+
+    glyphs_sorted = tuple(sorted(font_data.glyph.keys()))
+    first_glyph = glyphs_sorted[0]
+    last_glyph = glyphs_sorted[-1]
 
     if font_width == 0 or font_height == 0:
-        print("Did not find font dimensions")
-        sys.exit(2)
+        exit_error("Did not find font dimensions")
     if font_width > 8:
-        print("Font width larger than 8 pixels, not yet supported")
-        sys.exit(2)
+        exit_error("Font width larger than 8 pixels, not yet supported")
     if font_height > 8:
-        print("Font height larger than 8 pixels, not yet supported")
-        sys.exit(2)
+        exit_error("Font height larger than 8 pixels, not yet supported")
 
     # ugly, TextIO seems to be incorrectly treated as if it's not a
     # subclass of TextIOBase by some linters.
-    octo = OctoStream(stream)  # type: ignore
+    octo = OctoStream(out_file)  # type: ignore
 
     # Make code shorter by tearing off the instance methods and
     # turning them into local funcs. Annoys linters.
@@ -140,7 +153,7 @@ def emit_octo(stream, font_data: TextFontFile):
 
     prefix = "smallfont"
 
-    offset = font_data.first_glyph
+    offset = first_glyph
 
     # generate label names
     draw_func_name = prefix + "_draw_glyph"
@@ -150,7 +163,8 @@ def emit_octo(stream, font_data: TextFontFile):
 
     # header
     print()
-    available_chars = ''.join(chr(i) if i in glyphs else '' for i in range(255))
+    #available_chars = ''.join(chr(i) if i in glyphs else '' for i in range(255))
+    available_chars = ''.join(chr(i) for i, bitmap in pair_iterator_for_font(font_data))
     print(f"# Font: {prefix}  Available characters: {available_chars}")
 
     # generate glyph drawing routine
@@ -218,14 +232,13 @@ def emit_octo(stream, font_data: TextFontFile):
     label(f"{prefix}draw_str")
 
     # calculate and output the width table
-    for i in range(first_glyph, last_glyph + 1):
-        glyph_width = len(glyphs[i]) // font_height
+    for glyph_index, glyph in font_data.glyph.items():
+        glyph_width = font_data.getbbox(chr(glyph_index))[2]
         octo.byte_queue.append(glyph_width)
     octo.write_queued_data_with_label(widthtable_name)
 
     # calculate and output the glyph data
-    for glyph_code in range(first_glyph, last_glyph + 1):
-        glyph = glyphs[glyph_code]
+    for glyph_code, glyph in font_data.glyph.items():
         glyph_width, glyph_height = glyph.size
         pixels = bytes(glyph)
 
@@ -242,7 +255,7 @@ def emit_octo(stream, font_data: TextFontFile):
 
             # use the binary mask to pad the
             for pixel in pixels_from_image:
-                packed_row_data = (packed_row_data  << 1) | (1 if pixel else 0)
+                packed_row_data = (packed_row_data << 1) | (1 if pixel else 0)
 
             # align to the left
             packed_row_data  <<= char_size - glyph_width
@@ -285,13 +298,13 @@ def main():
 
     infile = fileinput.input()
 
-    # font_data = parse_textfont_file(infile)
-    font_data = TextFontFile(infile)
+    raw_font_data = TextFontFile(infile)
+    font_data = CachingFontAdapter(raw_font_data)
 #    print(file_input)
 #    print(file_input.glyphs)
 #    return
 
-    emit_octo(sys.stdout, font_data)
+    emit_octo(sys.stdout, font_data)#, [chr(i) for i in font_data.glyph.keys()])
 
 if __name__ == "__main__":
    main()

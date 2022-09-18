@@ -2,34 +2,15 @@
 import sys
 import getopt
 import string
-from typing import Tuple, Iterable
+from typing import Iterable
 
 from PIL import ImageFont
 from itertools import chain
 
-from octofont3 import calculate_alignments, CachingFontWrapper
-from octofont3.iohelpers import OutputHelper
-
-
-def find_max_dimensions(font: CachingFontWrapper, glyphs: Iterable[str]) -> Tuple[int, int]:
-    """
-    Get the size of the tile that will fit every glyph requested
-
-    :param font: The font to evaluate
-    :param glyphs: which glyphs to use
-    :return: the max glyph width and max glyph height for the font
-    """
-    max_width, max_height = 0, 0
-    for glyph in glyphs:
-        bbox = font.getbbox(glyph)
-
-        if bbox is not None:
-
-            x1, y1, x2, y2 = bbox
-            max_height = max(y2-y1, max_height)
-            max_width = max(x2-x1, max_width)
-
-    return max_width, max_height
+from octofont3 import calculate_alignments
+from octofont3.font_adapter import CachingFontAdapter
+from octofont3.iohelpers import OutputHelper, TextIOBaseSubclass
+from octofont3.utils import find_max_dimensions, show_image_for_text, print_dataclass_info
 
 
 class TextfontStream(OutputHelper):
@@ -42,81 +23,87 @@ class TextfontStream(OutputHelper):
         self.print(*objects, sep=sep, end=end)
 
 
-def emit_character(stream, font, glyph, max_height):
+class FontRenderer:
 
-    bitmap = font.getmask(glyph)
-    bbox = font.getbbox(glyph)
+    def __init__(
+        self,
+        stream: TextIOBaseSubclass,
+        include_padding: bool = True,
+        verbose: int = 0,
+        fill_character: str = 'X',
+        empty_character: str = '.',
+    ):
+        if not isinstance(stream, TextfontStream):
+            stream = TextfontStream(stream)
 
-    comment = [f"# {glyph} (ASCII: {ord(glyph)})"]
+        self.fill_character = fill_character
+        self.empty_character = empty_character
+        self.stream = stream
+        self.include_padding: bool = include_padding
+        self.verbose = verbose
 
-    if bbox is None:
-        stream.print(comment[0], "skipping empty glyph")
-        stream.print()
-        return
+    def emit_character(self, font: CachingFontAdapter, glyph):
 
-    x1, y1, x2, y2 = bbox
-    data_width = x2 - x1
-    data_height = y2 - y1
+        bitmap = font.getmask(glyph)
+        metadata = font.get_glyph_metadata(glyph)
+        glyph_bbox = metadata.glyph_bbox
+        bitmap_bbox = metadata.bitmap_bbox
 
-    pre, post = 0, 0
+        comment = [f"# {glyph} (ASCII: {ord(glyph)})"]
 
-    extra = max_height - data_height
+        if bitmap_bbox is None:
+            self.stream.print(comment[0], "skipping empty glyph")
 
-    if glyph in font.alignments["center"]:
-        comment.append(" (centered)")
-        post = extra // 2
-        pre = extra - post
+        padding_above = glyph_bbox.top
 
-    elif glyph in font.alignments["top"]:
-        comment.append(" (align-top)")
-        post = extra
+        if bitmap_bbox is not None:
+            data_width, data_height = bitmap_bbox[2:]
+        else:
+            data_width, data_height = 0, 0
+        padding_below = glyph_bbox.bottom - (padding_above + data_height)
 
-        # Move one pixel down from the top if the glyph is really short
-        if post > data_height:
-            post -= 1
-            pre = 1
-    else:
-        comment.append(" (align-bot)")
-        pre = extra
+        if bitmap_bbox is not None:
+            self.stream.header("GLYPH", ord(glyph), data_width, data_height, ''.join(comment))
 
-    #print comment
+        if self.verbose:
+            print(f"# metadata:")
+            print_dataclass_info(metadata)
+            # print()
 
-    stream.header("GLYPH", ord(glyph), data_width, max_height, ''.join(comment))
+        if bitmap_bbox is None:
+            return
 
-    pad_line = "." * data_width
-    for i in range(pre):
-        stream.print(pad_line)
+        pad_line = self.empty_character * glyph_bbox.width
 
-    line_raw = []
-    for y in range(y1, y2):
-        line_raw.clear()
+        for i in range(padding_above):
+            self.stream.print(pad_line)
 
-        for x in range(x1, x2):
-            if bitmap.getpixel((x, y)) > 0:
-                char = "X"
-            else:
-                char = "."
-            line_raw.append(char)
-        stream.print(''.join(line_raw))
+        line_raw = []
+        for y in range(data_height):
+            line_raw.clear()
+            for x in range(data_width):
+                #print("bitmap_bbox coord: ", x, y, file=sys.stderr)
+                line_raw.append(self.fill_character if bitmap.getpixel((x, y)) > 0 else self.empty_character)
 
-    for i in range(post):
-        stream.print(pad_line)
+            line_raw.extend((self.empty_character for i in range(glyph_bbox.width - data_width)))
+            self.stream.print(''.join(line_raw))
 
+        for i in range(padding_below):
+            self.stream.print(pad_line)
 
-def emit_textfont(stream, font: CachingFontWrapper, font_glyphs: Iterable[str]):
-    s = stream
-    max_width, max_height = find_max_dimensions(font, font_glyphs)
-    s.comment(f"{font.path}, {font.size} points, height {max_height} px, widest {max_width} px")
-    s.comment(f"Exporting: {font_glyphs}")
-    s.header("FONT", max_width, max_height)
+    def emit_textfont(self, font: CachingFontAdapter, font_glyphs: Iterable[str]):
+        s = self.stream
+        max_width, max_height = find_max_dimensions(font, font_glyphs)
+        s.comment(f"{font.path}, {font.size} points, height {max_height} px, widest {max_width} px")
+        s.comment(f"Exporting: {font_glyphs}")
+        s.header("FONT", max_width, max_height)
 
-    for glyph in font_glyphs:
-        emit_character(stream, font, glyph, max_height)
+        for glyph in font_glyphs:
+            self.emit_character(font, glyph)
 
 
 def main():
     prog, argv = sys.argv[0], sys.argv[1:]
-
 
     font_points = 8
     font_glyphs = string.printable
@@ -156,13 +143,15 @@ def main():
     # keep this here because someone might override it?
     alignments = calculate_alignments(vert_center=vert_center, vert_top=vert_top)
     raw_font = ImageFont.truetype(font_file, font_points)
-    font = CachingFontWrapper(
+    font = CachingFontAdapter(
         raw_font,
-        alignments=alignments
+        alignments=alignments,
+        require_glyph_sequence=list(font_glyphs)
     )
-    stream = TextfontStream(sys.stdout)
-    emit_textfont(stream, font, font_glyphs)
-
+    #show_image_for_text(raw_font, "Test text")
+    renderer = FontRenderer(sys.stdout, verbose=False)
+    renderer.emit_textfont(font, font_glyphs)
+    pass
 
 if __name__ == "__main__":
    main()

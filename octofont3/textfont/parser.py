@@ -4,7 +4,7 @@ from typing import Optional, List, Tuple, Union
 
 from PIL import Image
 
-from octofont3 import BoundingBox, Size
+from octofont3.custom_types import BoundingBox, Size
 from octofont3.iohelpers import TextIOBaseSubclass
 from octofont3.textfont import FONT_HEADER, GLYPH_HEADER
 
@@ -163,8 +163,6 @@ class TextFontFile:
         self.max_width, self.max_height = bounds
 
         # Temp local variables for faster access
-        first_glyph = None
-        last_glyph = None
         glyph_table = self.glyph
 
         # Parse each glyph in the file & update internal storage
@@ -173,13 +171,6 @@ class TextFontFile:
 
             glyph_table[code_point] = self._parse_glyph(
                 stream, max_width=glyph_width, height=glyph_height)
-
-            first_glyph = code_point if first_glyph is None else min(code_point, first_glyph)
-            last_glyph = code_point if last_glyph is None else max(code_point, last_glyph)
-
-        # Store results on slower instance variable access
-        self.first_glyph = first_glyph
-        self.last_glyph = last_glyph
 
     def __init__(self, file_stream: Optional[Union[FileInput, TextIOBaseSubclass]] = None, kerning: int = 1):
         super().__init__()
@@ -265,7 +256,6 @@ class TextFontFile:
     def getbbox(self, text: str) -> BoundingBox:
         width, height = self.getsize(text)
         return 0, 0, width, height
-
 
 
 if __name__ == "__main__":
