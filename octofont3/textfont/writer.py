@@ -83,12 +83,12 @@ class FontRenderer:
         for i in range(padding_below):
             self.stream.print(pad_line)
 
-    def emit_textfont(self, font: CachingFontAdapter, font_glyphs: Iterable[str]):
+    def emit_textfont(self, font: CachingFontAdapter, glyph_sequence: Iterable[str]):
         s = self.stream
-        max_width, max_height = find_max_dimensions(font, font_glyphs)
+        max_width, max_height = find_max_dimensions(font, glyph_sequence)
         s.comment(f"{font.path}, {font.size} points, height {max_height} px, widest {max_width} px")
-        s.comment(f"Exporting: {font_glyphs}")
+        s.comment(f"Exporting: {glyph_sequence}")
         s.header("FONT", max_width, max_height)
 
-        for glyph in font_glyphs:
+        for glyph in glyph_sequence:
             self.emit_character(font, glyph)

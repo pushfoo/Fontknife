@@ -15,7 +15,7 @@ def main():
     prog, argv = sys.argv[0], sys.argv[1:]
 
     font_points = 8
-    font_glyphs = string.printable
+    glyph_sequence = None
 
     vert_center = None
     vert_top = None
@@ -31,7 +31,7 @@ def main():
             print(help)
             sys.exit()
         elif opt == '-g':
-            font_glyphs = arg
+            glyph_sequence = arg
         elif opt == '-p':
             font_points = int(arg)
         elif opt == '-c':
@@ -45,9 +45,10 @@ def main():
 
     font_file = args[0]
 
-    # Remove unprintable characters
-    exclude = set(chr(i) for i in chain(range(0, 31), range(128, 255)))
-    font_glyphs = ''.join(ch for ch in font_glyphs if ch not in exclude)
+    # If no glyph order was specified, generate a default
+    if glyph_sequence is None:
+        exclude = set(chr(i) for i in chain(range(0, 31), range(128, 255)))
+        glyph_sequence = ''.join(ch for ch in string.printable if ch not in exclude)
 
     # keep this here because someone might override it?
     alignments = calculate_alignments(vert_center=vert_center, vert_top=vert_top)
@@ -55,11 +56,11 @@ def main():
     font = CachingFontAdapter(
         raw_font,
         alignments=alignments,
-        require_glyph_sequence=list(font_glyphs)
+        require_glyph_sequence=tuple(glyph_sequence)
     )
     #show_image_for_text(raw_font, "Test text")
     renderer = FontRenderer(sys.stdout, verbose=False)
-    renderer.emit_textfont(font, font_glyphs)
+    renderer.emit_textfont(font, glyph_sequence)
     pass
 
 if __name__ == "__main__":

@@ -105,6 +105,7 @@ def exit_error(message: str, code=2):
 def emit_octo(
     out_file,
     font_data: CachingFontAdapter,
+    glyph_sequence: Optional[Iterable[int]] = None
 ):
 
     # if glyphs is None:
@@ -114,11 +115,11 @@ def emit_octo(
     #         glyphs = [c for c in string.printable]
 
     #font_width, font_height = find_max_dimensions(font_data, glyphs_to_check=glyphs)
-    font_width, font_height = font_data.max_glyph_size
 
-    glyphs_sorted = tuple(sorted(font_data.glyph.keys()))
-    first_glyph = glyphs_sorted[0]
-    last_glyph = glyphs_sorted[-1]
+    font_width, font_height = font_data.max_glyph_size
+    glyph_sequence = glyph_sequence or tuple(sorted(font_data.glyph.keys()))
+    first_glyph = glyph_sequence[0]
+    last_glyph = glyph_sequence[-1]
 
     if font_width == 0 or font_height == 0:
         exit_error("Did not find font dimensions")
@@ -165,7 +166,7 @@ def emit_octo(
     print()
     #available_chars = ''.join(chr(i) if i in glyphs else '' for i in range(255))
     available_chars = ''.join(chr(i) for i, bitmap in pair_iterator_for_font(font_data))
-    print(f"# Font: {prefix}  Available characters: {available_chars}")
+    print(f"# Font: {prefix}  Table glyphs in order: {available_chars}")
 
     # generate glyph drawing routine
     print()
