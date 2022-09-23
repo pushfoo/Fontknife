@@ -6,7 +6,7 @@ from PIL import Image
 
 from octofont3.custom_types import BoundingBox, Size
 from octofont3.iohelpers import TextIOBaseSubclass
-from octofont3.textfont import FONT_HEADER, GLYPH_HEADER
+from octofont3.formats.textfont import FONT_HEADER, GLYPH_HEADER
 
 
 class FontParseError(BaseException):

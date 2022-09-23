@@ -1,20 +1,16 @@
 #!/usr/bin/python3
 import fileinput
-import string
 import sys
 import getopt
 from collections import deque
 from functools import cache
 from math import log
-from typing import Optional, Iterable, Sequence
-
-from PIL import ImageFont
+from typing import Optional, Iterable
 
 from octofont3.font_adapter import CachingFontAdapter, pair_iterator_for_font
 from octofont3.iohelpers import OutputHelper, TextIOBaseSubclass
 
-from octofont3.textfont.parser import TextFontFile
-from octofont3.utils import find_max_dimensions, guess_glyphs_to_check, get_bbox_size
+from octofont3.formats.textfont.parser import TextFontFile
 
 
 def padded_hex(value: int, num_digits: int = 2) -> str:
