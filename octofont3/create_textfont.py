@@ -8,7 +8,8 @@ from itertools import chain
 
 from octofont3 import calculate_alignments
 from octofont3.font_adapter import CachingFontAdapter
-from octofont3.textfont.writer import FontRenderer
+from octofont3.formats.loader import load_font
+from octofont3.formats.textfont.writer import FontRenderer
 
 
 def main():
@@ -52,12 +53,13 @@ def main():
 
     # keep this here because someone might override it?
     alignments = calculate_alignments(vert_center=vert_center, vert_top=vert_top)
-    raw_font = ImageFont.truetype(font_file, font_points)
-    font = CachingFontAdapter(
-        raw_font,
-        alignments=alignments,
-        require_glyph_sequence=tuple(glyph_sequence)
-    )
+    # raw_font = ImageFont.truetype(font_file, font_points)
+    # font = CachingFontAdapter(
+    #     raw_font,
+    #     alignments=alignments,
+    #     require_glyph_sequence=tuple(glyph_sequence)
+    # )
+    font = load_font(font_file, 16, required_glyphs=glyph_sequence)
     #show_image_for_text(raw_font, "Test text")
     renderer = FontRenderer(sys.stdout, verbose=False)
     renderer.emit_textfont(font, glyph_sequence)

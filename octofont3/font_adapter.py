@@ -116,7 +116,7 @@ class CachingFontAdapter(ImageFontLike):
 
         self._font = font
         self._size = size
-        self._path = getattr(font, 'path', None)
+        self._path = getattr(font, 'source', None)
         # Data for adapting fonts and convenience features
 
         self._local_metadata_table: Dict[int, GlyphMetadata] = {}
@@ -214,7 +214,7 @@ class CachingFontAdapter(ImageFontLike):
     def size(self):
         if self._size:
             return self._size
-        return self._font.size
+        return getattr(self._font, 'size', None)
 
     @property
     def alignments(self) -> Dict:

@@ -1,8 +1,13 @@
 from collections import namedtuple
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Tuple, Protocol, Optional, Union, Dict, List, runtime_checkable, Any
 
 from PIL import Image
+
+
+PathLike = Union[Path, str, bytes]
+
 
 Pair = Tuple[int, int]
 
@@ -11,7 +16,6 @@ SizeFancy = namedtuple('SizeFancy', ['width', 'height'])
 
 
 
-# BboxFancy = namedtuple('BboxFancy', ['left', 'top', 'right', 'bottom'])
 @dataclass(frozen=True)
 class BboxFancy:
     left: int
@@ -43,6 +47,7 @@ class BboxFancy:
 
 BoundingBox = Union[BboxFancy, Tuple[int, int, int, int]]
 
+
 @runtime_checkable
 class ImageFontLike(Protocol):
     """
@@ -58,6 +63,8 @@ class ImageFontLike(Protocol):
     def getbbox(self, text: str) -> Optional[Union[BoundingBox, BboxFancy]]:
         ...
 
+
+# Need to find a good way of typing the core class
 GlyphTableEntry = Optional[Any]
 
 
@@ -71,3 +78,5 @@ class FontWithGlyphTable(Protocol):
     instances or None is the old-style ASCII bitfont.
     """
     glyph: Union[Dict[int, Any], List[Optional[Any]]]
+
+

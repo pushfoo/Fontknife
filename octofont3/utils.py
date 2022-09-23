@@ -1,11 +1,12 @@
 import sys
 from dataclasses import asdict
 from math import inf
+from pathlib import Path
 from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Sized
 
 from PIL import Image, ImageDraw
 
-from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, Pair
+from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, Pair, PathLike
 
 
 def get_bbox_size(bbox: BoundingBox) -> Size:
@@ -89,3 +90,8 @@ def find_max_dimensions(
             max_width = max(height, max_width)
 
     return SizeFancy(max_width, max_height)
+
+
+def ensure_folder_exists(folder_path: PathLike) -> None:
+    folder_path = Path(folder_path)
+    folder_path.mkdir(exist_ok=True)
