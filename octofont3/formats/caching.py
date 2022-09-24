@@ -2,9 +2,9 @@ import csv
 import hashlib
 import tempfile
 from collections import UserDict
-from dataclasses import dataclass, astuple
+from dataclasses import dataclass, astuple, field
 from pathlib import Path
-from typing import Callable, Dict, Optional, Union, BinaryIO
+from typing import Callable, Dict, Optional, Union, BinaryIO, Set, Any
 
 from PIL import ImageFont
 
@@ -53,16 +53,33 @@ def hash_file(
     return hash
 
 
-@dataclass(frozen=True)
+def deserialize_optional(raw: str, converter: Optional[Callable] = None) -> Any:
+    if raw == 'None':
+        return None
+    elif converter is not None:
+        return converter(raw)
+    return raw
+
+
+@dataclass
 class MetadataCacheEntry:
     modified_time_nanoseconds: int
     file_hash: str
+    glyph_membership: Optional[frozenset] = field(default=None)
 
     @classmethod
     def generate_for_file(cls, source_file_path: Path):
         modified_time_ns = source_file_path.stat().st_mtime_ns
         file_hash = hash_file(source_file_path).hexdigest()
         return cls(modified_time_ns, file_hash)
+
+    @classmethod
+    def from_string_format(cls, *args):
+        modified_time_ns = int(args[0])
+        file_hash = args[1]
+        glyph_membership = deserialize_optional(args[2])
+
+        return cls(modified_time_ns, file_hash, glyph_membership)
 
 
 class FileMetadataCache(UserDict):
@@ -115,9 +132,7 @@ class FileMetadataCache(UserDict):
 
                 for raw_path, *raw_data in reader:
                     path = Path(raw_path)
-
-                    modified_time_nanoseconds, file_hash = int(raw_data[0]), raw_data[1]
-                    cache_entry_data = MetadataCacheEntry(modified_time_nanoseconds, file_hash)
+                    cache_entry_data = MetadataCacheEntry.from_string_format(*raw_data)
                     raw_cache[path] = cache_entry_data
 
         return cls(
@@ -140,8 +155,10 @@ class FileMetadataCache(UserDict):
         with open(self.cache_metadata_file_path, "w") as csvfile:
             writer = csv.writer(csvfile)
             for path, data_elements in self.items():
-                writer.writerow(map(str, (path, *map(str, astuple(data_elements)))))
+                writer.writerow((str(path), *map(str, astuple(data_elements))))
 
+    def __del__(self):
+        self.save_to_disk()
 
 default_cache: Optional[FileMetadataCache] = None
 
@@ -180,13 +197,16 @@ def load_and_cache_bitmap_font(
     pil_font_cache_dir = cache.cache_folder_path
     pil_font_cache_path = pil_font_cache_dir / metadata.file_hash
 
+    file_base_name = metadata.file_hash
+
     if source_path not in cache or metadata != cache[source_path]:
         print("updating cache...")
         raw_font = raw_loader(source_path)
 
         # todo: fix this naming scheme, just hashes is hard to use
         # todo: check if pillow caches fonts anywhere...
-        raw_font.save(pil_font_cache_dir / metadata.file_hash)
+        raw_font.save(pil_font_cache_dir / file_base_name)
+
         cache[source_path] = metadata
 
     pil_font = ImageFont.load(f"{pil_font_cache_path}.pil")

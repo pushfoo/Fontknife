@@ -1,12 +1,61 @@
+import string
 import sys
 from dataclasses import asdict
+from itertools import chain, filterfalse
 from math import inf
 from pathlib import Path
 from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Sized
 
+import PIL.Image
 from PIL import Image, ImageDraw
 
 from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, Pair, PathLike
+
+
+def generate_glyph_sequence(
+    raw_character_sequence: Optional[Iterable[str]] = None,
+    exclude: [Union[Callable,Iterable[str]]] = None
+) -> Tuple[str, ...]:
+    """
+    Generate an output order of strings as keys to glyph data.
+
+    If no arguments are provided, it will return the following ordering::
+
+        0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+
+    Digits are placed first to eliminate offset math for displaying
+    scores when working in retro development environments.
+
+    If you desire a different order, pass a value to
+    ``raw_character_sequence``. Use ``exclude`` to filter the iterables
+
+
+    :param raw_character_sequence:
+    :param exclude:
+    :return:
+    """
+
+    # If passed a function, use it to exclude
+    if callable(exclude):
+        exclude_func = exclude
+
+    else: # We need to generate an exclusion function
+        if exclude is None:
+            # Exclude everything before space and after base ASCII
+            exclude = set(chr(i) for i in chain(range(0, 31), range(128, 255)))
+        else:
+            # Convert the iterable to a set for efficient lookup
+            exclude = set(exclude)
+
+        def exclude_func(s):
+            return s in exclude
+
+    if not raw_character_sequence:
+        raw_character_sequence = string.printable
+
+    glyph_sequence = tuple(filterfalse(exclude_func, raw_character_sequence))
+
+    return glyph_sequence
 
 
 def get_bbox_size(bbox: BoundingBox) -> Size:
@@ -76,7 +125,7 @@ def find_max_dimensions(
     Get the size of the tile that will fit every glyph requested
 
     :param font: The font to evaluate
-    :param glyphs: which glyphs to use
+    :param glyphs_to_check: which glyphs to use
     :param bbox_getter: A function to process the font and requested glyphs with
     :return: the max glyph width and max glyph height for the font
     """
@@ -86,12 +135,106 @@ def find_max_dimensions(
 
         if bbox is not None:
             width, height = get_bbox_size(bbox)
-            max_height = max(width, max_height)
-            max_width = max(height, max_width)
+            max_width = max(width, max_width)
+            max_height = max(height, max_height)
 
     return SizeFancy(max_width, max_height)
 
 
+def tuplemap(callable: Callable, iterable: Iterable) -> Tuple:
+    return tuple(map(callable, iterable))
+
+
+def image_from_core(core, mode="1") -> Image.Image:
+    return Image.frombytes(mode, core.size, bytes(core))
+
+
+def empty_core(width: int = 0, height: int = 0):
+    return Image.new("1", (width, height), 0).im
+
+
+def generate_missing_character_core(
+    image_size: Size,
+    rectangle_bbox: Optional[BoundingBox] = None,
+    mode: str = 'L',
+    rectangle_margins_px: int = 1
+):
+    """
+    Generate a missing glyph "tofu" square as an image core object.
+
+    :param tofu_size:
+    :param mode:
+    :return:
+    """
+    # Calculate dimensions
+    image_size = SizeFancy(*image_size)
+    if rectangle_bbox is None:
+       rectangle_bbox = (
+           rectangle_margins_px,
+           rectangle_margins_px,
+           image_size.width - (1 + rectangle_margins_px),
+           image_size.height - (1 + rectangle_margins_px)
+       )
+
+    # Draw a rectangle on the image
+    image = Image.new(mode, image_size, 0)
+    draw = ImageDraw.Draw(image, mode)
+    draw.rectangle(rectangle_bbox, outline=255)
+
+    # Return the core for use as a mask
+    return image.im
+
 def ensure_folder_exists(folder_path: PathLike) -> None:
     folder_path = Path(folder_path)
     folder_path.mkdir(exist_ok=True)
+
+
+def exit_error(message: str, code=2):
+    print(f"ERROR: {message}")
+    sys.exit(code)
+
+
+def get_first_attr(obj: Any, attr_iterable: Iterable[str], default: Any = None, strict: bool = True) -> Any:
+    """
+    Search for passed attributes, returning a default or excepting if not found
+
+    The ``strict`` argument determines how failing to find the argument
+    is handled:
+
+        * When ``strict`` is False, returns the default
+        * When ``strict`` is True, raises an exception
+
+    :param obj: The object to search for attributes
+    :param attr_iterable: An iterable of attribute names to search for
+    :param default: the default value to return if no element is present
+    :param strict: whether to raise an exception if none are found
+    :return: The value of an attribute or the default
+    """
+    # Convert the requested object only if we might need it later
+    if strict:
+        attr_iterable = tuple(attr_iterable)
+
+    # Check for presence of attributes, returning the first
+    for attr in attr_iterable:
+        if hasattr(obj, attr):
+            return getattr(obj, attr)
+
+    # Error if in strict mode, otherwise return a default
+    if strict:
+        raise AttributeError("Could not find any of following attributes: ")
+
+    return default
+
+
+def get_stream_file(s) -> Optional[str]:
+    if hasattr(s, 'raw') and hasattr(s.raw, 'name'):
+        return s.raw.name
+    elif hasattr(s, 'name'):
+        return s.name
+    elif hasattr(s, 'filename'):
+        if callable(s.filename):
+            return s.filename()
+        else:
+            return s.filename
+
+    return None

@@ -1,12 +1,13 @@
 from collections import defaultdict
 from fileinput import FileInput
-from typing import Optional, List, Tuple, Union
+from typing import Optional, List, Tuple, Union, Dict
 
 from PIL import Image
 
-from octofont3.custom_types import BoundingBox, Size
+from octofont3.custom_types import BoundingBox, Size, PathLike
 from octofont3.iohelpers import TextIOBaseSubclass
 from octofont3.formats.textfont import FONT_HEADER, GLYPH_HEADER
+from octofont3.utils import get_stream_file, empty_core, generate_missing_character_core
 
 
 class FontParseError(BaseException):
@@ -19,7 +20,7 @@ class FontParseError(BaseException):
 
     @classmethod
     def from_stream_state(cls, message, stream):
-        return cls(message, stream.filename(), stream.lineno())
+        return cls(message, get_stream_file(stream), stream.lineno())
 
 
 def split_tokens(line: str) -> Optional[List[str]]:
@@ -160,6 +161,7 @@ class TextFontFile:
         """
         # Not currently used, but nice to have for debugging
         file_header, bounds = parse_header_and_values(stream, FONT_HEADER)
+        # todo: replace this with reading from the file and dynamically figuring it out
         self.max_width, self.max_height = bounds
 
         # Temp local variables for faster access
@@ -168,16 +170,17 @@ class TextFontFile:
         # Parse each glyph in the file & update internal storage
         while glyph_header := parse_header_and_values(stream, GLYPH_HEADER):
             code_point, glyph_width, glyph_height = glyph_header[1]
-
-            glyph_table[code_point] = self._parse_glyph(
+            #glyph = self._parse_glyph(stream, max_wiod)
+            glyph_table[chr(code_point)] = self._parse_glyph(
                 stream, max_width=glyph_width, height=glyph_height)
 
-    def __init__(self, file_stream: Optional[Union[FileInput, TextIOBaseSubclass]] = None, kerning: int = 1):
+    def __init__(self, file_stream: Optional[Union[PathLike, FileInput, TextIOBaseSubclass]] = None, kerning: int = 1):
         super().__init__()
 
         # Partially backward compatible glyph table, theoretically
         # supporting more than the original boring 255 characters.
-        self.glyph: defaultdict[int, Optional[Image.Image]] = defaultdict(lambda: None)
+        self.glyph: Dict[str, Optional[Image.Image]] = {}
+        self.filename = get_stream_file(file_stream)
 
         # these should really be recalculated from the font itself instead of the header
         self.max_width: Optional[int] = None
@@ -195,6 +198,21 @@ class TextFontFile:
 
         if file_stream:
             self._parse_textfont_file(file_stream)
+
+        #self.dummy_glyph = empty_core(self.max_width, self.max_height)
+        self.dummy_glyph = generate_missing_character_core((self.max_width, self.max_height))
+
+    @property
+    def provided_glyphs(self):
+        return tuple(self.glyph.keys())
+
+    def get_glyph(self, value, strict=False):
+
+        if value in self.glyph:
+            return  self.glyph[value]
+        elif not strict:
+            return self.dummy_glyph
+        raise KeyError(f"Could not find glyph data for sequence {value!r}")
 
     @property
     def size(self) -> int:
@@ -217,8 +235,10 @@ class TextFontFile:
         total_height = 0
 
         end_index = len(text) - 1
-        for char_index, char_code in enumerate(map(ord, text)):
-            char_image = self.glyph[char_code]
+        for char_index, char_code in enumerate(text):
+
+            char_image = self.get_glyph(text)
+
             width, height = char_image.size
 
             total_height = max(total_height, height)
@@ -237,12 +257,15 @@ class TextFontFile:
         :param text:
         :return:
         """
+        #if len(text) == 1:
+        #    return self.glyph[text]
+
         size = self.getsize(text)
         mask_image = Image.new("1", size)
 
         current_x, current_y = 0, 0
-        for char_code in map(ord, text):
-            char_image = self.glyph[char_code]
+        for char in text:
+            char_image = self.get_glyph(char)
             width, height = char_image.size
 
             mask_image.paste(

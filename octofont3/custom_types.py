@@ -10,10 +10,8 @@ PathLike = Union[Path, str, bytes]
 
 
 Pair = Tuple[int, int]
-
 Size = Tuple[int, int]
 SizeFancy = namedtuple('SizeFancy', ['width', 'height'])
-
 
 
 @dataclass(frozen=True)
@@ -66,17 +64,3 @@ class ImageFontLike(Protocol):
 
 # Need to find a good way of typing the core class
 GlyphTableEntry = Optional[Any]
-
-
-# This seems to interact poorly with Imaging.core
-@runtime_checkable
-class FontWithGlyphTable(Protocol):
-    """
-    A font with a glyph table.
-
-    The dict is this tool's "new" style, while the list of Image.core
-    instances or None is the old-style ASCII bitfont.
-    """
-    glyph: Union[Dict[int, Any], List[Optional[Any]]]
-
-

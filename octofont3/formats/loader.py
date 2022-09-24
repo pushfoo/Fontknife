@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional
 
@@ -11,27 +12,39 @@ from octofont3.formats.caching import get_cache, load_and_cache_bitmap_font
 
 from octofont3.formats.pcf import load_pcf
 from octofont3.formats.textfont.parser import TextFontFile
+from octofont3.utils import generate_glyph_sequence
 
 
-class FontLoadingError(Exception):
-    pass
+class FontLoadingError(Exception, ABC):
+
+    def __init__(self, path: PathLike, message: str = None):
+        super().__init__(message or self._gen_message(path))
+        self.path = path
+
+    @abstractmethod
+    def _gen_message(self, path) -> str:
+        ...
 
 
 class MissingExtension(FontLoadingError):
-    def __init__(self, path: PathLike):
-        super().__init__(f"Could not find a file extension on {str(path)}")
-        self.path = path
+
+    def _gen_message(self, path) -> str:
+        return f"Could not find a file extension on {str(path)}"
+
 
 class UnrecognizedExtension(FontLoadingError):
-    def __init__(self, path: PathLike):
-        super(UnrecognizedExtension, self).__init__(f"Could not recognize file extension on {str(path)}")
-        self.path = path
+    def _gen_message(self, path) -> str:
+        return f"Could not recognize file extension on {str(path)}."
+
+
+class FormatRequiresGlyphSequence(FontLoadingError):
+    def _gen_message(self, path) -> str:
+        return f"Loading a font of this format makes specifying glyph sequence mandatory: {str(path)}"
 
 
 def load_font(
     path: PathLike,
-    font_size: int,
-    required_glyphs: str,
+    font_size: Optional[int] = None,
     cache_dir: Optional[PathLike] = None,
     force_type: Optional[str] = None
 ) -> CachingFontAdapter:
@@ -43,30 +56,39 @@ def load_font(
         str_path = str(path)
         path = path
 
-    file_type = path.suffix[1:] if force_type is None else force_type
+    file_type = force_type if force_type else path.suffix[1:]
     if file_type == '':
         raise MissingExtension(path)
+    cache = get_cache(cache_directory=cache_dir)
+
+    # temp fix until font probing is added
+    provides_glyphs = generate_glyph_sequence()
 
     if file_type == "ttf":
-        raw_font = ImageFont.truetype(str_path, font_size)
+       raw_font = ImageFont.truetype(str_path, font_size)
+
     elif file_type == 'bdf':
         with open(path, "rb") as raw_file:
             raw_font = load_and_cache_bitmap_font(
                 str_path,
                 load_bdf,
-                cache=get_cache(cache_directory=cache_dir)
+                cache=cache
             )
     elif file_type == 'pcf':
         with open(path, "rb") as raw_file:
             raw_font = load_and_cache_bitmap_font(
                 str_path,
                 load_pcf,
-                cache=get_cache(cache_directory=cache_dir)
+                cache=cache
             )
+
     elif file_type == "textfont":
         with open(path, "r") as raw_file:
             raw_font = TextFontFile(raw_file)
     else:
         raise UnrecognizedExtension(path)
 
-    return CachingFontAdapter(raw_font, required_glyphs)
+    #if not hasattr(raw_font, 'glyph') and required_glyphs is None:
+    #    raise FormatRequiresGlyphSequence(path)
+
+    return CachingFontAdapter(raw_font, provides_glyphs=provides_glyphs)
