@@ -1,10 +1,12 @@
+import base64
 import csv
 import hashlib
+import json
 import tempfile
 from collections import UserDict
 from dataclasses import dataclass, astuple, field
 from pathlib import Path
-from typing import Callable, Dict, Optional, Union, BinaryIO, Set, Any
+from typing import Callable, Dict, Optional, Union, BinaryIO, Set, Any, Tuple
 
 from PIL import ImageFont
 
@@ -61,25 +63,102 @@ def deserialize_optional(raw: str, converter: Optional[Callable] = None) -> Any:
     return raw
 
 
+def glyph_sequence_to_string(raw: Tuple[str, ...]) -> str:
+    json_encode = json.dumps(raw)
+    bytes_encode = json_encode.encode('utf-8')
+    b64 = base64.b64encode(bytes_encode)
+    out = b64.decode('ascii')
+    return out
+
+
+def glyph_sequence_from_string(raw: str) -> Tuple[str, ...]:
+    raw_bytes = raw.encode('ascii')
+    utf8_bytes = base64.b64decode(raw_bytes)
+    json_string = utf8_bytes.decode('utf-8')
+    sequence_list = json.loads(json_string)
+    return tuple(sequence_list)
+
+
 @dataclass
 class MetadataCacheEntry:
-    modified_time_nanoseconds: int
-    file_hash: str
-    glyph_membership: Optional[frozenset] = field(default=None)
+    """
+    Metadata for a specific font file.
+
+    This makes an assumption that the hash won't collide. It is
+    theoretically possible for the hash and modification time of
+    two fonts to be the same despite containing different data.
+    """
+    modified_time_nanoseconds: int = field(hash=True)
+    file_hash: str = field(hash=True)
+    provided_glyphs: Tuple[str, ...] = field(hash=False, compare=False, default_factory=tuple)
 
     @classmethod
     def generate_for_file(cls, source_file_path: Path):
         modified_time_ns = source_file_path.stat().st_mtime_ns
         file_hash = hash_file(source_file_path).hexdigest()
+
         return cls(modified_time_ns, file_hash)
 
     @classmethod
-    def from_string_format(cls, *args):
+    def from_string_tuple(cls, *args):
         modified_time_ns = int(args[0])
         file_hash = args[1]
-        glyph_membership = deserialize_optional(args[2])
+        glyph_membership = glyph_sequence_from_string(args[2])
 
         return cls(modified_time_ns, file_hash, glyph_membership)
+
+    def to_string_tuple(self) -> Tuple[str, ...]:
+        return (
+            str(self.modified_time_nanoseconds),
+            str(self.file_hash),
+            glyph_sequence_to_string(self.provided_glyphs)
+        )
+
+    def detect_provided_glyphs(
+        self,
+        pilfont_metadata_file: Path,
+        value_length_byes: int = 2,
+        num_values_per_glyph: int = 10
+    ):
+        """
+        Return the glyphs present in a cached pil font.
+
+        This is a very nasty workaround for PIL's lack of support for
+        access to font metadata.
+
+        Must be called *after* the font is actually cached.
+
+        :param pilfont_metadata_file: The file holding PIL metadata
+        :param value_length_byes: the length of each metrics table value in bytes
+        :param num_values_per_glyph: how many values there are per glyph metrics table group
+        :return:
+        """
+        with open(pilfont_metadata_file, "rb") as fp:
+            glyph_length_bytes = value_length_byes * num_values_per_glyph
+
+            # Skip header lines to get to the metrics data
+            while line := fp.readline():
+                if line == b"DATA\n":
+                    break
+
+            # Read the metrics block
+            all_metrics = fp.read(256 * glyph_length_bytes)
+
+        included_glyphs = []
+
+        # Append every glyph character that is presented by the font
+        for glyph_index in range(256):
+
+            # Extract the metrics block for the current glyph index
+            glyph_start = glyph_index * glyph_length_bytes
+            glyph_end = glyph_start + glyph_length_bytes
+            glyph_metrics = all_metrics[glyph_start:glyph_end]
+
+            # Only glyphs provided by the font have non-zero metrics blocks
+            if any(glyph_metrics):
+                included_glyphs.append(chr(glyph_index))
+
+        self.provided_glyphs = tuple(included_glyphs)
 
 
 class FileMetadataCache(UserDict):
@@ -128,11 +207,11 @@ class FileMetadataCache(UserDict):
 
         if cache_metadata_file_path.is_file():
             with open(cache_metadata_file_path, "r") as csvfile:
-                reader = csv.reader(csvfile)
+                reader = csv.reader(csvfile, dialect=csv.excel_tab)
 
                 for raw_path, *raw_data in reader:
                     path = Path(raw_path)
-                    cache_entry_data = MetadataCacheEntry.from_string_format(*raw_data)
+                    cache_entry_data = MetadataCacheEntry.from_string_tuple(*raw_data)
                     raw_cache[path] = cache_entry_data
 
         return cls(
@@ -153,17 +232,19 @@ class FileMetadataCache(UserDict):
         data_rows.sort(key=lambda t: t[1].modified_time_nanoseconds)
 
         with open(self.cache_metadata_file_path, "w") as csvfile:
-            writer = csv.writer(csvfile)
+            writer = csv.writer(csvfile, dialect=csv.excel_tab)
             for path, data_elements in self.items():
-                writer.writerow((str(path), *map(str, astuple(data_elements))))
+                path
+                writer.writerow((str(path), *data_elements.to_string_tuple()))
 
     def __del__(self):
         self.save_to_disk()
 
+
 default_cache: Optional[FileMetadataCache] = None
 
 
-def get_cache(cache_directory: Optional[PathLike] = None) -> FileMetadataCache:
+def get_cache(cache_directory: Optional[PathLike] = None) -> FileMetadataCache[Path, MetadataCacheEntry]:
     creating_temp_cache = cache_directory is None
 
     if creating_temp_cache:
@@ -192,22 +273,21 @@ def load_and_cache_bitmap_font(
     elif not source_path.is_file():
         raise FileNotFoundError(f"{source_path} is not a file")
 
-    metadata = MetadataCacheEntry.generate_for_file(source_path)
+    current_metadata = MetadataCacheEntry.generate_for_file(source_path)
 
     pil_font_cache_dir = cache.cache_folder_path
-    pil_font_cache_path = pil_font_cache_dir / metadata.file_hash
+    pil_cached_font_base_name = pil_font_cache_dir / current_metadata.file_hash
+    pil_cached_font_metadata_name = pil_cached_font_base_name.with_suffix('.pil')
 
-    file_base_name = metadata.file_hash
-
-    if source_path not in cache or metadata != cache[source_path]:
+    if source_path not in cache or current_metadata != cache[source_path]:
         print("updating cache...")
         raw_font = raw_loader(source_path)
 
         # todo: fix this naming scheme, just hashes is hard to use
         # todo: check if pillow caches fonts anywhere...
-        raw_font.save(pil_font_cache_dir / file_base_name)
+        raw_font.save(pil_cached_font_base_name)
+        current_metadata.detect_provided_glyphs(pil_cached_font_metadata_name)
+        cache[source_path] = current_metadata
 
-        cache[source_path] = metadata
-
-    pil_font = ImageFont.load(f"{pil_font_cache_path}.pil")
+    pil_font = ImageFont.load(str(pil_cached_font_metadata_name))
     return pil_font

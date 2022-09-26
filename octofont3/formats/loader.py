@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Iterable
 
 from PIL import ImageFont
 
@@ -46,6 +46,8 @@ def load_font(
     path: PathLike,
     font_size: Optional[int] = None,
     cache_dir: Optional[PathLike] = None,
+    # only usable with TTFs
+    force_provides: Iterable[str] = None,
     force_type: Optional[str] = None
 ) -> CachingFontAdapter:
 
@@ -61,11 +63,11 @@ def load_font(
         raise MissingExtension(path)
     cache = get_cache(cache_directory=cache_dir)
 
-    # temp fix until font probing is added
-    provides_glyphs = generate_glyph_sequence()
 
     if file_type == "ttf":
-       raw_font = ImageFont.truetype(str_path, font_size)
+        raw_font = ImageFont.truetype(str_path, font_size)
+        # temp fix for being unable to probe TTF sequences
+        provided_glyphs = tuple(force_provides) or generate_glyph_sequence()
 
     elif file_type == 'bdf':
         with open(path, "rb") as raw_file:
@@ -74,6 +76,7 @@ def load_font(
                 load_bdf,
                 cache=cache
             )
+            provided_glyphs = cache[path].provided_glyphs
     elif file_type == 'pcf':
         with open(path, "rb") as raw_file:
             raw_font = load_and_cache_bitmap_font(
@@ -81,14 +84,17 @@ def load_font(
                 load_pcf,
                 cache=cache
             )
+            provided_glyphs = cache[path].provided_glyphs
 
     elif file_type == "textfont":
         with open(path, "r") as raw_file:
             raw_font = TextFontFile(raw_file)
+        provided_glyphs = raw_font.provided_glyphs
+
     else:
         raise UnrecognizedExtension(path)
 
     #if not hasattr(raw_font, 'glyph') and required_glyphs is None:
     #    raise FormatRequiresGlyphSequence(path)
 
-    return CachingFontAdapter(raw_font, provides_glyphs=provides_glyphs)
+    return CachingFontAdapter(raw_font, provided_glyphs=provided_glyphs)

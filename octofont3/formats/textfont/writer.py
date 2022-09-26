@@ -95,7 +95,7 @@ class FontRenderer:
 
         max_width, max_height = find_max_dimensions(font, glyph_sequence)
         s.comment(f"{font.path}, {font.size} points, height {max_height} px, widest {max_width} px")
-        s.comment(f"Exporting: {glyph_sequence}")
+        s.comment(f"Exporting: {', '.join(repr(g) for g in glyph_sequence)}")
         s.header("FONT", max_width, max_height)
 
         for glyph in glyph_sequence:

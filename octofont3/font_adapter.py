@@ -91,23 +91,23 @@ class CachingFontAdapter(ImageFontLike):
     def __init__(
         self,
         font: ImageFontLike,
-        provides_glyphs: Iterable[str],
+        provided_glyphs: Iterable[str],
         alignments: Optional[Dict] = None,
     ):
         """
-        ``provides_glyphs`` is mandatory. It needs to be probed outside
+        ``provided_glyphs`` is mandatory. It needs to be probed outside
         of this class and passed in. It is excluded from the constructor
         to keep this class simple.
 
         :param font: The font object wrapped
-        :param provides_glyphs: The glyphs probed as provided for this font.
+        :param provided_glyphs: The glyphs probed as provided for this font.
         :param alignments: Overriding alignment data, if any
         :return:
         """
 
         self._font = font
         self._path = get_first_attr(font, ('file', 'path', 'filename'), strict=True)
-        self._provided_glyphs = tuple(provides_glyphs)
+        self._provided_glyphs = tuple(provided_glyphs)
         self._provided_glyph_set = frozenset(self._provided_glyphs)
 
         # Provide places to store rendered glyph image cores & metadata
