@@ -51,6 +51,7 @@ def load_font(
     force_type: Optional[str] = None
 ) -> CachingFontAdapter:
 
+
     if not isinstance(path, Path):
         str_path = path
         path = Path(path)
@@ -58,9 +59,13 @@ def load_font(
         str_path = str(path)
         path = path
 
-    file_type = force_type if force_type else path.suffix[1:]
-    if file_type == '':
+    if force_type:
+        file_type = force_type
+    elif not path.suffix:
         raise MissingExtension(path)
+    else:
+        file_type = path.suffix[1:]
+
     cache = get_cache(cache_directory=cache_dir)
 
 
