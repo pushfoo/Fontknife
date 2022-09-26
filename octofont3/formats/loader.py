@@ -72,7 +72,10 @@ def load_font(
     if file_type == "ttf":
         raw_font = ImageFont.truetype(str_path, font_size)
         # temp fix for being unable to probe TTF sequences
-        provided_glyphs = tuple(force_provides) or generate_glyph_sequence()
+        if force_provides:
+            provided_glyphs = tuple(force_provides)
+        else:
+            provided_glyphs = generate_glyph_sequence()
 
     elif file_type == 'bdf':
         with open(path, "rb") as raw_file:
