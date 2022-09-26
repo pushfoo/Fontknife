@@ -222,10 +222,10 @@ class FileMetadataCache(UserDict):
 
     def save_to_disk(self, force_write: bool = False) -> None:
         if not (force_write or self._has_changes_unwritten):
-            print("skipping write, neither forced nor dirty")
+            # print("skipping write, neither forced nor dirty")
             return
 
-        print("writing cache to disk...")
+        # print("writing cache to disk...")
 
         # sort by last modified time
         data_rows = [(key, data) for key, data in self.items()]
@@ -234,7 +234,6 @@ class FileMetadataCache(UserDict):
         with open(self.cache_metadata_file_path, "w") as csvfile:
             writer = csv.writer(csvfile, dialect=csv.excel_tab)
             for path, data_elements in self.items():
-                path
                 writer.writerow((str(path), *data_elements.to_string_tuple()))
 
     def __del__(self):
@@ -280,7 +279,7 @@ def load_and_cache_bitmap_font(
     pil_cached_font_metadata_name = pil_cached_font_base_name.with_suffix('.pil')
 
     if source_path not in cache or current_metadata != cache[source_path]:
-        print("updating cache...")
+        # print("updating cache...")
         raw_font = raw_loader(source_path)
 
         # todo: fix this naming scheme, just hashes is hard to use
