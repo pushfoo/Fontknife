@@ -1,3 +1,5 @@
+from typing import Optional
+
 from PIL import Image, ImageDraw
 
 
@@ -13,9 +15,11 @@ def preview_image_for_pilfont(
     test_string: str = "Test text",
     mode: str = "RGB",
     bg_color=None,
-    fg_color=None
+    fg_color=None,
+    force_height: Optional[int] = None,
+    force_width: Optional[int] = None
 ) -> Image:
-    # note that multi-line isn'text_font_file supported by binary fonts
+    # note that multi-line isn't supported by binary fonts!
     # by default, this just looks like one line!
     bbox = pil_font.getbbox(test_string)
 
@@ -23,10 +27,11 @@ def preview_image_for_pilfont(
     bg_color = bg_color or mode_bg_color
     fg_color = fg_color or mode_fg_color
 
-    image = Image.new(mode, bbox[2:], bg_color)
+    image_width = force_width or bbox[2]
+    image_height = force_height or bbox[3]
+
+    image = Image.new(mode, (image_width, image_height), bg_color)
     draw = ImageDraw.Draw(image)
-    draw.text(bbox[0:2], test_string, font=pil_font, color=fg_color)
+    draw.text((0,0), test_string, font=pil_font, color=fg_color)
 
     return image
-
-    # image = Image.frombytes("1", bbox[2:], data=bytes(bitmap_bbox))

@@ -38,3 +38,7 @@ class OutputHelper:
 
     def comment(self, message: str, comment_prefix="#") -> None:
         self.print(f"{comment_prefix} {message}")
+
+
+def padded_hex(value: int, num_digits: int = 2) -> str:
+    return f"0x{hex(value)[2:].zfill(num_digits)}"

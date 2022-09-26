@@ -1,24 +1,11 @@
-#!/usr/bin/python3
-import fileinput
-import string
-import sys
-import getopt
 from collections import deque
 from functools import cache
 from math import log
-from typing import Optional, Iterable, Sequence
+from typing import Iterable, Optional
 
-from PIL import ImageFont
-
-from octofont3.font_adapter import CachingFontAdapter, pair_iterator_for_font
-from octofont3.iohelpers import OutputHelper, TextIOBaseSubclass
-
-from octofont3.textfont.parser import TextFontFile
-from octofont3.utils import find_max_dimensions, guess_glyphs_to_check, get_bbox_size
-
-
-def padded_hex(value: int, num_digits: int = 2) -> str:
-    return f"0x{hex(value)[2:].zfill(num_digits)}"
+from octofont3.font_adapter import CachingFontAdapter
+from octofont3.iohelpers import OutputHelper, TextIOBaseSubclass, padded_hex
+from octofont3.utils import exit_error
 
 
 class OctoStream(OutputHelper):
@@ -97,11 +84,6 @@ class OctoStream(OutputHelper):
                 self.print(label_pad, end='')
 
 
-def exit_error(message: str, code=2):
-    print(f"ERROR: {message}")
-    sys.exit(code)
-
-
 def emit_octo(
     out_file,
     font_data: CachingFontAdapter,
@@ -117,7 +99,7 @@ def emit_octo(
     #font_width, font_height = find_max_dimensions(font_data, glyphs_to_check=glyphs)
 
     font_width, font_height = font_data.max_glyph_size
-    glyph_sequence = glyph_sequence or tuple(sorted(font_data.glyph.keys()))
+    glyph_sequence = glyph_sequence or font_data.provided_glyphs
     first_glyph = glyph_sequence[0]
     last_glyph = glyph_sequence[-1]
 
@@ -154,7 +136,7 @@ def emit_octo(
 
     prefix = "smallfont"
 
-    offset = first_glyph
+    offset = ord(first_glyph)
 
     # generate label names
     draw_func_name = prefix + "_draw_glyph"
@@ -165,7 +147,7 @@ def emit_octo(
     # header
     print()
     #available_chars = ''.join(chr(i) if i in glyphs else '' for i in range(255))
-    available_chars = ''.join(chr(i) for i, bitmap in pair_iterator_for_font(font_data))
+    available_chars = ''.join(i for i, bitmap in font_data.items())
     print(f"# Font: {prefix}  Table glyphs in order: {available_chars}")
 
     # generate glyph drawing routine
@@ -233,14 +215,14 @@ def emit_octo(
     label(f"{prefix}draw_str")
 
     # calculate and output the width table
-    for glyph_index, glyph in font_data.glyph.items():
-        glyph_width = font_data.getbbox(chr(glyph_index))[2]
+    for glyph, glyph_img in font_data.items():
+        glyph_width = font_data.get_glyph_metadata(glyph).glyph_bbox.size[0]
         octo.byte_queue.append(glyph_width)
     octo.write_queued_data_with_label(widthtable_name)
 
     # calculate and output the glyph data
     for glyph_code, glyph in font_data.glyph.items():
-        glyph_width, glyph_height = glyph.size
+        glyph_width, glyph_height = font_data.get_glyph_metadata(glyph_code).glyph_bbox.size
         pixels = bytes(glyph)
 
         if not compact_glyphtable:
@@ -259,53 +241,8 @@ def emit_octo(
                 packed_row_data = (packed_row_data << 1) | (1 if pixel else 0)
 
             # align to the left
-            packed_row_data  <<= char_size - glyph_width
+            packed_row_data <<= char_size - glyph_width
 
             octo.byte_queue.append(packed_row_data)
 
     octo.write_queued_data_with_label(glyphtable_name)
-
-#    print "# " + font_file + ", " + str(font_points) + " points, height " + str(height) + " px, widest " + str(max_width) + " px"
-#    print "# Exporting: " + font_glyphs
-#    print
-
-#    for glyph in font_glyphs:
-#        print_character(font, glyph, height, alignments)
-
-
-def main():
-
-    prog, argv = sys.argv[0], sys.argv[1:]
-
-    help = prog + ' <textfont-file>'
-    try:
-        opts, args = getopt.getopt(argv, "h")
-    except getopt.GetoptError:
-        print(help)
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print(help)
-            sys.exit()
-    if len(args) != 1:
-        print(help)
-        sys.exit(2)
-
-#    input_filename = args[0]
-
-#    if input_filename == '-':
-#        infile = std
-    #infile = open(input_filename, "r")
-
-    infile = fileinput.input()
-
-    raw_font_data = TextFontFile(infile)
-    font_data = CachingFontAdapter(raw_font_data)
-#    print(file_input)
-#    print(file_input.glyphs)
-#    return
-
-    emit_octo(sys.stdout, font_data)#, [chr(i) for i in font_data.glyph.keys()])
-
-if __name__ == "__main__":
-   main()

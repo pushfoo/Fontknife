@@ -1,3 +1,4 @@
+import sys
 from typing import Iterable
 
 from octofont3.font_adapter import CachingFontAdapter
@@ -34,7 +35,7 @@ class FontRenderer:
         self.include_padding: bool = include_padding
         self.verbose = verbose
 
-    def emit_character(self, font: CachingFontAdapter, glyph):
+    def emit_character(self, font: CachingFontAdapter, glyph: str):
 
         bitmap = font.getmask(glyph)
         metadata = font.get_glyph_metadata(glyph)
@@ -62,19 +63,22 @@ class FontRenderer:
             print_dataclass_info(metadata)
             # print()
 
-        if bitmap_bbox is None:
-            return
-
         pad_line = self.empty_character * glyph_bbox.width
 
         for i in range(padding_above):
             self.stream.print(pad_line)
 
+        # Todo: look into weird width detection here
+        # Todo: look into fixing this or making it more elegant
+
+        # Return if padding already printed handles an empty glyph
+        if len(bytes(font.getmask(glyph))) == 0:
+            return
+
         line_raw = []
         for y in range(data_height):
             line_raw.clear()
             for x in range(data_width):
-                #print("bitmap_bbox coord: ", x, y, file=sys.stderr)
                 line_raw.append(self.fill_character if bitmap.getpixel((x, y)) > 0 else self.empty_character)
 
             line_raw.extend((self.empty_character for i in range(glyph_bbox.width - data_width)))
@@ -83,11 +87,15 @@ class FontRenderer:
         for i in range(padding_below):
             self.stream.print(pad_line)
 
-    def emit_textfont(self, font: CachingFontAdapter, glyph_sequence: Iterable[str]):
+    def emit_textfont(self, font: CachingFontAdapter, glyph_sequence: Iterable[str] = None):
         s = self.stream
+
+        # If not sequence specified, use whatever glyphs the font has, in the order it has them
+        glyph_sequence = glyph_sequence or font.provided_glyphs
+
         max_width, max_height = find_max_dimensions(font, glyph_sequence)
         s.comment(f"{font.path}, {font.size} points, height {max_height} px, widest {max_width} px")
-        s.comment(f"Exporting: {glyph_sequence}")
+        s.comment(f"Exporting: {', '.join(repr(g) for g in glyph_sequence)}")
         s.header("FONT", max_width, max_height)
 
         for glyph in glyph_sequence:

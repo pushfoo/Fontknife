@@ -8,7 +8,7 @@ setup(
     entry_points={
         "console_scripts": [
             "textfont-to-octo=octofont3.textfont_to_octo:main",
-            'ttf-to-textfont=octofont3.ttf_to_textfont:main'
+            'create-textfont=octofont3.create_textfont:main'
         ]
     }
 )
