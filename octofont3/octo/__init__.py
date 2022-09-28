@@ -4,7 +4,8 @@ from math import log
 from typing import Iterable, Optional
 
 from octofont3.font_adapter import CachingFontAdapter
-from octofont3.iohelpers import OutputHelper, TextIOBaseSubclass, padded_hex
+from octofont3.iohelpers import OutputHelper, padded_hex
+from octofont3.custom_types import TextIOBaseSubclass
 from octofont3.utils import exit_error
 
 

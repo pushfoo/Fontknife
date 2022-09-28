@@ -83,21 +83,6 @@ def show_image_for_text(font, text, mode="RGBA"):
     im.show()
 
 
-def guess_glyphs_to_check(font: Any) -> Iterable[str]:
-    glyphs_to_check = []
-
-    if not hasattr(font, 'glyph'):
-        raise ValueError("The passed font requires glyphs to be specified manually.")
-    else:
-        glyphs = font.glyph
-        if isinstance(glyphs, Dict):
-            glyphs_to_check.extend((chr(i) for i in glyphs.keys()))
-        else:
-            glyphs_to_check.extend((chr(i) for i in range(len(glyphs))))
-
-    return glyphs_to_check
-
-
 FIELD_NAMES_MAX_LEN: Dict[type, int] = {}
 
 
@@ -116,10 +101,18 @@ def filternone(iterable: Iterable):
     return filter(lambda a: a is None, iterable)
 
 
+def get_glyph_bbox(font: ImageFontLike, g: str) -> BoundingBox:
+    return BboxFancy(0,0, *font.getmask(g).size)
+
+
+def get_glyph_bbox_classic(font: ImageFontLike, g: str) -> BoundingBox:
+    return font.getbbox(g)
+
+
 def find_max_dimensions(
     font: ImageFontLike,
     glyphs_to_check: Iterable[str],
-    bbox_getter: Callable[[ImageFontLike, Iterable[str]], BoundingBox] = lambda font, glyph: font.getbbox(glyph)
+    bbox_getter: Callable[[ImageFontLike, str], BoundingBox] = get_glyph_bbox_classic
 ) -> SizeFancy:
     """
     Get the size of the tile that will fit every glyph requested
@@ -149,8 +142,8 @@ def image_from_core(core, mode="1") -> Image.Image:
     return Image.frombytes(mode, core.size, bytes(core))
 
 
-def empty_core(width: int = 0, height: int = 0):
-    return Image.new("1", (width, height), 0).im
+def empty_core(width: int = 0, height: int = 0, mode: str = '1'):
+    return Image.new(mode, (width, height), 0).im
 
 
 def generate_missing_character_core(
@@ -227,8 +220,8 @@ def get_first_attr(obj: Any, attr_iterable: Iterable[str], default: Any = None, 
 
 
 def get_stream_file(s) -> Optional[str]:
-    if hasattr(s, 'raw') and hasattr(s.raw, 'name'):
-        return s.raw.name
+    if hasattr(s, 'raw'):
+        return get_stream_file(s.raw)
     elif hasattr(s, 'name'):
         return s.name
     elif hasattr(s, 'filename'):

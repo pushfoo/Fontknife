@@ -253,6 +253,4 @@ class CachingFontAdapter(ImageFontLike):
         return bbox
 
     def get_glyph_metadata(self, text: str) -> GlyphMetadata:
-        if len(text) != 1:
-            raise ValueError("This method only takes 1-length strings")
         return self._local_metadata_table[text]

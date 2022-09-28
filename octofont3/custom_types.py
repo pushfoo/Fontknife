@@ -1,12 +1,18 @@
 from collections import namedtuple
 from dataclasses import dataclass, field
+from io import TextIOBase
 from pathlib import Path
-from typing import Tuple, Protocol, Optional, Union, Dict, List, runtime_checkable, Any
+from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar
 
 from PIL import Image
 
 
 PathLike = Union[Path, str, bytes]
+
+
+# Need to find a good way of typing the core class
+GlyphTableEntry = Optional[Any]
+TextIOBaseSubclass = TypeVar("TextIOBaseSubclass", bound=TextIOBase)
 
 
 Pair = Tuple[int, int]
@@ -60,7 +66,3 @@ class ImageFontLike(Protocol):
 
     def getbbox(self, text: str) -> Optional[Union[BoundingBox, BboxFancy]]:
         ...
-
-
-# Need to find a good way of typing the core class
-GlyphTableEntry = Optional[Any]

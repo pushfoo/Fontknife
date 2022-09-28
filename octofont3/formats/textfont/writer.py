@@ -1,19 +1,41 @@
-import sys
-from typing import Iterable
+import json
+from collections import deque
+from typing import Iterable, Optional, Any
 
+from octofont3.custom_types import PathLike, TextIOBaseSubclass
 from octofont3.font_adapter import CachingFontAdapter
-from octofont3.iohelpers import OutputHelper, TextIOBaseSubclass
+from octofont3.formats.textfont import (
+    TEXTFONT_FILE_HEADER,
+    TEXTFONT_GLYPH_HEADER,
+    TEXTFONT_COMMENT_PREFIX
+)
+from octofont3.iohelpers import OutputHelper
 from octofont3.utils import print_dataclass_info, find_max_dimensions
 
 
-class TextfontStream(OutputHelper):
+class TextFontStream(OutputHelper):
 
     def __init__(self, stream):
         super().__init__(stream)
+        self._comment_field_queue = deque()
+        self._max_field_label_len: int = 0
 
     def header(self, header: str, *objects, sep=" ", end="\n"):
-        self.print(f"{header}: ", end="")
-        self.print(*objects, sep=sep, end=end)
+        self.print(f"{header}:", *objects, sep=sep, end=end)
+
+    def queue_comment_field(self, label: Any, value: Any):
+        self._comment_field_queue.append((str(label), str(value)))
+        self._max_field_label_len = max(len(label), self._max_field_label_len)
+
+    def write_comment_field_block(self, sep=" : "):
+        """
+        Write the queued fields, with the separating
+        :return:
+        """
+        while self._comment_field_queue:
+            label, value = self._comment_field_queue.popleft()
+            self.comment(label.ljust(self._max_field_label_len), value, sep=sep)
+        self._max_field_label_len = 0
 
 
 class FontRenderer:
@@ -26,8 +48,8 @@ class FontRenderer:
         fill_character: str = 'X',
         empty_character: str = '.',
     ):
-        if not isinstance(stream, TextfontStream):
-            stream = TextfontStream(stream)
+        if not isinstance(stream, TextFontStream):
+            stream = TextFontStream(stream)
 
         self.fill_character = fill_character
         self.empty_character = empty_character
@@ -35,68 +57,98 @@ class FontRenderer:
         self.include_padding: bool = include_padding
         self.verbose = verbose
 
-    def emit_character(self, font: CachingFontAdapter, glyph: str):
+    def emit_character(self, font: CachingFontAdapter, glyph: str, comment_raw_glyph: bool = True):
 
+        # Fetch some useful data as locals
         bitmap = font.getmask(glyph)
         metadata = font.get_glyph_metadata(glyph)
         glyph_bbox = metadata.glyph_bbox
+        glyph_width, glyph_height = glyph_bbox.size
         bitmap_bbox = metadata.bitmap_bbox
+        stream = self.stream
 
-        comment = [f"# {glyph} (ASCII: {ord(glyph)})"]
+        # Emit the header using an easy to parse format
+        end = ' ' if comment_raw_glyph else '\n'
+        stream.header(TEXTFONT_GLYPH_HEADER, json.dumps(glyph), end=end)
+        if comment_raw_glyph:
+            stream.comment(f"Raw glyph:{glyph}")
 
+        # Get dimensions for the glyph with padding and the raw data inside
         if bitmap_bbox is None:
-            self.stream.print(comment[0], "skipping empty glyph")
-
-        padding_above = glyph_bbox.top
-
-        if bitmap_bbox is not None:
-            data_width, data_height = bitmap_bbox[2:]
-        else:
             data_width, data_height = 0, 0
-        padding_below = glyph_bbox.bottom - (padding_above + data_height)
+        else:
+            data_width, data_height = bitmap_bbox[2:]
 
-        if bitmap_bbox is not None:
-            self.stream.header("GLYPH", ord(glyph), data_width, data_height, ''.join(comment))
+        glyph_right = glyph_bbox.right
+        if glyph_right < 1:
+            stream.comment(f"WARNING! Glyph with abnormal width: {glyph_right}")
 
         if self.verbose:
-            print(f"# metadata:")
             print_dataclass_info(metadata)
-            # print()
+        else:
+            stream.comment(f"Glyph Size : {glyph_width, glyph_height}")
+            stream.comment(f"Data Size  : {data_width, data_height}")
 
-        pad_line = self.empty_character * glyph_bbox.width
+        # Calculate padding values and output padding
+        px_empty = self.empty_character
+        px_full = self.fill_character
+        padding_above = glyph_bbox.top
+        padding_below = glyph_bbox.bottom - (padding_above + data_height)
+        pad_left = glyph_bbox.left
+        pad_right = glyph_right - (pad_left + data_width)
+        full_width_padding_line = self.empty_character * glyph_width
 
         for i in range(padding_above):
-            self.stream.print(pad_line)
-
-        # Todo: look into weird width detection here
-        # Todo: look into fixing this or making it more elegant
-
-        # Return if padding already printed handles an empty glyph
-        if len(bytes(font.getmask(glyph))) == 0:
-            return
+            self.stream.print(full_width_padding_line)
 
         line_raw = []
         for y in range(data_height):
             line_raw.clear()
+            line_raw.extend(px_empty * pad_left)
             for x in range(data_width):
-                line_raw.append(self.fill_character if bitmap.getpixel((x, y)) > 0 else self.empty_character)
+                pixel = bitmap.getpixel((x, y))
+                line_raw.append(px_full if pixel > 0 else px_empty)
 
-            line_raw.extend((self.empty_character for i in range(glyph_bbox.width - data_width)))
+            line_raw.extend(px_empty * pad_right)
             self.stream.print(''.join(line_raw))
 
         for i in range(padding_below):
-            self.stream.print(pad_line)
+            self.stream.print(full_width_padding_line)
 
-    def emit_textfont(self, font: CachingFontAdapter, glyph_sequence: Iterable[str] = None):
+    def emit_textfont(
+        self,
+        font: CachingFontAdapter, glyph_sequence: Iterable[str] = None,
+        actual_source_path: Optional[PathLike] = None,
+        max_line_width: int = 80
+    ) -> None:
         s = self.stream
 
         # If not sequence specified, use whatever glyphs the font has, in the order it has them
         glyph_sequence = glyph_sequence or font.provided_glyphs
 
         max_width, max_height = find_max_dimensions(font, glyph_sequence)
-        s.comment(f"{font.path}, {font.size} points, height {max_height} px, widest {max_width} px")
-        s.comment(f"Exporting: {', '.join(repr(g) for g in glyph_sequence)}")
-        s.header("FONT", max_width, max_height)
+
+        if max_width > max_line_width:
+            raise ValueError(
+                f"Maximum glyph width ({max_width} exceeds maximum"
+                f" specified line width: {max_line_width}")
+
+        # Put the filetype header at the start of the file
+        s.header(TEXTFONT_FILE_HEADER)
+
+        # Provide some data useful to users in comments
+        if actual_source_path:
+            s.queue_comment_field("Original font", actual_source_path)
+        s.queue_comment_field("Data loaded from", font.path)
+
+        if font.size is not None:
+            s.queue_comment_field(f"Font size in pts",  font.size)
+
+        s.queue_comment_field("Max dimensions", f"{max_width}x{max_height} px")
+        s.queue_comment_field(f"Exported glyphs", '')
+        s.write_comment_field_block()
+
+        s.write_iterable_data(glyph_sequence, line_prefix=TEXTFONT_COMMENT_PREFIX + " ")
 
         for glyph in glyph_sequence:
             self.emit_character(font, glyph)

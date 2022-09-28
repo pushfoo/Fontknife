@@ -47,7 +47,7 @@ def main():
     font = load_font(font_file, font_points)
     #show_image_for_text(raw_font, "Test text")
     renderer = FontRenderer(sys.stdout, verbose=False)
-    renderer.emit_textfont(font, glyph_sequence)
+    renderer.emit_textfont(font, glyph_sequence, actual_source_path=font_file)
     pass
 
 if __name__ == "__main__":

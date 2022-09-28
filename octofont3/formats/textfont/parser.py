@@ -1,16 +1,16 @@
-from collections import defaultdict
+from ast import literal_eval
 from fileinput import FileInput
-from typing import Optional, List, Tuple, Union, Dict
+from typing import Optional, Union, Dict
 
 from PIL import Image
 
-from octofont3.custom_types import BoundingBox, Size, PathLike
-from octofont3.iohelpers import TextIOBaseSubclass
-from octofont3.formats.textfont import FONT_HEADER, GLYPH_HEADER
-from octofont3.utils import get_stream_file, empty_core, generate_missing_character_core
+from octofont3.custom_types import BoundingBox, Size, PathLike, TextIOBaseSubclass
+from octofont3.iohelpers import InputHelper, header_regex, strip_end_comments_and_space
+from octofont3.formats.textfont import TEXTFONT_FILE_HEADER, TEXTFONT_GLYPH_HEADER
+from octofont3.utils import get_stream_file, empty_core, generate_missing_character_core, find_max_dimensions
 
 
-class FontParseError(BaseException):
+class TextFontParseError(BaseException):
 
     def __init__(self, message, filename: str, lineno: int):
         super().__init__(f"{filename}, line {lineno}: {message}")
@@ -23,135 +23,135 @@ class FontParseError(BaseException):
         return cls(message, get_stream_file(stream), stream.lineno())
 
 
-def split_tokens(line: str) -> Optional[List[str]]:
-
-    if line == '':
-        return None
-
-    return line.rstrip().split(' ')
-
-
-def strip_end_comments(line: str) -> str:
-    comment_start_index = line.find("#")
-
-    if comment_start_index < 0:
-        return line
-
-    return line[:comment_start_index]
-
-
-def readline_and_split(stream, skip_comment_lines=True) -> Optional[List[str]]:
-
-    if skip_comment_lines:
-        raw_line = "#"
-        while raw_line and (raw_line.startswith("#") or raw_line[0] == "\n"):
-            raw_line = stream.readline()
-    else:
-        raw_line = stream.readline()
-    line = strip_end_comments(raw_line)
-
-    return split_tokens(line)
-
-
-def parse_header_and_values(stream, expected_header: str = None) -> Optional[Tuple[str, Tuple[int, ...]]]:
-    """
-    Return None if empty line, otherwise a string + ints after it
-
-    :param stream:
-    :param expected_header:
-    :return:
-    """
-    values = readline_and_split(stream)
-
-    # exit early because we reached the end of the file
-    if values is None:
-        return None
-
-    header = values[0]
-
-    if expected_header is not None and header != f"{expected_header}:":
-        raise FontParseError.from_stream_state(
-            f"Expected header {expected_header}, but got {header}", stream
-        )
-
-    int_values = tuple(map(int, values[1:]))
-    return header, int_values
-
-
 class TextFontFile:
     """
-    A font-like class for parsing human-editable TextFonts.
+    PIL-compatible reader for a human-editable text-based font format
 
-    It implements some ImageFont functionality as well as bits of
-    FreeTypeFont's API such as the size property.
+    You can use it with pillow's ImageDraw functions.
 
-    Advanced options are not supported at present. Only the following
-    are currently supported:
+    Advanced options are not supported at present. It has the following
+    restrictions:
 
-      * left-to-right text
-      * single lines for functions
+      * Left-to-right text only
+      * Only single lines of text are currently allowed
+
     """
+
+    # Use regexes for now because metaclasses are overkill for this format
+    textfont_header_regex = header_regex(TEXTFONT_FILE_HEADER)
+    glyph_header_regex = header_regex(TEXTFONT_GLYPH_HEADER, glyph=str)
+
+    def _read_glyph_pixels(
+        self,
+        stream: Union[TextIOBaseSubclass, FileInput],
+        glyph: str,
+        max_parsable_size: Size,
+        empty_char: str = ".",
+        full_char: str = "X",
+    ):
+        max_width, max_height = max_parsable_size
+        acceptable_chars = (empty_char, full_char)
+
+        y_index = 0
+        glyph_width = None
+        raw_glyph_lines = []
+
+        while True:
+
+            # End of file, abandon parsing
+            raw_line = stream.readline()
+            if not raw_line:
+                break
+
+            # Get clean data minus end comments
+            line = strip_end_comments_and_space(stream.peekline())
+            line_len = len(line)
+
+            # Set a width from the first line
+            if glyph_width is None:
+                glyph_width = line_len
+
+            # Break on end of file and lines starting with non-data chars
+            elif not line or line[0] not in acceptable_chars:
+                break
+
+            elif line_len != glyph_width:
+                raise TextFontParseError.from_stream_state(f"Mismatched line length", stream)
+
+            elif line_len > max_width:
+                raise TextFontParseError.from_stream_state(
+                    f"Glyph {repr(glyph)} exceeds specified maximum width ({line_len + 1} > {max_width})",
+                    stream)
+
+            elif y_index > max_height:
+                raise TextFontParseError.from_stream_state(
+                    f"Glyph {repr(glyph)} exceeds specified maximum height ({y_index + 1} > {max_height})",
+                    stream)
+
+            for char in line:
+                if char not in acceptable_chars:
+                    raise TextFontParseError.from_stream_state(
+                        f"Unexpected character: {char!r}", stream)
+
+            raw_glyph_lines.append(line)
+            y_index += 1
+
+        return raw_glyph_lines
 
     def _parse_glyph(
         self,
         stream: Union[TextIOBaseSubclass, FileInput],
-        max_width: int = 8,
-        height: int = 8,
+        glyph: str,
+        max_parsable_size: Size,
         empty_char: str = ".",
-        full_char: str = "X"
+        full_char: str = "X",
     ) -> Image:
         """
-        Parse a single glyph from the stream.
-
-        The actual with of the glyph will be set by the first line of
-        input for the glyph.
+        Parse a single glyph from the stream & convert its pixel data
 
         :param stream: the source stream to read from
-        :param max_width: Maximum expected width; overriden by 1st line
-        :param height: How many lines tall the glyph is expected to be.
-        :param empty_char: What counts as an empty pixel.
-        :param full_char: What counts as a filled pixel.
-        :return:
+        :param empty_char: What character counts as an empty pixel.
+        :param full_char: What character counts as a filled pixel.
+        :param max_parsable_size: Maximum allowed dimensions for parsing.
+        :return: A pillow image core
         """
+        # Get line data
+        glyph_data = self._read_glyph_pixels(
+            stream, glyph, max_parsable_size, empty_char=empty_char, full_char=full_char)
 
-        # Get first line & set row length expectations from it
-        raw_font_data = [stream.readline().rstrip()]
-        expected_width = len(raw_font_data[0])
+        # Calculate image data dimensions
+        glyph_height = len(glyph_data)
+        if glyph_height:
+            glyph_width = len(glyph_data[0])
+        else:
+            glyph_width = 0
+        glyph_size = glyph_width, glyph_height
 
-        # Extract the raw image data, raising an error if needed
-        for row_index in range(height - 1):
-            raw_line = stream.readline().rstrip()
-            if len(raw_line) != expected_width:
-                raise FontParseError.from_stream_state(
-                    f"Mismatched line length: expected line of length,"
-                    f" {expected_width}, but got {raw_line!r}",
-                    stream
-                )
-            for char in raw_line:
-                if char not in (full_char, empty_char):
-                    raise FontParseError.from_stream_state(
-                        f"Unexpected character: {char!r}",
-                        stream
-                    )
-            raw_font_data.append(raw_line)
+        # Handle anomalous glyph data by returning early
+        if glyph_size == (0, 0):
+            return empty_core(0, 0)
 
         # Create a zeroed buffer of the needed length
-        data_buffer = bytearray(max_width * height)
+        data_buffer = bytearray(glyph_width * glyph_height)
 
         # Convert the parsed row data and fill the buffer with it
-        for row_index, row in enumerate(raw_font_data):
-            start_index = row_index * max_width
-            end_index = start_index + len(raw_font_data[row_index])
+        for row_index, row in enumerate(glyph_data):
+            start_index = row_index * glyph_width
+            end_index = start_index + glyph_width
             data_buffer[start_index:end_index] = map(
                 lambda c: 255 if c == full_char else 0, row)
 
         # Create a greyscale version of the glyph data
-        image = Image.frombytes("L", (max_width, height), bytes(data_buffer))
+        image = Image.frombytes("L", glyph_size, bytes(data_buffer))
         # Convert the glyph into a 1-bit mask expected
         # by pillow for binary font drawing.
         return image.convert("1").im
 
-    def _parse_textfont_file(self, stream: Union[TextIOBaseSubclass, FileInput]) -> None:
+    def _parse_textfont_file(
+        self,
+        stream: Union[TextIOBaseSubclass, FileInput],
+        max_parsable_size: Size
+    ) -> None:
         """
 
         Extract all glyphs to the internal table from the stream
@@ -159,36 +159,51 @@ class TextFontFile:
         :param stream: The stream object to use as a source
         :return:
         """
-        # Not currently used, but nice to have for debugging
-        file_header, bounds = parse_header_and_values(stream, FONT_HEADER)
-        # todo: replace this with reading from the file and dynamically figuring it out
-        self.max_width, self.max_height = bounds
+        stream = InputHelper(stream)
+
+        line = stream.readline()
+        match = self.textfont_header_regex.match(line)
+        if not match:
+            raise TextFontParseError.from_stream_state(
+                f"Malformed Textfont header, expected \"{TEXTFONT_FILE_HEADER}:\", but got {line!r}", stream)
 
         # Temp local variables for faster access
         glyph_table = self.glyph
 
         # Parse each glyph in the file & update internal storage
-        while glyph_header := parse_header_and_values(stream, GLYPH_HEADER):
-            code_point, glyph_width, glyph_height = glyph_header[1]
-            #glyph = self._parse_glyph(stream, max_wiod)
-            glyph_table[chr(code_point)] = self._parse_glyph(
-                stream, max_width=glyph_width, height=glyph_height)
+        line = True
+        while line:
 
-    def __init__(self, file_stream: Optional[Union[PathLike, FileInput, TextIOBaseSubclass]] = None, kerning: int = 1):
+            line = stream.peekline()
+            if not line:
+                break
+
+            match = self.glyph_header_regex.match(line)
+            if match is None:
+                raise TextFontParseError.from_stream_state("Malformed glyph header", stream)
+
+            groups = match.groupdict()
+            glyph = literal_eval(groups['glyph'])
+            glyph_table[glyph] = self._parse_glyph(stream, glyph, max_parsable_size)
+
+        pass
+
+    def __init__(
+        self,
+        file_stream: Optional[Union[PathLike, FileInput, TextIOBaseSubclass]] = None,
+        kerning: int = 0,
+        max_parsable_glyph_size: Size = (64, 64)
+    ):
         super().__init__()
 
-        # Partially backward compatible glyph table, theoretically
-        # supporting more than the original boring 255 characters.
+        # Dictionary glyph table that allows support for multi-byte
+        # sequences and unicode.
         self.glyph: Dict[str, Optional[Image.Image]] = {}
         self.filename = get_stream_file(file_stream)
 
         # these should really be recalculated from the font itself instead of the header
         self.max_width: Optional[int] = None
         self.max_height: Optional[int] = None
-
-        # expected in octo emissions
-        first_glyph: Optional[int] = None
-        last_glyph: Optional[int] = None
 
         # imitate the FreeType point size property
         self._size: Optional[int] = None
@@ -197,9 +212,8 @@ class TextFontFile:
         self.kerning: int = kerning
 
         if file_stream:
-            self._parse_textfont_file(file_stream)
-
-        #self.dummy_glyph = empty_core(self.max_width, self.max_height)
+            self._parse_textfont_file(file_stream, max_parsable_glyph_size)
+        self.max_width, self.max_height = find_max_dimensions(self, self.provided_glyphs)
         self.dummy_glyph = generate_missing_character_core((self.max_width, self.max_height))
 
     @property
@@ -209,7 +223,7 @@ class TextFontFile:
     def get_glyph(self, value, strict=False):
 
         if value in self.glyph:
-            return  self.glyph[value]
+            return self.glyph[value]
         elif not strict:
             return self.dummy_glyph
         raise KeyError(f"Could not find glyph data for sequence {value!r}")
@@ -296,7 +310,7 @@ if __name__ == "__main__":
         file_input = FileInput(files=argv[1])
         text_font_file = TextFontFile(file_input)
 
-    except FontParseError as e:
+    except TextFontParseError as e:
         print(f"ERROR: Bad font: {e!r}")
         exit(1)
 
