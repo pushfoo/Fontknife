@@ -67,7 +67,11 @@ class FontRenderer:
         end = ' ' if comment_raw_glyph else '\n'
         stream.header(TEXTFONT_GLYPH_HEADER, json.dumps(glyph), end=end)
         if comment_raw_glyph:
-            stream.comment(f"Raw glyph:{glyph}")
+            if glyph == '"':
+                quote = "'"
+            else:
+                quote = '"'
+            stream.comment(f"Raw glyph: {quote}{glyph}{quote}")
 
         # Get dimensions for the glyph with padding and the raw data inside
         if bitmap_bbox is None:
