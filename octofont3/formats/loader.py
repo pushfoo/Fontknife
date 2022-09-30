@@ -12,6 +12,7 @@ from octofont3.formats.caching import get_cache, load_and_cache_bitmap_font
 
 from octofont3.formats.pcf import load_pcf
 from octofont3.formats.textfont.parser import TextFontFile
+from octofont3.iohelpers import guess_path_type
 from octofont3.utils import generate_glyph_sequence
 
 
@@ -51,7 +52,6 @@ def load_font(
     force_type: Optional[str] = None
 ) -> CachingFontAdapter:
 
-
     if not isinstance(path, Path):
         str_path = path
         path = Path(path)
@@ -61,13 +61,12 @@ def load_font(
 
     if force_type:
         file_type = force_type
-    elif not path.suffix:
-        raise MissingExtension(path)
     else:
-        file_type = path.suffix[1:]
+        file_type = guess_path_type(path)
+        if not file_type:
+            raise MissingExtension(path)
 
     cache = get_cache(cache_directory=cache_dir)
-
 
     if file_type == "ttf":
         raw_font = ImageFont.truetype(str_path, font_size)

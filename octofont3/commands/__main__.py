@@ -27,7 +27,7 @@ COMMAND_OPTIONS = {
         'help': 'The glyph sequence to use. Mandatory for TTFs,'
                 ' but other types can omit it to dump all glyphs in the file.'
     }),
-    'output-path': (('-o',), {'type': str, 'default': None, 'required': True, 'help': 'Where to write the output to'})
+    'output-path': (('-o',), {'type': str, 'default': None, 'required': False, 'help': 'Where to write the output to'})
 }
 
 
@@ -71,7 +71,7 @@ def add_named_subcommand(subparser_object, name: str, parser_callback: Callable,
 
 convert_parser = add_named_subcommand(subparsers, 'convert', convert)
 convert_parser.add_argument(
-    '-O', '--output-type', type=str, default='textfont',
+    '-O', '--output-type', type=str, default=None,
     choices=['auto', 'textfont'],
     help="Directly specify the output format, overriding automatic detection from path"
 )

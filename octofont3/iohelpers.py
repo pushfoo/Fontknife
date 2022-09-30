@@ -1,10 +1,11 @@
 import re
+import sys
 from collections import deque, Mapping as MappingABC
 from functools import cache
+from pathlib import Path
 from typing import Optional, Tuple, Iterable, Union, Mapping, Callable, Any
 
-from octofont3.custom_types import TextIOBaseSubclass
-
+from octofont3.custom_types import TextIOBaseSubclass, PathLike
 
 PairTypeStr = Tuple[type, str]
 IterablePairTypeStrs = Iterable[PairTypeStr]
@@ -13,6 +14,8 @@ IterablePairTypeStrs = Iterable[PairTypeStr]
 NEWLINE_REGEX = re.compile('\n')
 
 
+def stderr(*objects, sep=' ', end='\n') -> None:
+    print(*objects, sep=sep, end=end, file=sys.stderr)
 
 
 class OutputHelper:
@@ -280,4 +283,13 @@ def header_regex(
     return regex
 
 
+def guess_path_type(path: PathLike) -> Optional[str]:
+    path = Path(path)
 
+    if not path.suffix:
+        if path.is_dir():
+            return "spritedir"
+        else:
+            return None
+
+    return path.suffix[1:]
