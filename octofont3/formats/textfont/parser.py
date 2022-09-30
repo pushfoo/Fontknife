@@ -6,7 +6,7 @@ from PIL import Image
 
 from octofont3.custom_types import BoundingBox, Size, PathLike, TextIOBaseSubclass
 from octofont3.iohelpers import InputHelper, header_regex, strip_end_comments_and_space
-from octofont3.formats.textfont import TEXTFONT_FILE_HEADER, TEXTFONT_GLYPH_HEADER
+from octofont3.formats.textfont import TEXTFONT_GLYPH_HEADER
 from octofont3.utils import get_stream_file, empty_core, generate_missing_character_core, find_max_dimensions
 
 
@@ -38,7 +38,6 @@ class TextFontFile:
     """
 
     # Use regexes for now because metaclasses are overkill for this format
-    textfont_header_regex = header_regex(TEXTFONT_FILE_HEADER)
     glyph_header_regex = header_regex(TEXTFONT_GLYPH_HEADER, glyph=str)
 
     def _read_glyph_pixels(
@@ -160,12 +159,6 @@ class TextFontFile:
         :return:
         """
         stream = InputHelper(stream)
-
-        line = stream.readline()
-        match = self.textfont_header_regex.match(line)
-        if not match:
-            raise TextFontParseError.from_stream_state(
-                f"Malformed Textfont header, expected \"{TEXTFONT_FILE_HEADER}:\", but got {line!r}", stream)
 
         # Temp local variables for faster access
         glyph_table = self.glyph

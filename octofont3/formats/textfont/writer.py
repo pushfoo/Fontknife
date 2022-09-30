@@ -4,11 +4,7 @@ from typing import Iterable, Optional, Any
 
 from octofont3.custom_types import PathLike, TextIOBaseSubclass
 from octofont3.font_adapter import CachingFontAdapter
-from octofont3.formats.textfont import (
-    TEXTFONT_FILE_HEADER,
-    TEXTFONT_GLYPH_HEADER,
-    TEXTFONT_COMMENT_PREFIX
-)
+from octofont3.formats.textfont import TEXTFONT_GLYPH_HEADER, TEXTFONT_COMMENT_PREFIX
 from octofont3.iohelpers import OutputHelper
 from octofont3.utils import print_dataclass_info, find_max_dimensions
 
@@ -132,9 +128,6 @@ class FontRenderer:
             raise ValueError(
                 f"Maximum glyph width ({max_width} exceeds maximum"
                 f" specified line width: {max_line_width}")
-
-        # Put the filetype header at the start of the file
-        s.header(TEXTFONT_FILE_HEADER)
 
         # Provide some data useful to users in comments
         if actual_source_path:
