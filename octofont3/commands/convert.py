@@ -31,7 +31,7 @@ def main(parsed_args, parser):
     if parsed_args.output_path is None:
         out_stream = sys.stdout
     else:
-        close_after_writing_stream = open(parsed_args.output_path, 'r')
+        close_after_writing_stream = open(parsed_args.output_path, 'w')
         out_stream = close_after_writing_stream
 
     try:
