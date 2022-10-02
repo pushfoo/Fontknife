@@ -1,23 +1,43 @@
 from collections import namedtuple
 from dataclasses import dataclass, field
-from io import TextIOBase
+from io import TextIOBase, IOBase
 from pathlib import Path
-from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar
+from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable
 
 from PIL import Image
 
-
 PathLike = Union[Path, str, bytes]
-
+StreamOrPathLike = Union[PathLike, IOBase]
+ValidatorFunc = Callable[[Any, ], bool]
 
 # Need to find a good way of typing the core class
 GlyphTableEntry = Optional[Any]
 TextIOBaseSubclass = TypeVar("TextIOBaseSubclass", bound=TextIOBase)
 
-
 Pair = Tuple[int, int]
 Size = Tuple[int, int]
 SizeFancy = namedtuple('SizeFancy', ['width', 'height'])
+
+
+@runtime_checkable
+class HasReadline(Protocol):
+
+    def readline(self):
+        ...
+
+
+@runtime_checkable
+class HasTextReadline(Protocol):
+
+    def readline(self) -> str:
+        ...
+
+
+@runtime_checkable
+class HasBytesReadline(Protocol):
+
+    def readline(self) -> bytes:
+        ...
 
 
 @dataclass(frozen=True)

@@ -6,7 +6,7 @@ from PIL import ImageFont, Image
 
 from octofont3 import calculate_alignments
 from octofont3.custom_types import BoundingBox, BboxFancy, Size, ImageFontLike, SizeFancy
-from octofont3.utils import find_max_dimensions, generate_missing_character_core, get_first_attr
+from octofont3.utils import find_max_dimensions, generate_missing_character_core, value_of_first_attribute_present
 
 
 @dataclass
@@ -106,7 +106,7 @@ class CachingFontAdapter(ImageFontLike):
         """
 
         self._font = font
-        self._path = get_first_attr(font, ('file', 'path', 'filename'), strict=True)
+        self._path = value_of_first_attribute_present(font, ('file', 'path', 'filename'), missing_ok=True)
         self._provided_glyphs = tuple(provided_glyphs)
         self._provided_glyph_set = frozenset(self._provided_glyphs)
 

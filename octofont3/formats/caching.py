@@ -10,8 +10,8 @@ from typing import Callable, Dict, Optional, Union, BinaryIO, Set, Any, Tuple
 
 from PIL import ImageFont
 
-from octofont3.custom_types import PathLike
-from octofont3.utils import ensure_folder_exists
+from octofont3.custom_types import PathLike, StreamOrPathLike, HasBytesReadline
+from octofont3.iohelpers import ensure_folder_exists, load_binary_source, get_source_filesystem_path
 
 
 def hash_binary_stream(source: BinaryIO, hash_algo: Callable = hashlib.sha1, block_size: int = 2 ** 16):
@@ -93,7 +93,8 @@ class MetadataCacheEntry:
     provided_glyphs: Tuple[str, ...] = field(hash=False, compare=False, default_factory=tuple)
 
     @classmethod
-    def generate_for_file(cls, source_file_path: Path):
+    def generate_for_source(cls, source: StreamOrPathLike):
+        source_file_path = Path(get_source_filesystem_path(source))
         modified_time_ns = source_file_path.stat().st_mtime_ns
         file_hash = hash_file(source_file_path).hexdigest()
 
@@ -188,10 +189,16 @@ class FileMetadataCache(UserDict):
     def has_changes_unwritten(self) -> bool:
         return  self._has_changes_unwritten
 
+    def __contains__(self, item: PathLike):
+        return super().__contains__(Path(item))
+
+    def __getitem__(self, item: PathLike):
+        return super().__getitem__(Path(item))
+
     def __setitem__(self, key: PathLike, value: MetadataCacheEntry):
         key_path = Path(key)
         if key_path not in self or self[key_path] != value:
-            super().__setitem__(key, value)
+            super().__setitem__(key_path, value)
             self._has_changes_unwritten = True
 
     @classmethod
@@ -233,7 +240,10 @@ class FileMetadataCache(UserDict):
 
         with open(self.cache_metadata_file_path, "w") as csvfile:
             writer = csv.writer(csvfile, dialect=csv.excel_tab)
+            print(list(self.data.items()))
+            print(list(self.items()))
             for path, data_elements in self.items():
+                print(path, data_elements)
                 writer.writerow((str(path), *data_elements.to_string_tuple()))
 
     def __del__(self):
@@ -259,20 +269,17 @@ default_cache = get_cache()
 
 
 def load_and_cache_bitmap_font(
-    source_path: PathLike,
+    source: StreamOrPathLike,
     raw_loader: Callable,
     cache: Optional[FileMetadataCache] = None
 ) -> ImageFont:
 
-    source_path = Path(source_path).resolve()
-
-    if not source_path.exists():
-        raise FileNotFoundError(f"Couldn't find {source_path}")
-
-    elif not source_path.is_file():
-        raise FileNotFoundError(f"{source_path} is not a file")
-
-    current_metadata = MetadataCacheEntry.generate_for_file(source_path)
+    current_metadata = MetadataCacheEntry.generate_for_source(source)
+    source_is_stream = isinstance(source, HasBytesReadline)
+    if source_is_stream:
+        source_path = get_source_filesystem_path(source)
+    else:
+        source_path = source
 
     pil_font_cache_dir = cache.cache_folder_path
     pil_cached_font_base_name = pil_font_cache_dir / current_metadata.file_hash
@@ -280,7 +287,7 @@ def load_and_cache_bitmap_font(
 
     if source_path not in cache or current_metadata != cache[source_path]:
         # print("updating cache...")
-        raw_font = raw_loader(source_path)
+        raw_font = load_binary_source(source, raw_loader)
 
         # todo: fix this naming scheme, just hashes is hard to use
         # todo: check if pillow caches fonts anywhere...

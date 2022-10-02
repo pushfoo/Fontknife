@@ -1,4 +1,5 @@
 from ast import literal_eval
+from contextlib import ExitStack
 from fileinput import FileInput
 from io import TextIOBase
 from pathlib import Path
@@ -8,8 +9,8 @@ from PIL import Image
 
 from octofont3.custom_types import BoundingBox, Size, PathLike
 from octofont3.formats.textfont import TEXTFONT_GLYPH_HEADER
-from octofont3.iohelpers import InputHelper, header_regex, strip_end_comments_and_space
-from octofont3.utils import empty_core, find_max_dimensions, generate_missing_character_core, get_stream_file
+from octofont3.iohelpers import InputHelper, header_regex, strip_end_comments_and_space, get_source_filesystem_path
+from octofont3.utils import empty_core, find_max_dimensions, generate_missing_character_core
 
 
 class TextFontParseError(BaseException):
@@ -22,7 +23,7 @@ class TextFontParseError(BaseException):
 
     @classmethod
     def from_stream_state(cls, message, stream):
-        return cls(message, get_stream_file(stream), stream.lineno())
+        return cls(message, get_source_filesystem_path(stream), stream.lineno())
 
 
 
@@ -172,28 +173,29 @@ class TextFontFile:
         :param file: A file to open or a stream to use as a source
         :return:
         """
-        file_to_close_at_end = None
+        if not file:
+            raise TypeError('Got {file}, but file must be a path stream-like object')
 
-        # Make sure we have a stream & convert it to an InputHelper
-        if isinstance(file, (Path, str)):
-            file_to_close_at_end = open(file, 'r')
-            stream = InputHelper(file_to_close_at_end)
-            self.filename = str(file)
-        elif isinstance(file, InputHelper):
-            stream = file
-        else:
-            stream = InputHelper(file)
+        # Set up a context to clean up any files opened
+        with ExitStack() as close_at_end:
+            # Open any raw path as a stream the context will close afterward
+            if isinstance(file, (Path, str)):
+                temp_stream = close_at_end.enter_context(open(file, 'r'))
+                stream = InputHelper(temp_stream)
 
-        if not self.filename:
-            self.filename = get_stream_file(file)
+            # Handle pre-existing input helpers and streams
+            elif isinstance(file, InputHelper):
+                stream = file
+            else:
+                stream = InputHelper(file, mode='r')
 
-        # Temp local variable for readability
-        glyph_table = self.glyph
+            self.filename = get_source_filesystem_path(file)
 
-        # Parse each glyph in the file & update internal storage
-        line = True
-        try:
-            while line:
+            # Temp local variable for readability
+            glyph_table = self.glyph
+
+            # Parse each glyph in the file & update internal storage
+            while True:
                 # Assumes the InputHelper already skipped comments
                 line = stream.peekline()
 
@@ -215,9 +217,6 @@ class TextFontFile:
                 stream.readline()
                 glyph_table[glyph] = self._parse_glyph(stream, glyph)
 
-        finally:
-            if file_to_close_at_end:
-                file_to_close_at_end.close()
 
         # Update local metadata & helpers
         self.max_width, self.max_height = find_max_dimensions(self, self.provided_glyphs)

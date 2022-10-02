@@ -6,7 +6,7 @@ import getopt
 from octofont3.formats.loader import load_font
 
 from octofont3.octo import emit_octo
-from octofont3.utils import generate_glyph_sequence
+from octofont3.utils import generate_glyph_sequence, show_image_for_text
 
 
 def main():
@@ -43,7 +43,8 @@ def main():
 
     # infile = fileinput.input()
 
-    font = load_font(input_filename, size_points)
+    font = load_font(input_filename, font_size=size_points)
+
     emit_octo(sys.stdout, font, glyph_sequence=glyph_sequence)
 
 if __name__ == "__main__":

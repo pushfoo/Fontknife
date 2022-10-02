@@ -1,15 +1,14 @@
 import string
 import sys
+from collections import defaultdict
 from dataclasses import asdict
 from itertools import chain, filterfalse
-from math import inf
-from pathlib import Path
-from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Sized
+from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping
+from collections.abc import Mapping as MappingABC
 
-import PIL.Image
 from PIL import Image, ImageDraw
 
-from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, Pair, PathLike
+from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, ValidatorFunc
 
 
 def generate_glyph_sequence(
@@ -138,8 +137,15 @@ def tuplemap(callable: Callable, iterable: Iterable) -> Tuple:
     return tuple(map(callable, iterable))
 
 
-def image_from_core(core, mode="1") -> Image.Image:
-    return Image.frombytes(mode, core.size, bytes(core))
+def image_from_core(core, mode="L") -> Image.Image:
+    # note that this has to start out in mode L or it doesn't work
+    initial = Image.frombytes("L", core.size, bytes(core))
+    if initial.mode != mode:
+        return initial.convert(mode)
+    return initial
+
+def show_core(core, mode: str = "L"):
+    image_from_core(core, mode=mode).show()
 
 
 def empty_core(width: int = 0, height: int = 0, mode: str = '1'):
@@ -177,17 +183,23 @@ def generate_missing_character_core(
     # Return the core for use as a mask
     return image.im
 
-def ensure_folder_exists(folder_path: PathLike) -> None:
-    folder_path = Path(folder_path)
-    folder_path.mkdir(exist_ok=True)
+
+def first_attribute_present(obj: Any, attr_iterable: Iterable[str]) -> Optional[str]:
+    """
+    Return None or the name of the first attribute found on the object.
+
+    :param obj: The object to search
+    :param attr_iterable: An iterable of attribute names to search for
+    :return: None or the first attribute found
+    """
+    for attr in attr_iterable:
+        if hasattr(obj, attr):
+            return attr
+    return None
 
 
-def exit_error(message: str, code=2):
-    print(f"ERROR: {message}")
-    sys.exit(code)
-
-
-def get_first_attr(obj: Any, attr_iterable: Iterable[str], default: Any = None, strict: bool = True) -> Any:
+def value_of_first_attribute_present(
+        obj: Any, attr_iterable: Iterable[str], default: Any = None, missing_ok: bool = False) -> Any:
     """
     Search for passed attributes, returning a default or excepting if not found
 
@@ -200,34 +212,64 @@ def get_first_attr(obj: Any, attr_iterable: Iterable[str], default: Any = None, 
     :param obj: The object to search for attributes
     :param attr_iterable: An iterable of attribute names to search for
     :param default: the default value to return if no element is present
-    :param strict: whether to raise an exception if none are found
+    :param missing_ok: whether to raise an exception if none are found
     :return: The value of an attribute or the default
     """
     # Convert the requested object only if we might need it later
-    if strict:
+    if missing_ok:
         attr_iterable = tuple(attr_iterable)
 
     # Check for presence of attributes, returning the first
-    for attr in attr_iterable:
-        if hasattr(obj, attr):
-            return getattr(obj, attr)
+    first_on_object = first_attribute_present(obj, attr_iterable)
+    if first_on_object is not None:
+        return getattr(obj, first_on_object)
 
     # Error if in strict mode, otherwise return a default
-    if strict:
-        raise AttributeError("Could not find any of following attributes: ")
+    if not missing_ok:
+        raise AttributeError(f"Could not find any of following attributes: {attr_iterable}")
 
     return default
 
 
-def get_stream_file(s) -> Optional[str]:
-    if hasattr(s, 'raw'):
-        return get_stream_file(s.raw)
-    elif hasattr(s, 'name'):
-        return s.name
-    elif hasattr(s, 'filename'):
-        if callable(s.filename):
-            return s.filename()
-        else:
-            return s.filename
+def has_all_attributes(
+    obj: Any,
+    attribute_names: Iterable[str],
+    validator: Optional[Union[Mapping[str, ValidatorFunc], ValidatorFunc]] = None
+) -> bool:
+    """
+    Return True if the object has all attribute names.
 
-    return None
+    A validator function or mapping of attributes to functions can also
+    be passed to make sure all the named attributes meet requirements.
+
+    :param obj: The object to check.
+    :param attribute_names: The attributes to check for.
+    :param validator: If not None, used to check the attribute values.
+    :return:
+    """
+    if validator and not isinstance(validator, MappingABC):
+        validator = defaultdict(lambda: validator)
+
+    for attribute in attribute_names:
+        if not hasattr(obj, attribute):
+            return False
+        if validator and not validator[attribute](getattr(obj, attribute)):
+            return False
+    return True
+
+
+def has_method(obj: Any, method_name: str) -> bool:
+    return callable(getattr(obj, method_name, None))
+
+
+def has_all_methods(obj: Any, method_names: Iterable[str]) -> bool:
+    """
+    True if all the named methods exist as callable attributes.
+
+    :param obj:
+    :param method_names:
+    :return:
+    """
+    return has_all_attributes(obj, method_names, callable)
+
+

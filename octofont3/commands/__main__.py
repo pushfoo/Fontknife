@@ -17,17 +17,24 @@ subparsers = base_parser.add_subparsers(dest='command')
 
 # Used with a builder function to reliably display help on subcommands
 COMMAND_OPTIONS = {
-    'input_files': (tuple(), {'type': str, 'nargs': '*', 'help': "The source file(s) to use"}),
+    'input_path': (tuple(), {
+        'type': str,# 'default': None,
+         'help': "Either a path to load glyph data from, or - for stdin. The latter option is only supported for some"
+                 "combinations of source and destination."
+    }),
     'input-type': (('-I',), {
-        'type': str, 'default': None, 'choices': ['textfont', 'bdf', 'pcf', 'ttf', 'textfont-stdin'],
+        'type': str, 'default': None, 'choices': ['textfont', 'bdf', 'pcf', 'ttf'],
         'help': 'Override input file type(s) detected from path(s)'
     }),
-    'glyph-sequence': (('-g',), {
+   'glyph-sequence': (('-g',), {
         'type': str, 'default': None,
         'help': 'The glyph sequence to use. Mandatory for TTFs,'
                 ' but other types can omit it to dump all glyphs in the file.'
     }),
-    'output-path': (('-o',), {'type': str, 'default': None, 'required': False, 'help': 'Where to write the output to'})
+    'output_path': (tuple(), {
+        'type': str, 'default': None,
+        'help': 'Either a path to write output to, or - for stdout. The latter option is only available for some'
+                 'combinations of source and destination.'})
 }
 
 
@@ -48,13 +55,16 @@ def build_subparser_args(parser, requested_args: Optional[Iterable[str]] = None)
     if requested_args is None:
         requested_args = COMMAND_OPTIONS.keys()
 
-    elif 'input_files' not in requested_args:
-        requested_args = ('input_files',) + tuple(requested_args)
-
     add_template_args_to_parser(parser, requested_args)
 
 
-def add_named_subcommand(subparser_object, name: str, parser_callback: Callable, template_arg_names: Optional[Iterable[str]] = None):
+def add_named_subcommand(
+    subparser_object,
+    name: str,
+    parser_callback: Callable,
+    description: Optional[str] = None,
+    template_arg_names: Optional[Iterable[str]] = None
+):
     """
     Build a parser that automatically calls a function if successful.
 
@@ -63,26 +73,28 @@ def add_named_subcommand(subparser_object, name: str, parser_callback: Callable,
     :param template_arg_names: A list of templated args to include.
     :return:
     """
-    subparser = subparser_object.add_parser(name)
+    subparser = subparser_object.add_parser(name, description=description)
     build_subparser_args(subparser, template_arg_names)
     subparser.set_defaults(func=parser_callback)
     return subparser
 
 
-convert_parser = add_named_subcommand(subparsers, 'convert', convert)
+convert_parser = add_named_subcommand(
+    subparsers, 'convert', convert,
+    description="Convert between different fonts representations.")
 convert_parser.add_argument(
     '-O', '--output-type', type=str, default=None,
-    choices=['auto', 'textfont'],
-    help="Directly specify the output format, overriding automatic detection from path"
-)
+    choices=['textfont'],
+    help="Directly specify the output format, overriding automatic detection from path")
 
 
-emit_code_parser = add_named_subcommand(subparsers, 'emit-code', emit_code)
+emit_code_parser = add_named_subcommand(
+    subparsers, 'emit-code', emit_code,
+    description="Emit code for statically including the font data in various programming languages")
 emit_code_parser.add_argument(
     '-O', '--output-language', type=str, default=None,
-    choices=['octo', '8o'],
-    help="Directly specify the output format, overriding automatic detection from path"
-)
+    choices=['octo-chip8'],
+    help="Directly specify the output format, overriding automatic detection from path")
 
 
 def general_help_and_exit_if_code(exit_code: Optional[int] = None):
