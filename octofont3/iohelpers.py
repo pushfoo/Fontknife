@@ -28,25 +28,37 @@ def stderr(*objects, sep=' ', end='\n') -> None:
     print(*objects, sep=sep, end=end, file=sys.stderr)
 
 
-def exit_error(message: str, before_exit: Optional[Union[str, Callable]] = None, code=2) -> None:
-    """
-    Helper for exiting with an error
+def call_or_print_if_not_none(item: Optional[Any], file=sys.stdout):
+    if item is not None:
+        if callable(item):
+            item()
+        else:
+            print(item, file=file)
 
-    :param message:
-    :param before_exit:
-    :param code:
+
+def exit_error(
+    message: str,
+    error_string: str = "\nERROR",
+    before_message: Optional[Union[str, Callable]] = None,
+    after_message: Optional[Union[str, Callable]] = None,
+    code: int = 2
+) -> None:
+    """
+    Exit with an error and specified messages.
+
+    The before & after options are useful for displaying argparse
+    usage or help before or after an error message is printed.
+
+    :param message: The message to display
+    :param error_string: The string to prefix the message with
+    :param before_message: What to show or call before the message is printed
+    :param after_message: What to show or call after the message is printed
+    :param code: The status code to exit with
     :return:
     """
-    stderr(f"ERROR: {message}")
-    if help:
-        stderr(help)
-
-    if before_exit is not None:
-        if callable(before_exit):
-            before_exit()
-        else:
-            stderr(before_exit)
-
+    call_or_print_if_not_none(before_message, sys.stderr)
+    stderr(f"{error_string}: {message}")
+    call_or_print_if_not_none(after_message, sys.stderr)
     sys.exit(code)
 
 
@@ -500,6 +512,12 @@ def get_source_filesystem_path(source: StreamOrPathLike):
     if isinstance(source, (str, Path, bytes)):
         return absolute_path(source)
     return get_stream_filesystem_path(source)
+
+
+def guess_source_path_type(source: StreamOrPathLike) -> str:
+    path = get_source_filesystem_path(source)
+    guessed_path_type = guess_path_type(path)
+    return guessed_path_type
 
 
 class SeekableBinaryFileCopy(BytesIO):

@@ -5,7 +5,7 @@ from typing import Optional, Iterable, Dict, Sequence, Tuple
 from PIL import ImageFont, Image
 
 from octofont3 import calculate_alignments
-from octofont3.custom_types import BoundingBox, BboxFancy, Size, ImageFontLike, SizeFancy
+from octofont3.custom_types import BoundingBox, BboxFancy, Size, ImageFontLike, SizeFancy, PathLike
 from octofont3.utils import find_max_dimensions, generate_missing_character_core, value_of_first_attribute_present
 
 
@@ -93,6 +93,8 @@ class CachingFontAdapter(ImageFontLike):
         font: ImageFontLike,
         provided_glyphs: Iterable[str],
         alignments: Optional[Dict] = None,
+        path: Optional[PathLike] = None,
+        autodetect_path_if_none: bool = True
     ):
         """
         ``provided_glyphs`` is mandatory. It needs to be probed outside
@@ -102,11 +104,17 @@ class CachingFontAdapter(ImageFontLike):
         :param font: The font object wrapped
         :param provided_glyphs: The glyphs probed as provided for this font.
         :param alignments: Overriding alignment data, if any
+        :param path: The path the file should be recorded as loaded from
         :return:
         """
 
         self._font = font
-        self._path = value_of_first_attribute_present(font, ('file', 'path', 'filename'), missing_ok=True)
+
+        if autodetect_path_if_none:
+            self._path = path or value_of_first_attribute_present(font, ('file', 'path', 'filename'), missing_ok=True)
+        else:
+            self._path = path
+
         self._provided_glyphs = tuple(provided_glyphs)
         self._provided_glyph_set = frozenset(self._provided_glyphs)
 

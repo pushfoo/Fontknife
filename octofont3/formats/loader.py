@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from contextlib import ExitStack
 from io import IOBase
 from pathlib import Path
 from typing import Optional, Iterable, Union, Any
@@ -7,13 +8,13 @@ from PIL import ImageFont
 from PIL.BdfFontFile import BdfFontFile
 from PIL.PcfFontFile import PcfFontFile
 
-from octofont3.custom_types import PathLike
+from octofont3.custom_types import PathLike, HasRead
 from octofont3.font_adapter import CachingFontAdapter
 from octofont3.formats.caching import get_cache, load_and_cache_bitmap_font
 
 
 from octofont3.formats.textfont.parser import TextFontFile
-from octofont3.iohelpers import guess_path_type, looks_like_stream_with_read_support, get_stream_filesystem_path
+from octofont3.iohelpers import guess_path_type, get_stream_filesystem_path, StdOrFile, SeekableBinaryFileCopy
 from octofont3.utils import generate_glyph_sequence
 
 
@@ -53,18 +54,24 @@ def load_font(
     force_provides: Iterable[str] = None,
 ) -> CachingFontAdapter:
 
-    source_is_stream: bool = looks_like_stream_with_read_support(source)
+    # Attempt to copy the font data to memory
+    with ExitStack() as es:
 
-    if source_is_stream:
-        str_path = get_stream_filesystem_path(source)
-        path = None if str_path is None else Path(str_path)
-    else:
-        path = Path(source)
-        str_path = str(path)
+         # Load the specified file if needed
+         if isinstance(source, (Path, str)):
+             input_stream = es.enter_context(StdOrFile(source, 'r')).raw
+         else:
+             input_stream = source
 
-    source_type = source_type or guess_path_type(path)
+         source = SeekableBinaryFileCopy.copy(input_stream)
+
+    str_original_path = get_stream_filesystem_path(source)
+    original_path = None if str_original_path is None else Path(str_original_path)
+    path_actually_loaded_from = original_path
+
+    source_type = source_type or guess_path_type(original_path)
     if source_type is None:
-        raise UnclearSourceType(path, source_type)
+        raise UnclearSourceType(original_path, source_type)
 
     # Begin loading by checking for different types
     if source_type == "textfont":
@@ -80,16 +87,17 @@ def load_font(
             provided_glyphs = generate_glyph_sequence()
 
     else:  # Handle cachable binary fonts
-        cache = get_cache(cache_directory=cache_dir)
 
+        cache = get_cache(cache_directory=cache_dir)
         if source_type == 'bdf':
             font_type = BdfFontFile
         elif source_type == 'pcf':
             font_type = PcfFontFile
         else:
-            raise InvalidSourceType(path, source_type)
+            raise InvalidSourceType(original_path, source_type)
 
         raw_font = load_and_cache_bitmap_font(source, font_type, cache=cache)
-        provided_glyphs = cache[path].provided_glyphs
+        path_actually_loaded_from = getattr(raw_font, 'file')
+        provided_glyphs = cache[original_path].provided_glyphs
 
-    return CachingFontAdapter(raw_font, provided_glyphs=provided_glyphs)
+    return CachingFontAdapter(raw_font, provided_glyphs=provided_glyphs, path=path_actually_loaded_from)

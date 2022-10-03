@@ -2,12 +2,10 @@
 Convert between formats.
 """
 from contextlib import ExitStack
-from pathlib import Path
 
-from octofont3.formats.loader import load_font
+from octofont3.formats.loader import load_font, FontLoadingError
 from octofont3.formats.textfont.writer import FontRenderer
-from octofont3.iohelpers import guess_path_type, StdOrFile, exit_error, SeekableBinaryFileCopy
-from octofont3.utils import generate_glyph_sequence
+from octofont3.iohelpers import guess_path_type, StdOrFile, exit_error
 
 
 def main(parsed_args, parser):
@@ -30,24 +28,21 @@ def main(parsed_args, parser):
     input_path_type = parsed_args.input_type or guess_path_type(input_path)
     output_path_type = parsed_args.output_type or guess_path_type(output_path)
 
-    if output_path_type not in ('textfont', ):
-        if output_path == "-":
-            message = "Ambiguous output type. Please specify the output type when piping to stdout."
-        else:
-            message = f"Unrecognized output type {output_path_type!r}\n"
-        exit_error(message, lambda: parser.print_usage())
+    if output_path_type is None:
+        exit_error(
+           "Ambiguous output type. Please specify the output type when piping to stdout.",
+           before_message=lambda: parser.print_usage())
 
-    # Load the file to a seekable copy
-    with ExitStack() as input_streams:
-        input_stream = input_streams.enter_context(StdOrFile(input_path, 'r')).raw
-        seekable_bytes_copy = SeekableBinaryFileCopy.copy(input_stream)
-        font = load_font(seekable_bytes_copy, font_size=8, source_type=input_path_type)
+    try:
+        font = load_font(input_path, font_size=8, source_type=input_path_type)
+    except FontLoadingError as e:
+        exit_error(e)
+    except FileNotFoundError as e:
+        exit_error(e)
 
-    # Use any glyph sequence to reorder the output emission order
-    local_sequence = getattr(parsed_args, 'glyph_sequence', font.provided_glyphs)
+    glyph_sequence = getattr(parsed_args, 'glyph_sequence', font.provided_glyphs)
 
     with ExitStack() as output_streams:
         output_stream = output_streams.enter_context(StdOrFile(output_path, 'w')).raw
-
         renderer = FontRenderer(output_stream, verbose=False)
-        renderer.emit_textfont(font, local_sequence, actual_source_path=input_path)
+        renderer.emit_textfont(font, glyph_sequence, actual_source_path=input_path)

@@ -10,7 +10,7 @@ from typing import Callable, Dict, Optional, Union, BinaryIO, Set, Any, Tuple
 
 from PIL import ImageFont
 
-from octofont3.custom_types import PathLike, StreamOrPathLike, HasBytesReadline
+from octofont3.custom_types import PathLike, StreamOrPathLike, HasBytesReadline, HasReadline, HasRead
 from octofont3.iohelpers import ensure_folder_exists, load_binary_source, get_source_filesystem_path
 
 
@@ -275,8 +275,7 @@ def load_and_cache_bitmap_font(
 ) -> ImageFont:
 
     current_metadata = MetadataCacheEntry.generate_for_source(source)
-    source_is_stream = isinstance(source, HasBytesReadline)
-    if source_is_stream:
+    if isinstance(source, (HasReadline, HasRead)):
         source_path = get_source_filesystem_path(source)
     else:
         source_path = source

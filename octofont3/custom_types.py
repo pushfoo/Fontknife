@@ -20,6 +20,12 @@ SizeFancy = namedtuple('SizeFancy', ['width', 'height'])
 
 
 @runtime_checkable
+class HasRead(Protocol):
+    def read(self, hint: int = -1):
+        ...
+
+
+@runtime_checkable
 class HasReadline(Protocol):
 
     def readline(self):
