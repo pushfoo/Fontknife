@@ -37,7 +37,7 @@ def call_or_print_if_not_none(item: Optional[Any], file=sys.stdout):
 
 
 def exit_error(
-    message: str,
+    message: Any,
     error_string: str = "\nERROR",
     before_message: Optional[Union[str, Callable]] = None,
     after_message: Optional[Union[str, Callable]] = None,
@@ -66,15 +66,19 @@ class StdOrFile:
     """
     A context manager that helps with input piping.
 
+
     If it is asked to open '-' as a file path, it attempts to use one of
     the following based on the mode string:
 
         * sys.stdin if 'r' is in the mode string
         * sys.stdout if 'w' is in the mode string
 
-    This is somewhat like ``fileinput.FileInput`` in the standard
-    library. Unlike FileInput, it allows opening in read mode and
-    does not support any proxying of stream methods.
+    This class exists instead of using standard library functionality
+    for the following reasons:
+
+        * ``fileinput.FileInput`` only supports read mode
+        * ``argparse.FileInput`` requires accepting argparse's ugly exit
+          handling behavior on Python 3.8 and lower.
 
     The use of IOBase for typing is intentional in case some objects
     require a binary mode instead of a textmode.
