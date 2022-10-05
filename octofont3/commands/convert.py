@@ -20,8 +20,6 @@ def main(parsed_args, parser):
     :return:
     """
 
-    font_points = 8
-
     input_path = parsed_args.input_path
     output_path = parsed_args.output_path
 
@@ -34,7 +32,7 @@ def main(parsed_args, parser):
            before_message=lambda: parser.print_usage())
 
     try:
-        font = load_font(input_path, font_size=8, source_type=input_path_type)
+        font = load_font(input_path, font_size=parsed_args.font_size_points, source_type=input_path_type)
     except FontLoadingError as e:
         exit_error(e)
     except FileNotFoundError as e:

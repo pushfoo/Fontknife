@@ -31,6 +31,10 @@ COMMAND_OPTIONS = {
         'help': 'The glyph sequence to use. Mandatory for TTFs,'
                 ' but other types can omit it to dump all glyphs in the file.'
     }),
+    'font-size-points': (('-p',), {
+        'type' : int, 'default': 16,
+        'help': 'The font size in points to use. Currently only relevant for truetype fonts.'
+    }),
     'output_path': (tuple(), {
         'type': str, 'default': None,
         'help': 'Either a path to write output to, or - for stdout. The latter option is only available for some'
