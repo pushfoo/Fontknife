@@ -7,8 +7,7 @@ setup(
     packages=find_packages(include=['octofont3', 'octofont3.*']),
     entry_points={
         "console_scripts": [
-            "textfont-to-octo=octofont3.textfont_to_octo:main",
-            'create-textfont=octofont3.create_textfont:main'
+            "octofont3=octofont3.commands.__main__:main",
         ]
     }
 )
