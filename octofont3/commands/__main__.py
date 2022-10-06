@@ -109,6 +109,24 @@ def _add_argument_specification_to_parser(
         parser.add_argument(*add_argument_positionals, **argument_options)
 
 
+def merge_configs(*configs: Mapping[str, Mapping[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    """
+    Merge passed configs into one
+
+    Earlier entries have higher priority than later ones.
+
+    :param configs: The command configs to merge.
+    :return: A dict of dicts as the merged entry.
+    """
+    all_keys = tuple(ChainMap(*configs).keys())
+    merged = {}
+    for key in all_keys:
+        raw_merged_entry = ChainMap(*(c.get(key, {}) for c in configs))
+        merged[key] = dict(raw_merged_entry)
+
+    return merged
+
+
 def add_named_subcommand(
     subparsers_object,
     name: str,
@@ -141,13 +159,7 @@ def add_named_subcommand(
     subparser = subparsers_object.add_parser(
         name, description=description, formatter_class=argparse.RawTextHelpFormatter)
 
-    # Merge any changes onto the base command template
-    all_keys = tuple(ChainMap(changes, base_command_template).keys())
-    command_options = {}
-    for key in all_keys:
-        changes_value = changes.get(key, {})
-        template_value = base_command_template.get(key, {})
-        command_options[key] = dict(ChainMap(changes_value, template_value))
+    command_options = merge_configs(changes, base_command_template)
 
     _add_argument_specification_to_parser(subparser, command_options)
     subparser.set_defaults(callback=callback)
