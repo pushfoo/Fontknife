@@ -78,7 +78,7 @@ def _add_argument_specification_to_parser(
 
     Positional arguments should use these rules:
 
-        1. underscores in their names instead of dashes
+        1. Underscores in their names instead of dashes
         2. No 'short_flag' key in their template
 
     Any multi-line text in a kwarg value will have a dedent operation
