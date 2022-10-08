@@ -240,10 +240,10 @@ class FileMetadataCache(UserDict):
 
         with open(self.cache_metadata_file_path, "w") as csvfile:
             writer = csv.writer(csvfile, dialect=csv.excel_tab)
-            print(list(self.data.items()))
-            print(list(self.items()))
+            # print(list(self.data.items()))
+            # print(list(self.items()))
             for path, data_elements in self.items():
-                print(path, data_elements)
+                # print(path, data_elements)
                 writer.writerow((str(path), *data_elements.to_string_tuple()))
 
     def __del__(self):
