@@ -62,6 +62,10 @@ def exit_error(
     sys.exit(code)
 
 
+def absolute_path(path: Union[str, Path, bytes]) -> str:
+    return str(Path(path).expanduser().resolve())
+
+
 class StdOrFile:
     """
     A context manager that helps with input piping.
@@ -99,7 +103,7 @@ class StdOrFile:
 
         # Attempt to open the requested path as a file system path
         elif isinstance(stream_or_path, (str, Path)):
-            path = Path(stream_or_path).expanduser().resolve()
+            path = absolute_path(stream_or_path)
             raw = open(path, mode)
             self._using_filesystem_stream = True
         else:
@@ -172,7 +176,7 @@ def load_binary_source(
     """
     with ExitStack() as es:
         if isinstance(source, (str, Path)):
-            raw_file = es.enter_context(open(source, "rb"))
+            raw_file = es.enter_context(open(absolute_path(source), "rb"))
         elif hasattr(source, 'mode') and 'rb' not in source.mode:
             raw_file = source.buffer
         else:
@@ -460,10 +464,6 @@ def header_regex(
 def ensure_folder_exists(folder_path: PathLike) -> None:
     folder_path = Path(folder_path)
     folder_path.mkdir(exist_ok=True)
-
-
-def absolute_path(path: Union[str, Path, bytes]) -> str:
-    return str(Path(path).expanduser().resolve())
 
 
 def guess_path_type(path: Optional[PathLike]) -> Optional[str]:
