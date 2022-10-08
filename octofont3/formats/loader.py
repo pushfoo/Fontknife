@@ -53,7 +53,7 @@ def load_font(
 ) -> CachingFontAdapter:
 
     # Attempt to copy the font data to memory & setup paths
-    source = load_binary_source(source, SeekableBinaryFileCopy.copy)
+    source = SeekableBinaryFileCopy.copy(source)
     str_original_path = get_stream_filesystem_path(source)
     original_path = None if str_original_path is None else Path(str_original_path)
     path_actually_loaded_from = original_path

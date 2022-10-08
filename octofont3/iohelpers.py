@@ -1,3 +1,4 @@
+import inspect
 import re
 import sys
 from collections import deque
@@ -6,9 +7,9 @@ from contextlib import ExitStack
 from functools import cache
 from io import IOBase, BytesIO, TextIOWrapper
 from pathlib import Path
-from typing import Optional, Tuple, Iterable, Union, Mapping, Callable, Any, BinaryIO, TypeVar, TextIO
+from typing import Optional, Tuple, Iterable, Union, Mapping, Callable, Any, BinaryIO, TypeVar
 
-from octofont3.custom_types import TextIOBaseSubclass, PathLike, StreamOrPathLike, HasReadline, HasTextReadline
+from octofont3.custom_types import TextIOBaseSubclass, PathLike, StreamOrPathLike, HasReadline
 from octofont3.utils import has_all_methods, value_of_first_attribute_present
 
 
@@ -176,7 +177,7 @@ def load_binary_source(
     """
     with ExitStack() as es:
         if isinstance(source, (str, Path)):
-            raw_file = es.enter_context(open(absolute_path(source), "rb"))
+            raw_file = es.enter_context(StdOrFile(source, 'rb').raw)
         elif hasattr(source, 'mode') and 'rb' not in source.mode:
             raw_file = source.buffer
         else:
@@ -305,9 +306,12 @@ class InputHelper:
     ):
         if not isinstance(stream, HasReadline):
             raise TypeError(f"Expected a stream with readline support, but got {stream}")
-        elif isinstance(stream, HasTextReadline):
+
+        # Typing protocols only support run-time checking of method
+        # presence. We have to manually check the return type.
+        if inspect.signature(stream.readline).return_annotation is str:
             self._stream = stream
-        else:
+        else:  # Assume it is bytes-like
             self._stream = TextIOWrapper(stream)
 
         self._comment_prefix = comment_prefix
@@ -578,7 +582,7 @@ class SeekableBinaryFileCopy(BytesIO):
         :param source:
         :return:
         """
-        copy = load_binary_source(source, lambda s: cls(s))
+        copy = load_binary_source(source, cls)
         return copy
 
 

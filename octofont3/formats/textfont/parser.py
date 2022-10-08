@@ -187,7 +187,7 @@ class TextFontFile:
             elif isinstance(file, InputHelper):
                 stream = file
             else:
-                stream = InputHelper(file, mode='r')
+                stream = InputHelper(file)
 
             self.filename = get_source_filesystem_path(file)
 
