@@ -11,7 +11,7 @@ from typing import Callable, Dict, Optional, Union, BinaryIO, Set, Any, Tuple
 from PIL import ImageFont
 
 from octofont3.custom_types import PathLike, StreamOrPathLike, HasBytesReadline, HasReadline, HasRead
-from octofont3.iohelpers import ensure_folder_exists, load_binary_source, get_source_filesystem_path
+from octofont3.iohelpers import ensure_folder_exists, load_binary_source, get_source_filesystem_path, absolute_path
 
 
 def hash_binary_stream(source: BinaryIO, hash_algo: Callable = hashlib.sha1, block_size: int = 2 ** 16):
@@ -278,7 +278,7 @@ def load_and_cache_bitmap_font(
     if isinstance(source, (HasReadline, HasRead)):
         source_path = get_source_filesystem_path(source)
     else:
-        source_path = source
+        source_path = absolute_path(source)
 
     pil_font_cache_dir = cache.cache_folder_path
     pil_cached_font_base_name = pil_font_cache_dir / current_metadata.file_hash

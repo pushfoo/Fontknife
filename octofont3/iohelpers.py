@@ -69,8 +69,7 @@ def absolute_path(path: Union[str, Path, bytes]) -> str:
 
 class StdOrFile:
     """
-    A context manager that helps with input piping.
-
+    A context manager that helps with piping.
 
     If it is asked to open '-' as a file path, it attempts to use one of
     the following based on the mode string:
@@ -78,6 +77,7 @@ class StdOrFile:
         * sys.stdin if 'r' is in the mode string
         * sys.stdout if 'w' is in the mode string
 
+    If '+' is included in the mode,
     This class exists instead of using standard library functionality
     for the following reasons:
 
@@ -97,10 +97,18 @@ class StdOrFile:
 
         # Handle stdin/stdout requests
         if stream_or_path == '-':
+            if '+' in mode:
+                raise ValueError(
+                    "Opening console streams in mixed write mode is not supported")
+
             if 'r' in mode:
                 raw = sys.stdin
-            elif 'w' in mode:
+            elif 'w' in mode or 'a' in mode:
                 raw = sys.stdout
+
+            # hijack the wrapped binary stream
+            if 'b' in mode:
+                raw = raw.buffer
 
         # Attempt to open the requested path as a file system path
         elif isinstance(stream_or_path, (str, Path)):
@@ -308,11 +316,13 @@ class InputHelper:
             raise TypeError(f"Expected a stream with readline support, but got {stream}")
 
         # Typing protocols only support run-time checking of method
-        # presence. We have to manually check the return type.
-        if inspect.signature(stream.readline).return_annotation is str:
-            self._stream = stream
-        else:  # Assume it is bytes-like
+        # presence, and not all streams type-annotate their return
+        # types. We can check mode, but it's best to avoid passing
+        # binary streams to this class.
+        if hasattr(stream, 'mode') and 'b' in stream.mode:
             self._stream = TextIOWrapper(stream)
+        else:  # Assume it's text mode
+            self._stream = stream
 
         self._comment_prefix = comment_prefix
         self._line_index = -1
@@ -470,7 +480,7 @@ def ensure_folder_exists(folder_path: PathLike) -> None:
     folder_path.mkdir(exist_ok=True)
 
 
-def guess_path_type(path: Optional[PathLike]) -> Optional[str]:
+def guess_output_path_type(path: Optional[PathLike]) -> Optional[str]:
 
     if path is None:
         return None
@@ -520,12 +530,6 @@ def get_source_filesystem_path(source: StreamOrPathLike):
     if isinstance(source, (str, Path, bytes)):
         return absolute_path(source)
     return get_stream_filesystem_path(source)
-
-
-def guess_source_path_type(source: StreamOrPathLike) -> str:
-    path = get_source_filesystem_path(source)
-    guessed_path_type = guess_path_type(path)
-    return guessed_path_type
 
 
 class SeekableBinaryFileCopy(BytesIO):
