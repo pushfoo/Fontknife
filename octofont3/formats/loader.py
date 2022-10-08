@@ -1,6 +1,4 @@
 from abc import ABC, abstractmethod
-from contextlib import ExitStack
-from io import IOBase
 from pathlib import Path
 from typing import Optional, Iterable, Union, Any
 
@@ -11,10 +9,10 @@ from PIL.PcfFontFile import PcfFontFile
 from octofont3.custom_types import PathLike, HasRead
 from octofont3.font_adapter import CachingFontAdapter
 from octofont3.formats.caching import get_cache, load_and_cache_bitmap_font
-
-
 from octofont3.formats.textfont.parser import TextFontFile
-from octofont3.iohelpers import guess_path_type, get_stream_filesystem_path, StdOrFile, SeekableBinaryFileCopy
+from octofont3.iohelpers import (
+    get_stream_filesystem_path, guess_path_type,
+    SeekableBinaryFileCopy, load_binary_source)
 from octofont3.utils import generate_glyph_sequence
 
 
@@ -46,7 +44,7 @@ class FormatRequiresGlyphSequence(FontLoadingError):
 
 
 def load_font(
-    source: Union[PathLike, IOBase],
+    source: Union[PathLike, HasRead],
     source_type: Optional[str] = None,
     font_size: int = 10,
     cache_dir: Optional[PathLike] = None,
@@ -54,17 +52,8 @@ def load_font(
     force_provides: Iterable[str] = None,
 ) -> CachingFontAdapter:
 
-    # Attempt to copy the font data to memory
-    with ExitStack() as es:
-
-         # Load the specified file if needed
-         if isinstance(source, (Path, str)):
-             input_stream = es.enter_context(StdOrFile(source, 'r')).raw
-         else:
-             input_stream = source
-
-         source = SeekableBinaryFileCopy.copy(input_stream)
-
+    # Attempt to copy the font data to memory & setup paths
+    source = load_binary_source(source, SeekableBinaryFileCopy.copy)
     str_original_path = get_stream_filesystem_path(source)
     original_path = None if str_original_path is None else Path(str_original_path)
     path_actually_loaded_from = original_path
