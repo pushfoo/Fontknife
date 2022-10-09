@@ -5,7 +5,7 @@ from typing import Optional, Iterable, Dict, Sequence, Tuple
 from PIL import ImageFont, Image
 
 from octofont3 import calculate_alignments
-from octofont3.custom_types import BoundingBox, BboxFancy, Size, ImageFontLike, SizeFancy, PathLike
+from octofont3.custom_types import BoundingBox, BboxFancy, Size, ImageFontLike, SizeFancy, PathLike, ImageCoreLike
 from octofont3.utils import find_max_dimensions, generate_missing_character_core, value_of_first_attribute_present
 
 
@@ -28,7 +28,7 @@ class GlyphMetadata:
     @classmethod
     def from_font_glyph(
         cls,
-        bitmap: Image.core,
+        bitmap: ImageCoreLike,
         glyph_bbox: BoundingBox
     ) -> "GlyphMetadata":
 
@@ -119,7 +119,7 @@ class CachingFontAdapter(ImageFontLike):
         self._provided_glyph_set = frozenset(self._provided_glyphs)
 
         # Provide places to store rendered glyph image cores & metadata
-        self._local_raster_table: Dict[str, GlyphMetadata] = {}
+        self._local_raster_table: Dict[str, ImageCoreLike] = {}
         self._local_metadata_table: Dict[str, GlyphMetadata] = {}
 
         # Pre-render glyphs & calculate important metadata
@@ -203,10 +203,10 @@ class CachingFontAdapter(ImageFontLike):
         return self._alignments
 
     @property
-    def font(self) -> ImageFont:
+    def font(self) -> ImageFontLike:
         return self._font
 
-    def getmask(self, text: str):
+    def getmask(self, text: str) -> ImageCoreLike:
         if text in self._local_raster_table:
             return self._local_raster_table[text]
 

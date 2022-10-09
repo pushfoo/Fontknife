@@ -4,19 +4,10 @@ from io import TextIOBase, IOBase
 from pathlib import Path
 from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable
 
-from PIL import Image
 
 PathLike = Union[Path, str, bytes]
 StreamOrPathLike = Union[PathLike, IOBase]
 ValidatorFunc = Callable[[Any, ], bool]
-
-# Need to find a good way of typing the core class
-GlyphTableEntry = Optional[Any]
-TextIOBaseSubclass = TypeVar("TextIOBaseSubclass", bound=TextIOBase)
-
-Pair = Tuple[int, int]
-Size = Tuple[int, int]
-SizeFancy = namedtuple('SizeFancy', ['width', 'height'])
 
 
 @runtime_checkable
@@ -46,6 +37,17 @@ class HasBytesReadline(Protocol):
         ...
 
 
+TextIOBaseSubclass = TypeVar("TextIOBaseSubclass", bound=TextIOBase)
+
+
+Pair = Tuple[int, int]
+Size = Tuple[int, int]
+SizeFancy = namedtuple('SizeFancy', ['width', 'height'])
+
+
+BboxSimple = Tuple[int, int, int, int]
+
+
 @dataclass(frozen=True)
 class BboxFancy:
     left: int
@@ -56,6 +58,8 @@ class BboxFancy:
     width: Optional[int] = field(default=None)
     height: Optional[int] = field(default=None)
     size: Optional[SizeFancy] = field(default=None)
+    _cached_tuple: Optional[BboxSimple] = field(
+        default=None, init=False, repr=False, compare=False)
 
     def __len__(self) -> int:
         return 4
@@ -64,6 +68,7 @@ class BboxFancy:
         object.__setattr__(self, 'width', self.right - self.left)
         object.__setattr__(self, 'height', self.bottom - self.top)
         object.__setattr__(self, 'size', SizeFancy(self.width, self.height))
+        object.__setattr__(self, '_cached_tuple', tuple(self))
 
     def __iter__(self):
         yield self.left
@@ -72,23 +77,55 @@ class BboxFancy:
         yield self.bottom
 
     def __getitem__(self, index):
-        return tuple(self)[index]
+        return self._cached_tuple[index]
 
 
-BoundingBox = Union[BboxFancy, Tuple[int, int, int, int]]
+BoundingBox = Union[BboxFancy, BboxSimple]
+
+
+class ImageCoreLike(Protocol):
+    """
+    An attempt at typing the Image.core internal class.
+
+    It's unclear if there's a good way to handle this. While it appears
+    to be impossible to hook into pillow's font rendering without using
+    Image.core, the pillow source warns that Image.core is not part of
+    the public API and may vanish at any time.
+
+    Using Image.core directly does not work with linters because the
+    .pyi file for PIL.Image does not provide it. A bad alternative to
+    protocols is the following::
+
+        ImageCore = type(Image.new('1', (0, 0), 0).im)
+
+    The protocol approach seems better by comparison.
+    """
+    mode: str
+    size: Size
+
+    def getbbox(self) -> Optional[BoundingBox]:
+        """
+        Returns None if the core is empty.
+
+        :return:
+        """
+        ...
+
+    def __len__(self) -> int:
+        ...
+
+    def __bytes__(self) -> bytes:
+        ...
 
 
 @runtime_checkable
 class ImageFontLike(Protocol):
     """
-    Describes the required behavior to be used as a font by pillow.
-
-    If it meets this protocol's requirements, it should work with ImageDraw.
+    The features required for PIL.ImageDraw to use an object as a font
     """
 
-    # Dangerous! Pillow's Image.py warns that this may change
-    def getmask(self, text: str) -> Image.core:
+    def getmask(self, text: str) -> ImageCoreLike:
         ...
 
-    def getbbox(self, text: str) -> Optional[Union[BoundingBox, BboxFancy]]:
+    def getbbox(self, text: str) -> Optional[BoundingBox]:
         ...
