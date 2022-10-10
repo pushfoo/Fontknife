@@ -7,11 +7,11 @@ from PIL import ImageFont
 from PIL.BdfFontFile import BdfFontFile
 from PIL.PcfFontFile import PcfFontFile
 
-from octofont3.custom_types import HasRead, PathLike, StreamOrPathLike
+from octofont3.custom_types import HasRead, PathLike, PathLikeOrHasRead
 from octofont3.font_adapter import CachingFontAdapter
 from octofont3.formats.caching import get_cache, load_and_cache_bitmap_font
 from octofont3.formats.textfont.parser import TextFontFile
-from octofont3.iohelpers import SeekableBinaryFileCopy, get_source_filesystem_path, absolute_path, StdOrFile
+from octofont3.iohelpers import SeekableBinaryFileCopy, get_source_filesystem_path, StdOrFile
 
 
 class FormatReader(ABC):
@@ -111,7 +111,7 @@ def guess_path_type(path: Optional[PathLike]) -> Optional[str]:
     return path_type
 
 
-def guess_source_path_type(source: StreamOrPathLike) -> Optional[str]:
+def guess_source_path_type(source: PathLikeOrHasRead) -> Optional[str]:
     source_path = get_source_filesystem_path(source)
     source_type = guess_path_type(source_path)
     return source_type

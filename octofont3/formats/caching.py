@@ -10,7 +10,7 @@ from typing import Callable, Dict, Optional, Union, BinaryIO, Set, Any, Tuple
 
 from PIL import ImageFont
 
-from octofont3.custom_types import PathLike, StreamOrPathLike, HasBytesReadline, HasReadline, HasRead
+from octofont3.custom_types import PathLike, HasReadline, HasRead, PathLikeOrHasRead
 from octofont3.iohelpers import ensure_folder_exists, load_binary_source, get_source_filesystem_path, absolute_path
 
 
@@ -93,7 +93,7 @@ class MetadataCacheEntry:
     provided_glyphs: Tuple[str, ...] = field(hash=False, compare=False, default_factory=tuple)
 
     @classmethod
-    def generate_for_source(cls, source: StreamOrPathLike):
+    def generate_for_source(cls, source: PathLikeOrHasRead):
         source_file_path = Path(get_source_filesystem_path(source))
         modified_time_ns = source_file_path.stat().st_mtime_ns
         file_hash = hash_file(source_file_path).hexdigest()
@@ -269,7 +269,7 @@ default_cache = get_cache()
 
 
 def load_and_cache_bitmap_font(
-    source: StreamOrPathLike,
+    source: PathLikeOrHasRead[bytes],
     raw_loader: Callable,
     cache: Optional[FileMetadataCache] = None
 ) -> ImageFont:

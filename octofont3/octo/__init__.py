@@ -5,7 +5,7 @@ from typing import Iterable, Optional
 
 from octofont3.font_adapter import CachingFontAdapter
 from octofont3.iohelpers import OutputHelper, padded_hex, exit_error
-from octofont3.custom_types import TextIOBaseSubclass
+from octofont3.custom_types import HasWrite
 
 
 class OctoStream(OutputHelper):
@@ -13,7 +13,7 @@ class OctoStream(OutputHelper):
     A helper for printing octo-related statements
     """
 
-    def __init__(self, stream: TextIOBaseSubclass, indent_chars="  "):
+    def __init__(self, stream: HasWrite[str], indent_chars="  "):
         super().__init__(stream)
 
         self._indent_level = 0

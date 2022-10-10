@@ -1,46 +1,65 @@
+"""
+Custom types for annotations, falling into two categories:
+
+    * IO & Streams
+    * Image & Font support
+
+IO & Streams heavily lean on Protocols for annotating file-like objects
+per Guido van Rossum's advice on the subject:
+https://github.com/python/typing/discussions/829#discussioncomment-1150579
+"""
+from array import array
 from collections import namedtuple
 from dataclasses import dataclass, field
-from io import TextIOBase, IOBase
 from pathlib import Path
-from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable
+from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString
 
 
-PathLike = Union[Path, str, bytes]
-StreamOrPathLike = Union[PathLike, IOBase]
 ValidatorFunc = Callable[[Any, ], bool]
 
 
+# Partial workaround for there being no way to represent buffer protocol
+# support via typing. Relevant PEP: https://peps.python.org/pep-0687/
+BytesLike = Union[ByteString, array]
+
+
+PathLike = Union[Path, str, bytes]
+InputTypeVar = TypeVar('InputTypeVar')
+OutputTypeVar = TypeVar('OutputTypeVar')
+
+
+# Generic stream method classes
 @runtime_checkable
-class HasRead(Protocol):
-    def read(self, hint: int = -1):
+class HasWrite(Protocol[InputTypeVar]):
+    def write(self, b: InputTypeVar) -> InputTypeVar:
         ...
 
 
 @runtime_checkable
-class HasReadline(Protocol):
-
-    def readline(self):
+class HasRead(Protocol[OutputTypeVar]):
+    def read(self, hint: int = -1) -> OutputTypeVar:
         ...
 
 
 @runtime_checkable
-class HasTextReadline(Protocol):
+class HasReadline(Protocol[OutputTypeVar]):
 
-    def readline(self) -> str:
+    def readline(self) -> OutputTypeVar:
         ...
 
 
+# Type-specific classes
 @runtime_checkable
-class HasBytesReadline(Protocol):
-
-    def readline(self) -> bytes:
+class HasBytesWrite(Protocol):
+    def write(self, b: BytesLike) -> bytes:
         ...
 
 
-TextIOBaseSubclass = TypeVar("TextIOBaseSubclass", bound=TextIOBase)
+# These function as generics
+PathLikeOrHasRead = Union[HasRead[InputTypeVar], PathLike]
+PathLikeOrHasReadline = Union[HasReadline[InputTypeVar], PathLike]
 
 
-Pair = Tuple[int, int]
 Size = Tuple[int, int]
 SizeFancy = namedtuple('SizeFancy', ['width', 'height'])
 
@@ -87,9 +106,9 @@ class ImageCoreLike(Protocol):
     """
     An attempt at typing the Image.core internal class.
 
-    It's unclear if there's a good way to handle this. While it appears
-    to be impossible to hook into pillow's font rendering without using
-    Image.core, the pillow source warns that Image.core is not part of
+    It's unclear if there's a good way to handle this. Using Image.core
+    appears to be crucial to interacting with font drawing in pillow,
+    but the pillow source also warns that Image.core is not part of
     the public API and may vanish at any time.
 
     Using Image.core directly does not work with linters because the

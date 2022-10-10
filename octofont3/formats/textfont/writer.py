@@ -2,7 +2,7 @@ import json
 from collections import deque
 from typing import Iterable, Optional, Any
 
-from octofont3.custom_types import PathLike, TextIOBaseSubclass
+from octofont3.custom_types import PathLike, HasWrite
 from octofont3.font_adapter import CachingFontAdapter
 from octofont3.formats.textfont import TEXTFONT_GLYPH_HEADER, TEXTFONT_COMMENT_PREFIX
 from octofont3.iohelpers import OutputHelper
@@ -38,7 +38,7 @@ class FontRenderer:
 
     def __init__(
         self,
-        stream: TextIOBaseSubclass,
+        stream: HasWrite[str],
         include_padding: bool = True,
         verbose: int = 0,
         fill_character: str = 'X',

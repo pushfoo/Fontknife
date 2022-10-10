@@ -8,7 +8,7 @@ from collections.abc import Mapping as MappingABC
 
 from PIL import Image, ImageDraw
 
-from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, ValidatorFunc
+from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, ValidatorFunc, ImageCoreLike
 
 
 def generate_glyph_sequence(
@@ -137,18 +137,19 @@ def tuplemap(callable: Callable, iterable: Iterable) -> Tuple:
     return tuple(map(callable, iterable))
 
 
-def image_from_core(core, mode="L") -> Image.Image:
+def image_from_core(core: ImageCoreLike, mode="L") -> Image.Image:
     # note that this has to start out in mode L or it doesn't work
     initial = Image.frombytes("L", core.size, bytes(core))
     if initial.mode != mode:
         return initial.convert(mode)
     return initial
 
-def show_core(core, mode: str = "L"):
+
+def show_core(core: ImageCoreLike, mode: str = "L"):
     image_from_core(core, mode=mode).show()
 
 
-def empty_core(width: int = 0, height: int = 0, mode: str = '1'):
+def empty_core(width: int = 0, height: int = 0, mode: str = '1') -> ImageCoreLike:
     return Image.new(mode, (width, height), 0).im
 
 
@@ -157,7 +158,7 @@ def generate_missing_character_core(
     rectangle_bbox: Optional[BoundingBox] = None,
     mode: str = 'L',
     rectangle_margins_px: int = 1
-):
+) -> ImageCoreLike:
     """
     Generate a missing glyph "tofu" square as an image core object.
 

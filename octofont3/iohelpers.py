@@ -5,11 +5,11 @@ from collections import deque
 from collections.abc import Mapping as MappingABC
 from contextlib import ExitStack
 from functools import cache
-from io import IOBase, BytesIO, TextIOWrapper
+from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from typing import Optional, Tuple, Iterable, Union, Mapping, Callable, Any, BinaryIO, TypeVar
 
-from octofont3.custom_types import TextIOBaseSubclass, PathLike, StreamOrPathLike, HasReadline
+from octofont3.custom_types import PathLike, HasReadline, HasWrite, PathLikeOrHasRead, HasRead
 from octofont3.utils import has_all_methods, value_of_first_attribute_present
 
 
@@ -85,9 +85,6 @@ class StdOrFile:
         * ``argparse.FileInput`` requires accepting argparse's ugly exit
           handling behavior on Python 3.8 and lower.
 
-    The use of IOBase for typing is intentional in case some objects
-    require a binary mode instead of a textmode.
-
     In some circumstances, it appears that stdin and stdout can be None.
     Most users probably won't encounter this.
     """
@@ -99,7 +96,7 @@ class StdOrFile:
         if stream_or_path == '-':
             if '+' in mode:
                 raise ValueError(
-                    "Opening console streams in mixed write mode is not supported")
+                    "Opening console streams in mixed read/write mode (+) is not supported")
 
             if 'r' in mode:
                 raw = sys.stdin
@@ -111,7 +108,7 @@ class StdOrFile:
                 raw = raw.buffer
 
         # Attempt to open the requested path as a file system path
-        elif isinstance(stream_or_path, (str, Path)):
+        elif isinstance(stream_or_path, (str, Path, bytes)):
             path = absolute_path(stream_or_path)
             raw = open(path, mode)
             self._using_filesystem_stream = True
@@ -134,9 +131,15 @@ class StdOrFile:
         return None
 
     @property
-    def raw(self) -> Optional[IOBase]:
+    def raw(self) -> Optional[Union[HasRead, HasWrite, HasReadline]]:
         """
-        The raw stream this object wraps.
+        The raw stream this object wraps, if any.
+
+        The returned stream is not guaranteed to be an IOBase subclass:
+
+            * When inside a debugger, the stream may be a wrapper class
+            * Under other circumstances, stdin or stdout may be None
+
         :return:
         """
         return self._raw
@@ -159,7 +162,7 @@ class StdOrFile:
 
 LoadedType = TypeVar('LoadedType')
 def load_binary_source(
-    source: StreamOrPathLike,
+    source: PathLikeOrHasRead[bytes],
     loader_func: Callable[[BinaryIO], LoadedType]
 ) -> LoadedType:
     """
@@ -201,7 +204,7 @@ class OutputHelper:
 
     Subclasses should be made for specific formats & languages.
     """
-    def __init__(self, stream: TextIOBaseSubclass, comment_prefix: str = "# "):
+    def __init__(self, stream: HasWrite[str], comment_prefix: str = "# "):
         super().__init__()
         self._stream = stream
         self._comment_prefix = comment_prefix
@@ -302,16 +305,25 @@ class OutputHelper:
 
 
 class InputHelper:
-    """
-    Encapsulate common input operations on streams.
-
-    Can be subclassed to make parsing formats easier.
-    """
     def __init__(
         self,
         stream: HasReadline,
         comment_prefix: str = '#',
     ):
+        """
+        Encapsulate common input operations on streams.
+
+        Can be subclassed to make parsing formats easier.
+
+        Important: Avoid passing binary streams to this class!
+        Run-time checking of protocols is very limited, so this
+        class has a very limited ability to detect them.
+
+        Pre-wrap binary streams in a TextIOWrapper if possible.
+
+        :param stream:
+        :param comment_prefix:
+        """
         if not isinstance(stream, HasReadline):
             raise TypeError(f"Expected a stream with readline support, but got {stream}")
 
@@ -526,7 +538,7 @@ def get_stream_filesystem_path(stream: Any) -> Optional[str]:
     return path
 
 
-def get_source_filesystem_path(source: StreamOrPathLike):
+def get_source_filesystem_path(source: PathLikeOrHasRead):
     if isinstance(source, (str, Path, bytes)):
         return absolute_path(source)
     return get_stream_filesystem_path(source)
@@ -576,7 +588,7 @@ class SeekableBinaryFileCopy(BytesIO):
         return self._mode
 
     @classmethod
-    def copy(cls, source: StreamOrPathLike) -> "SeekableBinaryFileCopy":
+    def copy(cls, source: PathLikeOrHasRead[bytes]) -> "SeekableBinaryFileCopy":
         """
         Return a seekable copy of the original binary data.
 
