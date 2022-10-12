@@ -12,8 +12,7 @@ from array import array
 from collections import namedtuple
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString
-
+from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence
 
 ValidatorFunc = Callable[[Any, ], bool]
 
@@ -126,6 +125,15 @@ class ImageCoreLike(Protocol):
         """
         Returns None if the core is empty.
 
+        :return:
+        """
+        ...
+
+    def getpixel(self, position: Sequence) -> Union[int, Tuple[int, ...]]:
+        """
+        Returns the value for a pixel in the image.
+
+        :param position:
         :return:
         """
         ...
