@@ -188,7 +188,7 @@ def load_binary_source(
     """
     with ExitStack() as es:
         if isinstance(source, (str, Path)):
-            raw_file = es.enter_context(StdOrFile(source, 'rb').raw)
+            raw_file = es.enter_context(StdOrFile(source, 'rb')).raw
         elif hasattr(source, 'mode') and 'rb' not in source.mode:
             raw_file = source.buffer
         else:
