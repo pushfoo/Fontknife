@@ -12,6 +12,7 @@ from octofont3.font_adapter import CachingFontAdapter
 from octofont3.formats.caching import get_cache, load_and_cache_bitmap_font
 from octofont3.formats.textfont.parser import TextFontFile
 from octofont3.iohelpers import SeekableBinaryFileCopy, get_source_filesystem_path, StdOrFile
+from octofont3.utils import generate_glyph_sequence
 
 
 class FormatReader(ABC):
@@ -121,16 +122,6 @@ class BinaryReader(FormatReader, ABC):
     # This must be specified by subclasses
     wrapped_creation_func: Optional[type] = None
 
-    def load_source(
-            self, source: Union[PathLike, HasRead],
-            provided_glyphs: Optional[Iterable[str]] = None
-    ) -> CachingFontAdapter:
-        actual_load_path, provided_glyphs, raw_font = self.wrapped_creation_func(source)
-        return CachingFontAdapter(
-            raw_font,
-            provided_glyphs=provided_glyphs,
-            path=actual_load_path)
-
 
 class CachingReader(BinaryReader, ABC):
 
@@ -178,6 +169,21 @@ class TrueTypeReader(BinaryReader):
     format_name = 'truetype'
     file_extensions = ['ttf']
     wrapped_creation_func = ImageFont.truetype
+
+    def load_source(
+            self, source: Union[PathLike, HasRead],
+            force_provided_glyphs: Optional[Iterable[str]] = None
+    ) -> CachingFontAdapter:
+        if force_provided_glyphs is None:
+            force_provided_glyphs = generate_glyph_sequence()
+        with StdOrFile(source, 'rb') as wrapped:
+            raw_font = self.__class__.wrapped_creation_func(wrapped.raw)
+            path = get_source_filesystem_path(source)
+        return CachingFontAdapter(
+            raw_font,
+            provided_glyphs=force_provided_glyphs,
+            path=path
+        )
 
 
 class BDFReader(CachingReader):
