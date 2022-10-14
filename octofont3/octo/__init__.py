@@ -3,6 +3,7 @@ from functools import cache
 from math import log
 from typing import Iterable, Optional
 
+from octofont3.formats import RasterFont
 from octofont3.iohelpers import OutputHelper, padded_hex, exit_error
 from octofont3.custom_types import HasWrite
 
@@ -146,7 +147,7 @@ def emit_octo(
     # header
     print()
     #available_chars = ''.join(chr(i) if i in glyphs else '' for i in range(255))
-    available_chars = ''.join(i for i, bitmap in font_data.items())
+    available_chars = ''.join(i for i in font_data.provided_glyphs)
     print(f"# Font: {prefix}  Table glyphs in order: {available_chars}")
 
     # generate glyph drawing routine
@@ -214,13 +215,13 @@ def emit_octo(
     label(f"{prefix}draw_str")
 
     # calculate and output the width table
-    for glyph, glyph_img in font_data.items():
+    for glyph, glyph_img in font_data.glyph_table.items():
         glyph_width = font_data.get_glyph_metadata(glyph).glyph_bbox.size[0]
         octo.byte_queue.append(glyph_width)
     octo.write_queued_data_with_label(widthtable_name)
 
     # calculate and output the glyph data
-    for glyph_code, glyph in font_data.glyph.items():
+    for glyph_code, glyph in font_data.glyph_table.items():
         glyph_width, glyph_height = font_data.get_glyph_metadata(glyph_code).glyph_bbox.size
         pixels = bytes(glyph)
 
