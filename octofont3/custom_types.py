@@ -15,7 +15,8 @@ from array import array
 from collections import namedtuple
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence
+from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence, \
+    Mapping
 
 ValidatorFunc = Callable[[Any, ], bool]
 
@@ -195,6 +196,9 @@ class ImageFontLike(Protocol):
 
     def getbbox(self, text: str) -> Optional[BoundingBox]:
         ...
+
+
+GlyphMapping = Mapping[str, ImageCoreLike]
 
 
 @dataclass

@@ -2,14 +2,14 @@ from abc import ABC, abstractmethod
 from inspect import isabstract
 from pathlib import Path
 from types import MappingProxyType
-from typing import Optional, Iterable, Union, Callable, Dict, Set, Type, Mapping, KeysView
+from typing import Optional, Iterable, Union, Callable, Dict, Set, Type, KeysView
 
 from PIL import ImageFont, Image
 from PIL.BdfFontFile import BdfFontFile
 from PIL.PcfFontFile import PcfFontFile
 
 from octofont3.custom_types import HasRead, PathLike, PathLikeOrHasRead, ImageCoreLike, GlyphMetadata, Size, \
-    BoundingBox, BboxFancy, ImageFontLike
+    BoundingBox, BboxFancy, ImageFontLike, GlyphMapping
 from octofont3.formats.caching import get_cache, load_and_cache_bitmap_font
 from octofont3.formats.textfont.parser import TextFontFile
 from octofont3.iohelpers import SeekableBinaryFileCopy, get_source_filesystem_path, StdOrFile
@@ -35,7 +35,7 @@ class RasterFont:
 
     def __init__(
         self,
-        glyph_table: Optional[Mapping[str, ImageCoreLike]] = None,
+        glyph_table: Optional[GlyphMapping] = None,
         text_tracking_px: int = 0,
         size_points: Optional[int] = None,
         **font_metadata
