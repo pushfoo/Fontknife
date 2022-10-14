@@ -3,7 +3,6 @@ from functools import cache
 from math import log
 from typing import Iterable, Optional
 
-from octofont3.font_adapter import CachingFontAdapter
 from octofont3.iohelpers import OutputHelper, padded_hex, exit_error
 from octofont3.custom_types import HasWrite
 
@@ -86,7 +85,7 @@ class OctoStream(OutputHelper):
 
 def emit_octo(
     out_file,
-    font_data: CachingFontAdapter,
+    font_data: RasterFont,
     glyph_sequence: Optional[Iterable[int]] = None
 ):
 
@@ -99,7 +98,7 @@ def emit_octo(
     #font_width, font_height = find_max_dimensions(font_data, glyphs_to_check=glyphs)
 
     font_width, font_height = font_data.max_glyph_size
-    glyph_sequence = glyph_sequence or font_data.provided_glyphs
+    glyph_sequence = tuple(glyph_sequence or font_data.provided_glyphs)
     first_glyph = glyph_sequence[0]
     last_glyph = glyph_sequence[-1]
 

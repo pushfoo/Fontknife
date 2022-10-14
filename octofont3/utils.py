@@ -1,3 +1,4 @@
+import math
 import string
 import sys
 from collections import defaultdict
@@ -8,7 +9,8 @@ from collections.abc import Mapping as MappingABC
 
 from PIL import Image, ImageDraw
 
-from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, ValidatorFunc, ImageCoreLike
+from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, ValidatorFunc, ImageCoreLike, \
+    BboxSimple, BboxClassABC
 
 
 def generate_glyph_sequence(
@@ -274,3 +276,71 @@ def has_all_methods(obj: Any, method_names: Iterable[str]) -> bool:
     return has_all_attributes(obj, method_names, callable)
 
 
+class PropUninitializedError(ValueError):
+    def __init__(self, prop_name: str):
+        super().__init__(
+            f"Can't access property {prop_name} when the base value is None!"
+            f" Please initialize it!")
+
+
+class BboxEnclosingAll(BboxClassABC):
+    """
+    Grows to enclose all bboxes it's updated from
+
+    Raises PropUninitializedError when used without being updated.
+    """
+
+    def __init__(self, *bboxes: BoundingBox):
+        self._left, self._top = None, None
+        self._right, self._bottom = 0, 0
+
+        if bboxes:
+            self.update(*bboxes)
+
+    def __getitem__(self, item: int):
+        return getattr(self, ('left', 'top', 'right', 'bottom')[item])
+
+    @property
+    def left(self) -> int:
+        if self._left is None:
+            raise PropUninitializedError('left')
+        return self._left
+
+    @property
+    def top(self) -> Optional[int]:
+        if self._top is None:
+            raise PropUninitializedError('top')
+        return self._top
+
+    @property
+    def right(self) -> Optional[int]:
+        return self._bottom
+
+    @property
+    def bottom(self) -> Optional[int]:
+        return self._bottom
+
+    def update(self, *boxes: BoundingBox) -> None:
+        """
+        Grow to fit all bounding boxes passed.
+
+        :param boxes:
+        :return:
+        """
+        # locals for fast access
+        left, top = self._left, self._top
+        right, bottom = self._right, self._bottom
+
+        for box in boxes:
+            left = box.left if left is None else min(left, box.left)
+            top = box.top if top is None else min(top, box.top)
+            right = max(right, box.right)
+            bottom = max(bottom, box.bottom)
+
+        self._left, self._top = left, top
+        self._right, self._bottom = right, bottom
+
+    def reset(self, *boxes: BoundingBox) -> None:
+        self._left, self._top = None, None
+        self._right, self._bottom = 0, 0
+        self.update(*boxes)

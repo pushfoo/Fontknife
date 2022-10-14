@@ -3,7 +3,7 @@ from collections import deque
 from typing import Iterable, Optional, Any
 
 from octofont3.custom_types import PathLike, HasWrite
-from octofont3.font_adapter import CachingFontAdapter
+from octofont3.formats import RasterFont
 from octofont3.formats.textfont import TEXTFONT_GLYPH_HEADER, TEXTFONT_COMMENT_PREFIX
 from octofont3.iohelpers import OutputHelper
 from octofont3.utils import print_dataclass_info, find_max_dimensions
@@ -53,7 +53,7 @@ class FontRenderer:
         self.include_padding: bool = include_padding
         self.verbose = verbose
 
-    def emit_character(self, font: CachingFontAdapter, glyph: str, comment_raw_glyph: bool = True):
+    def emit_character(self, font: RasterFont, glyph: str, comment_raw_glyph: bool = True):
 
         # Fetch some useful data as locals
         bitmap = font.getmask(glyph)
@@ -117,7 +117,7 @@ class FontRenderer:
 
     def emit_textfont(
         self,
-        font: CachingFontAdapter, glyph_sequence: Iterable[str] = None,
+        font: RasterFont, glyph_sequence: Iterable[str] = None,
         actual_source_path: Optional[PathLike] = None,
         max_line_width: int = 80
     ) -> None:

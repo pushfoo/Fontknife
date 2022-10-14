@@ -1,5 +1,7 @@
 """
-Custom types for annotations, falling into two categories:
+Custom types used as annotations or building blocks of larger types.
+
+Module members fall into two categories:
 
     * IO & Streams
     * Image & Font support
@@ -8,6 +10,7 @@ IO & Streams heavily lean on Protocols for annotating file-like objects
 per Guido van Rossum's advice on the subject:
 https://github.com/python/typing/discussions/829#discussioncomment-1150579
 """
+from abc import ABC, abstractmethod
 from array import array
 from collections import namedtuple
 from dataclasses import dataclass, field
@@ -63,11 +66,52 @@ Size = Tuple[int, int]
 SizeFancy = namedtuple('SizeFancy', ['width', 'height'])
 
 
+@runtime_checkable
+class BoundingBox(Protocol):
+    """
+    Protocol to cover all bounding box behavior.
+
+    It covers the original bounding box tuple behavior, as well as the
+    class-based bounding boxes that mimic it.
+    """
+    left: int
+    top: int
+    right: int
+    bottom: int
+
+    def __len__(self) -> int:
+        ...
+
+    def __iter__(self):
+        ...
+
+    def __getitem__(self, index: int):
+        ...
+
+
 BboxSimple = Tuple[int, int, int, int]
 
 
+class BboxClassABC(ABC):
+    """Common functionality for Bounding Box-like classes."""
+
+    def __len__(self) -> int:
+        return 4
+
+    @abstractmethod
+    def __getitem__(self, item: int):
+        ...
+
+    def __iter__(self):
+        yield self.left
+        yield self.top
+        yield self.right
+        yield self.bottom
+
+
 @dataclass(frozen=True)
-class BboxFancy:
+class BboxFancy(BboxClassABC):
+    """A Bounding Box with pre-calcualted convenience attributes"""
     left: int
     top: int
     right: int
@@ -78,9 +122,6 @@ class BboxFancy:
     size: Optional[SizeFancy] = field(default=None)
     _cached_tuple: Optional[BboxSimple] = field(
         default=None, init=False, repr=False, compare=False)
-
-    def __len__(self) -> int:
-        return 4
 
     def __post_init__(self):
         object.__setattr__(self, 'width', self.right - self.left)
@@ -94,13 +135,11 @@ class BboxFancy:
         yield self.right
         yield self.bottom
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int):
         return self._cached_tuple[index]
 
 
-BoundingBox = Union[BboxFancy, BboxSimple]
-
-
+@runtime_checkable
 class ImageCoreLike(Protocol):
     """
     An attempt at typing the Image.core internal class.
@@ -151,8 +190,66 @@ class ImageFontLike(Protocol):
     The features required for PIL.ImageDraw to use an object as a font
     """
 
-    def getmask(self, text: str) -> ImageCoreLike:
+    def getmask(self, text: str, mode: str = '') -> ImageCoreLike:
         ...
 
     def getbbox(self, text: str) -> Optional[BoundingBox]:
         ...
+
+
+@dataclass
+class GlyphMetadata:
+    """
+    Keep track of bounding box information about glyphs.
+
+    Glyphs can have empty actual data despite having a bounding box. In
+    this case, bitmap_bbox will be None.
+
+    This class does not store the PIL.Image.core object itself because
+    doing so causes issues with dataclass library internals.
+    """
+    bitmap_bbox: Optional[BboxFancy]
+    glyph_bbox: BboxFancy
+    bitmap_size: Size
+    bitmap_len_bytes: int
+
+    @classmethod
+    def from_font_glyph(
+        cls,
+        bitmap: ImageCoreLike,
+        glyph_bbox: BoundingBox
+    ) -> "GlyphMetadata":
+
+        # get the stated values
+        glyph_bbox = BboxFancy(*glyph_bbox)
+        bitmap_bbox = None
+
+        if bitmap is not None:
+            bitmap_bbox = bitmap.getbbox()
+            if bitmap_bbox is not None:
+                bitmap_bbox = BboxFancy(*bitmap_bbox)
+
+        return cls(
+            glyph_bbox=glyph_bbox,
+            bitmap_bbox=bitmap_bbox,
+            bitmap_size=SizeFancy(*bitmap.size),
+            bitmap_len_bytes=len(bitmap)
+        )
+
+
+class MissingGlyphError(Exception):
+    """
+    1 or more required glyphs were not found.
+
+    Does not subclass Key or Index errors because the underlying
+    representation below may be either.
+    """
+    def __init__(self, message_header, missing_glyph_codes: Sequence[int]):
+        super().__init__(f"{message_header} : {missing_glyph_codes}")
+        self.missing_glyph_codes = missing_glyph_codes
+
+    @classmethod
+    def default_msg(cls, missing_glyph_codes: Sequence[int]):
+        cls(
+            "One or more required glyphs was found to be missing",
+            missing_glyph_codes)

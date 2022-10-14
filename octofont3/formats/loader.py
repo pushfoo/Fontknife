@@ -3,8 +3,7 @@ from typing import Optional, Iterable, Union, Any
 
 
 from octofont3.custom_types import PathLike, HasRead
-from octofont3.font_adapter import CachingFontAdapter
-from octofont3.formats import guess_source_path_type, FormatReader
+from octofont3.formats import guess_source_path_type, FormatReader, RasterFont
 from octofont3.formats.caching import get_cache
 
 
@@ -44,7 +43,7 @@ def load_font(
     cache_dir: Optional[PathLike] = None,
     # Currently only usable with TTFs
     force_provides: Iterable[str] = None,
-) -> CachingFontAdapter:
+) -> RasterFont:
 
     if not source_type:
         if source == '-':
