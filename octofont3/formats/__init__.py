@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from inspect import isabstract
 from pathlib import Path
 from types import MappingProxyType
 from typing import Optional, Iterable, Union, Callable, Dict, Set, Type, KeysView
@@ -225,16 +224,15 @@ class FormatReader(ABC):
 
     def __init_subclass__(cls):
         """
-        Register every non-abstract subclass for easy access.
+        Register every subclass without ABC as an immediate parent.
 
         This uses the attributes of subclasses instead of
         __init_subclass__ arguments because ABC appears to be
-        incompatible in current python versions.
+        incompatible with them in current python versions.
 
-        The following subclass attributes are supported:
-            1. ``wrapped_creation_func`` Mandatory for registration,
-               optional for ABCs. A creation function or type wrapped
-               by the subclass.
+        The following optional subclass attributes are supported:
+            1. ``wrapped_creation_func``. A creation function or type
+               wrapped by the subclass.
             1. ``format_name`` overrides auto-generation of format name
             2. ``file_extension`` overrides auto-generation of file
                 extensions.
@@ -258,23 +256,24 @@ class FormatReader(ABC):
         format names and file extensions.
        """
 
-        # Don't register abstract classes
-        if isabstract(cls):
+        # Don't register classes with ABC as a direct baseclass. This
+        # allows excluding intermediate reader classes without adding
+        # extra abstract methods or properties for isabstract to detect.
+        if ABC in cls.__bases__:
             return
 
-        # Return if a wrapped_creation_func was not specified
+        # If wrapped_creation_func is defined, type check it
         wrapped = getattr(cls, 'wrapped_creation_func', None)
-        if not wrapped:
-            return
-        elif not callable(wrapped):
-            raise TypeError('wrapped_creation_func must be a type or factory method for non-abstract classes!')
+        if wrapped is not None and not callable(wrapped):
+           raise TypeError('wrapped_creation_func must be a type or factory method for non-abstract classes!')
 
+        # Use a specified format_name or generate one from the class
         format_name = getattr(cls, 'format_name', None)
         if not format_name:
             format_name = cls.__name__.lower().replace('reader', '')
-
         cls.by_format_name[format_name] = cls
 
+        # Use format_name as an extension if no extensions are specified
         file_extensions = getattr(cls, 'file_extensions', None)
         if not file_extensions:
             file_extensions = (format_name,)
@@ -282,11 +281,11 @@ class FormatReader(ABC):
             file_extensions = (file_extensions,)
         file_extensions = set(file_extensions)
 
+        # Register the format_name and extensions for the reader
         cls.file_extensions_for_class[cls] = file_extensions
         for extension in file_extensions:
             cls.by_file_extension[extension] = cls
             cls.file_extension_to_format_name[extension] = format_name
-
 
     @abstractmethod
     def load_source(
@@ -316,7 +315,6 @@ def guess_source_path_type(source: PathLikeOrHasRead) -> Optional[str]:
 
 
 class BinaryReader(FormatReader, ABC):
-    # This must be specified by subclasses
     wrapped_creation_func: Optional[type] = None
 
 
