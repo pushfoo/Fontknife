@@ -1,7 +1,8 @@
 from contextlib import ExitStack
 from typing import Optional, Callable
 
-from octofont3.formats.loader import load_font, FontLoadingError, UnclearSourceType
+from octofont3.formats import load_font
+from octofont3.formats.common import FontLoadingError, UnclearSourceType
 from octofont3.iohelpers import guess_output_path_type, exit_error, StdOrFile
 from octofont3.octo import emit_octo
 

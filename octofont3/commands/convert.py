@@ -4,7 +4,8 @@ Convert between formats.
 from contextlib import ExitStack
 from typing import Callable, Optional
 
-from octofont3.formats.loader import load_font, FontLoadingError, UnclearSourceType
+from octofont3.formats import load_font
+from octofont3.formats.common import FontLoadingError, UnclearSourceType
 from octofont3.iohelpers import guess_output_path_type, StdOrFile, exit_error
 from octofont3.formats.textfont.writer import FontRenderer
 

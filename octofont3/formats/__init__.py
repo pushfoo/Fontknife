@@ -3,9 +3,11 @@ import pkgutil
 import re
 
 from pathlib import Path
-from typing import Pattern, Any, Dict, Union, Iterable
+from typing import Pattern, Any, Dict, Union, Iterable, Optional
 
-from octofont3.custom_types import PathLike
+from octofont3.custom_types import PathLike, HasRead
+from octofont3.formats.common import RasterFont, get_cache, SourceTypeRequiredWhenPiping, guess_source_path_type, UnclearSourceType, \
+    FormatReader
 from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
 from octofont3.formats.common.caching import get_cache, load_and_cache_bitmap_font
 from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
@@ -63,3 +65,24 @@ _here = Path(__file__).parent
 # Load reader plugins
 default_readers = load_format_plugins(str(_here / 'readers'))
 
+
+def load_font(
+    source: Union[PathLike, HasRead],
+    source_type: Optional[str] = None,
+    font_size: int = 10,
+    cache_dir: Optional[PathLike] = None,
+    # Currently only usable with TTFs
+    force_provides: Iterable[str] = None,
+) -> RasterFont:
+
+    if not source_type:
+        if source == '-':
+            raise SourceTypeRequiredWhenPiping()
+
+        source_type = guess_source_path_type(source)
+        if source_type is None:
+            raise UnclearSourceType(source, source_type)
+
+    reader = FormatReader.by_format_name[source_type](get_cache)
+    font = reader.load_source(source)
+    return font

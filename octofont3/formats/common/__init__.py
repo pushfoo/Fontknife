@@ -7,7 +7,7 @@ write format plugins.
 """
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Dict, Type, Set, Callable, Union, Optional, Iterable
+from typing import Dict, Type, Set, Callable, Union, Optional, Iterable, Any
 
 from octofont3.custom_types import PathLike, HasRead, PathLikeOrHasRead
 from octofont3.iohelpers import get_source_filesystem_path, SeekableBinaryFileCopy
@@ -146,3 +146,32 @@ class CachingReader(BinaryReader, ABC):
         raw_glyphs = copy_glyphs(raw_font, provided_glyphs)
         result = RasterFont(raw_glyphs, size_points=font_size, path=actual_path)
         return result
+
+
+class FontLoadingError(Exception, ABC):
+
+    def __init__(self, path: PathLike = None, source_type: Any = None, message: str = None):
+        super().__init__(message or self._gen_message(path, source_type))
+        self.path = path
+
+    @abstractmethod
+    def _gen_message(self, path, source_type) -> str:
+        ...
+
+
+class UnclearSourceType(FontLoadingError):
+
+    def _gen_message(self, path, source_type) -> str:
+        return f"Could not resolve a source type for {path!r}. Please specify it directly."
+
+
+class SourceTypeRequiredWhenPiping(UnclearSourceType):
+
+    def _gen_message(self, path, source_type) -> str:
+        return "You must specify an source type when piping from stdin."
+
+
+class FormatRequiresGlyphSequence(FontLoadingError):
+
+    def _gen_message(self, path, source_type) -> str:
+        return f"Specifying glyphs sequence is mandatory for {source_type!r}"
