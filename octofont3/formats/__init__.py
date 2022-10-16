@@ -49,7 +49,7 @@ class RasterFont:
         subclasses are expected to return rasterized copies of source fonts
         instead.
 
-        :param glyph_table: A raw table of glyphs, if any.
+        :param glyph_table: An raw table of glyph bitmaps.
         :param text_tracking_px: The space added between glyph tiles.
         :param size_points: The size in points, if any.
         :param font_metadata: Can be accessed via
@@ -61,8 +61,8 @@ class RasterFont:
         self._glyph_bitmaps: Dict[str, ImageCoreLike] = dict(glyph_table) if glyph_table else {}
         self._glyph_metadata: Dict[str, GlyphMetadata] = {}
 
-        self._max_tile_bbox: Optional[BoundingBox] = None
-        self._max_bitmap_bbox: Optional[BoundingBox] = None
+        self._max_tile_bbox: Optional[BboxFancy] = None
+        self._max_bitmap_bbox: Optional[BboxFancy] = None
         self._notdef_glyph: Optional[ImageCoreLike] = None
 
         self._update_metadata()
@@ -83,7 +83,7 @@ class RasterFont:
         changed glyphs by passing an iterable of glyph strings via
         ``updated_glyphs``.
 
-        :param updated_glyphs: Limit metadata update to these glyph keys
+        :param updated_glyphs: Limit metadata update to these glyphs
         """
 
         # Exit early if there are no valid glyphs in the table.
@@ -136,7 +136,7 @@ class RasterFont:
     def glyph_table(self) -> MappingProxyType:
         return MappingProxyType(self._glyph_bitmaps)
 
-    def get_glyph(self, value: str, strict=False):
+    def get_glyph(self, value: str, strict=False) -> ImageCoreLike:
         if value in self._glyph_bitmaps:
             return self._glyph_bitmaps[value]
         elif not strict:
@@ -146,10 +146,11 @@ class RasterFont:
     @property
     def size(self) -> Optional[int]:
         """
-        Return the size in points for the font if it's known property of the original ImageFont.
+        Return any known point size for the font.
 
-        This can return None because pillow does not provide a way to
-        recover
+        This can return None because some font formats do not provide
+        this information.
+
         :return:
         """
         return self._size_points
@@ -173,13 +174,14 @@ class RasterFont:
 
         return total_width, total_height
 
-    def getmask(self, text: str, mode: str = ''):
+    def getmask(self, text: str, mode: str = '') -> ImageCoreLike:
         """
         Get an imaging core object to use as a drawing mask.
 
-        Crucial for drawing text.
+        Breaks PEP naming conventions for pillow compatibility.
 
-        :param text:
+        :param text: The text to get a mask for.
+        :param mode: Attempt to force the image mode.
         :return:
         """
         size = self.getsize(text)
@@ -201,6 +203,14 @@ class RasterFont:
         return mask_image.im
 
     def getbbox(self, text: str) -> BoundingBox:
+        """
+        Get a bounding box for the specified text.
+
+        Breaks PEP naming conventions for pillow compatibility.
+
+        :param text: The text to get a bounding box for.
+        :return:
+        """
         width, height = self.getsize(text)
         return BboxFancy(0, 0, width, height)
 
@@ -334,7 +344,7 @@ class CachingReader(BinaryReader, ABC):
         actual_path = getattr(raw_font, 'file')
         provided_glyphs = self.cache[original_path].provided_glyphs
         raw_glyphs = copy_glyphs(raw_font, provided_glyphs)
-        result = RasterFont(raw_glyphs, size_points=font_size,path=actual_path)
+        result = RasterFont(raw_glyphs, size_points=font_size, path=actual_path)
         return result
 
 
