@@ -16,7 +16,7 @@ from collections import namedtuple
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence, \
-    Mapping
+    Mapping, Dict
 
 ValidatorFunc = Callable[[Any, ], bool]
 
@@ -24,7 +24,6 @@ ValidatorFunc = Callable[[Any, ], bool]
 # Partial workaround for there being no way to represent buffer protocol
 # support via typing. Relevant PEP: https://peps.python.org/pep-0687/
 BytesLike = Union[ByteString, array]
-
 
 PathLike = Union[Path, str, bytes]
 InputTypeVar = TypeVar('InputTypeVar')
@@ -199,7 +198,7 @@ class ImageFontLike(Protocol):
 
 
 GlyphMapping = Mapping[str, ImageCoreLike]
-
+GlyphDict = Dict[str, ImageCoreLike]
 
 @dataclass
 class GlyphMetadata:

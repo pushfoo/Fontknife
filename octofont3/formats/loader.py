@@ -3,8 +3,9 @@ from typing import Optional, Iterable, Union, Any
 
 
 from octofont3.custom_types import PathLike, HasRead
-from octofont3.formats import guess_source_path_type, FormatReader, RasterFont
-from octofont3.formats.caching import get_cache
+from octofont3.formats import RasterFont
+from octofont3.formats.common import FormatReader, guess_source_path_type
+from octofont3.formats.common.caching import get_cache
 
 
 class FontLoadingError(Exception, ABC):
