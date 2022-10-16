@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Pattern, Any, Dict, Union, Iterable, Optional
 
 from octofont3.custom_types import PathLike, HasRead
-from octofont3.formats.common import RasterFont, get_cache, SourceTypeRequiredWhenPiping, guess_source_path_type, UnclearSourceType, \
+from octofont3.formats.common import RasterFont, get_cache, SourceTypeRequiredWhenPiping, guess_source_type, UnclearSourceType, \
     FormatReader
 from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
 from octofont3.formats.common.caching import get_cache, load_and_cache_bitmap_font
@@ -79,7 +79,7 @@ def load_font(
         if source == '-':
             raise SourceTypeRequiredWhenPiping()
 
-        source_type = guess_source_path_type(source)
+        source_type = guess_source_type(source)
         if source_type is None:
             raise UnclearSourceType(source, source_type)
 

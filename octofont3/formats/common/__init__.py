@@ -105,7 +105,7 @@ class FormatReader(ABC):
         pass
 
 
-def guess_path_type(path: Optional[PathLike]) -> Optional[str]:
+def guess_source_path_type(path: Optional[PathLike]) -> Optional[str]:
     if path is None:
         return None
 
@@ -118,9 +118,9 @@ def guess_path_type(path: Optional[PathLike]) -> Optional[str]:
     return path_type
 
 
-def guess_source_path_type(source: PathLikeOrHasRead) -> Optional[str]:
+def guess_source_type(source: PathLikeOrHasRead) -> Optional[str]:
     source_path = get_source_filesystem_path(source)
-    source_type = guess_path_type(source_path)
+    source_type = guess_source_path_type(source_path)
     return source_type
 
 
