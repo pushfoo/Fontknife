@@ -11,7 +11,7 @@ from typing import Callable, Dict, Optional, Union, BinaryIO, Set, Any, Tuple
 from PIL import ImageFont
 
 from octofont3.custom_types import PathLike, HasReadline, HasRead, PathLikeOrHasRead
-from octofont3.iohelpers import ensure_folder_exists, load_binary_source, get_source_filesystem_path, absolute_path
+from octofont3.iohelpers import ensure_folder_exists, load_binary_source, get_resource_filesystem_path, absolute_path
 
 
 def hash_binary_stream(source: BinaryIO, hash_algo: Callable = hashlib.sha1, block_size: int = 2 ** 16):
@@ -94,7 +94,7 @@ class MetadataCacheEntry:
 
     @classmethod
     def generate_for_source(cls, source: PathLikeOrHasRead):
-        source_file_path = Path(get_source_filesystem_path(source))
+        source_file_path = Path(get_resource_filesystem_path(source))
         modified_time_ns = source_file_path.stat().st_mtime_ns
         file_hash = hash_file(source_file_path).hexdigest()
 
@@ -276,7 +276,7 @@ def load_and_cache_bitmap_font(
 
     current_metadata = MetadataCacheEntry.generate_for_source(source)
     if isinstance(source, (HasReadline, HasRead)):
-        source_path = get_source_filesystem_path(source)
+        source_path = get_resource_filesystem_path(source)
     else:
         source_path = absolute_path(source)
 

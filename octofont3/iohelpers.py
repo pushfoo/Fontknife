@@ -9,7 +9,7 @@ from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from typing import Optional, Tuple, Iterable, Union, Mapping, Callable, Any, BinaryIO, TypeVar
 
-from octofont3.custom_types import PathLike, HasReadline, HasWrite, PathLikeOrHasRead, HasRead
+from octofont3.custom_types import PathLike, HasReadline, HasWrite, PathLikeOrHasRead, HasRead, PathLikeOrHasStreamFunc
 from octofont3.utils import has_all_methods, value_of_first_attribute_present
 
 
@@ -492,22 +492,6 @@ def ensure_folder_exists(folder_path: PathLike) -> None:
     folder_path.mkdir(exist_ok=True)
 
 
-def guess_output_path_type(path: Optional[PathLike]) -> Optional[str]:
-
-    if path is None:
-        return None
-
-    path = Path(path)
-
-    if not path.suffix:
-        if path.is_dir():
-            return "spritedir"
-        else:
-            return None
-
-    return path.suffix[1:]
-
-
 def get_stream_filesystem_path(stream: Any) -> Optional[str]:
     """
     Attempt to return a string path for stream's underlying path
@@ -538,7 +522,7 @@ def get_stream_filesystem_path(stream: Any) -> Optional[str]:
     return path
 
 
-def get_source_filesystem_path(source: PathLikeOrHasRead):
+def get_resource_filesystem_path(source: PathLikeOrHasStreamFunc):
     if isinstance(source, (str, Path, bytes)):
         return absolute_path(source)
     return get_stream_filesystem_path(source)

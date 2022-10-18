@@ -26,40 +26,45 @@ ValidatorFunc = Callable[[Any, ], bool]
 BytesLike = Union[ByteString, array]
 
 PathLike = Union[Path, str, bytes]
-InputTypeVar = TypeVar('InputTypeVar')
-OutputTypeVar = TypeVar('OutputTypeVar')
+StreamTypeVar = TypeVar('StreamTypeVar')
 
 
-# Generic stream method classes
+# Generic stream method Protocols
 @runtime_checkable
-class HasWrite(Protocol[InputTypeVar]):
-    def write(self, b: InputTypeVar) -> InputTypeVar:
+class HasWrite(Protocol[StreamTypeVar]):
+    def write(self, b: StreamTypeVar) -> int:
         ...
 
 
 @runtime_checkable
-class HasRead(Protocol[OutputTypeVar]):
-    def read(self, hint: int = -1) -> OutputTypeVar:
+class HasRead(Protocol[StreamTypeVar]):
+    def read(self, hint: int = -1) -> StreamTypeVar:
         ...
 
 
 @runtime_checkable
-class HasReadline(Protocol[OutputTypeVar]):
+class HasReadline(Protocol[StreamTypeVar]):
 
-    def readline(self) -> OutputTypeVar:
+    def readline(self) -> StreamTypeVar:
         ...
 
 
 # Type-specific classes
 @runtime_checkable
 class HasBytesWrite(Protocol):
-    def write(self, b: BytesLike) -> bytes:
+    def write(self, b: BytesLike) -> int:
         ...
 
 
-# These function as generics
-PathLikeOrHasRead = Union[HasRead[InputTypeVar], PathLike]
-PathLikeOrHasReadline = Union[HasReadline[InputTypeVar], PathLike]
+# Combined path + stream types for resources / loading
+PathLikeOrHasRead = Union[HasRead[StreamTypeVar], PathLike]
+PathLikeOrHasReadline = Union[HasReadline[StreamTypeVar], PathLike]
+PathLikeOrHasWrite = Union[HasWrite[StreamTypeVar], PathLike]
+PathLikeOrHasStreamFunc = Union[
+    PathLike,
+    HasRead[StreamTypeVar],
+    HasWrite[StreamTypeVar],
+    HasReadline[StreamTypeVar]]
 
 
 Size = Tuple[int, int]
@@ -199,6 +204,7 @@ class ImageFontLike(Protocol):
 
 GlyphMapping = Mapping[str, ImageCoreLike]
 GlyphDict = Dict[str, ImageCoreLike]
+
 
 @dataclass
 class GlyphMetadata:

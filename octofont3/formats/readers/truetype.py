@@ -5,7 +5,7 @@ from PIL import ImageFont
 from octofont3.custom_types import PathLike, HasRead
 from octofont3.formats import RasterFont, copy_glyphs
 from octofont3.formats.common import BinaryReader
-from octofont3.iohelpers import StdOrFile, get_source_filesystem_path
+from octofont3.iohelpers import StdOrFile, get_resource_filesystem_path
 from octofont3.utils import generate_glyph_sequence
 
 
@@ -23,7 +23,7 @@ class TrueTypeReader(BinaryReader):
             force_provided_glyphs = generate_glyph_sequence()
         with StdOrFile(source, 'rb') as wrapped:
             raw_font = self.__class__.wrapped_creation_func(wrapped.raw)
-            path = get_source_filesystem_path(source)
+            path = get_resource_filesystem_path(source)
 
         raw_glyph_table = copy_glyphs(raw_font, glyphs=force_provided_glyphs)
         raster_font = RasterFont(

@@ -1,11 +1,12 @@
 import json
 from collections import deque
-from typing import Iterable, Optional, Any
+from typing import Iterable, Optional, Any, Union
 
-from octofont3.custom_types import PathLike, HasWrite
+from octofont3.custom_types import PathLike, HasWrite, PathLikeOrHasWrite
 from octofont3.formats import RasterFont
-from octofont3.formats.textfont import TEXTFONT_GLYPH_HEADER, TEXTFONT_COMMENT_PREFIX
-from octofont3.iohelpers import OutputHelper
+from octofont3.formats.common import FormatWriter
+from octofont3.formats.common.textfont import TEXTFONT_GLYPH_HEADER, TEXTFONT_COMMENT_PREFIX
+from octofont3.iohelpers import OutputHelper, StdOrFile
 from octofont3.utils import print_dataclass_info, find_max_dimensions
 
 
@@ -117,7 +118,8 @@ class FontRenderer:
 
     def emit_textfont(
         self,
-        font: RasterFont, glyph_sequence: Iterable[str] = None,
+        font: RasterFont,
+        glyph_sequence: Iterable[str] = None,
         actual_source_path: Optional[PathLike] = None,
         max_line_width: int = 80
     ) -> None:
@@ -149,3 +151,16 @@ class FontRenderer:
 
         for glyph in glyph_sequence:
             self.emit_character(font, glyph)
+
+
+class TextFontWriter(FormatWriter):
+
+    def write_output(
+        self, font: RasterFont,
+        destination: PathLikeOrHasWrite,
+        glyph_sequence: Optional[Iterable[str]] = None
+    ) -> None:
+
+        with StdOrFile(destination, 'w') as file:
+            renderer = FontRenderer(file.raw)
+            renderer.emit_textfont(font, glyph_sequence=glyph_sequence)

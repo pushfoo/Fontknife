@@ -3,7 +3,7 @@ import fileinput
 import sys
 import getopt
 
-from octofont3.formats.loader import load_font
+from octofont3.formats import load_font
 
 from octofont3.octo import emit_octo
 from octofont3.utils import generate_glyph_sequence, show_image_for_text

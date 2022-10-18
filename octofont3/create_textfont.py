@@ -3,8 +3,8 @@ import sys
 import getopt
 
 from octofont3 import calculate_alignments
-from octofont3.formats.loader import load_font
-from octofont3.formats.textfont.writer import FontRenderer
+from octofont3.formats import load_font
+from octofont3.formats.writers.textfont import FontRenderer
 
 
 def main():

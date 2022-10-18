@@ -8,8 +8,8 @@ from PIL import Image
 from octofont3.custom_types import PathLike, HasRead, HasReadline, GlyphMapping, GlyphDict, Size
 from octofont3.formats import RasterFont
 from octofont3.formats.common import FormatReader
-from octofont3.formats.textfont import TEXTFONT_GLYPH_HEADER
-from octofont3.iohelpers import StdOrFile, get_source_filesystem_path, header_regex, InputHelper, \
+from octofont3.formats.common.textfont import TEXTFONT_GLYPH_HEADER
+from octofont3.iohelpers import StdOrFile, get_resource_filesystem_path, header_regex, InputHelper, \
     strip_end_comments_and_space
 from octofont3.utils import empty_core
 
@@ -24,7 +24,7 @@ class TextFontParseError(BaseException):
 
     @classmethod
     def from_stream_state(cls, message, stream):
-        return cls(message, get_source_filesystem_path(stream), stream.lineno())
+        return cls(message, get_resource_filesystem_path(stream), stream.lineno())
 
 
 class TextFontParser:
@@ -261,7 +261,7 @@ class TextFontReader(FormatReader):
         with StdOrFile(source, 'r') as file:
             raw_data = parser.parse(file.raw)
 
-        path = get_source_filesystem_path(source)
+        path = get_resource_filesystem_path(source)
         font = RasterFont(glyph_table=raw_data)
 
         return font

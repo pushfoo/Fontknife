@@ -5,9 +5,12 @@ import re
 from pathlib import Path
 from typing import Pattern, Any, Dict, Union, Iterable, Optional
 
-from octofont3.custom_types import PathLike, HasRead
-from octofont3.formats.common import RasterFont, get_cache, SourceTypeRequiredWhenPiping, guess_source_type, UnclearSourceType, \
-    FormatReader
+
+from octofont3.custom_types import PathLike, HasRead, PathLikeOrHasWrite
+from octofont3.formats.common import RasterFont, get_cache, PipingToStdoutRequiresFontFormat, \
+    guess_source_path_type, UnclearSourceFontFormat, PipingFromStdinRequiresFontFormat, \
+    FormatReader, PipingToStdoutRequiresFontFormat, guess_source_type, guess_output_type, UnclearOutputFontFormat, \
+    FormatWriter
 from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
 from octofont3.formats.common.caching import get_cache, load_and_cache_bitmap_font
 from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
@@ -63,7 +66,8 @@ _here = Path(__file__).parent
 
 
 # Load reader plugins
-default_readers = load_format_plugins(str(_here / 'readers'))
+default_readers = load_format_plugins(_here / 'readers')
+default_writers = load_format_plugins(_here / 'writers')
 
 
 def load_font(
@@ -77,12 +81,31 @@ def load_font(
 
     if not source_type:
         if source == '-':
-            raise SourceTypeRequiredWhenPiping()
+            raise PipingFromStdinRequiresFontFormat()
 
         source_type = guess_source_type(source)
         if source_type is None:
-            raise UnclearSourceType(source, source_type)
+            raise UnclearSourceFontFormat(source, source_type)
 
     reader = FormatReader.by_format_name[source_type](get_cache)
     font = reader.load_source(source)
     return font
+
+
+def write_font(
+    font: RasterFont,
+    output: PathLikeOrHasWrite,
+    output_format: Optional[str] = None,
+    glyph_sequence: Iterable[str] = None
+) -> None:
+
+    if not output_format:
+        if output == '-':
+            raise PipingToStdoutRequiresFontFormat()
+
+        output_format = guess_output_type(output)
+        if output_format is None:
+            raise UnclearOutputFontFormat(output, output_format)
+
+    writer = FormatWriter.by_format_name[output_format]()
+    writer.write_output(font, output, glyph_sequence=glyph_sequence)
