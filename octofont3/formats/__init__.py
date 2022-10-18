@@ -1,20 +1,17 @@
 import importlib.util
 import pkgutil
 import re
-
 from pathlib import Path
-from typing import Pattern, Any, Dict, Union, Iterable, Optional
-
+from typing import Pattern, Any, Dict, Union, Iterable, Optional, Type
 
 from octofont3.custom_types import PathLike, HasRead, PathLikeOrHasWrite
 from octofont3.formats.common import RasterFont, get_cache, PipingToStdoutRequiresFontFormat, \
-    guess_source_path_type, UnclearSourceFontFormat, PipingFromStdinRequiresFontFormat, \
-    FormatReader, PipingToStdoutRequiresFontFormat, guess_source_type, guess_output_type, UnclearOutputFontFormat, \
+    UnclearSourceFontFormat, PipingFromStdinRequiresFontFormat, \
+    FormatReader, PipingToStdoutRequiresFontFormat, UnclearOutputFontFormat, \
     FormatWriter
-from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
 from octofont3.formats.common.caching import get_cache, load_and_cache_bitmap_font
 from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
-
+from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
 
 # Matches anything that is approximately a non-dunder python module name.
 # Digits are allowed after the first character for convenience.
@@ -72,40 +69,45 @@ default_writers = load_format_plugins(_here / 'writers')
 
 def load_font(
     source: Union[PathLike, HasRead],
-    source_type: Optional[str] = None,
+    format_name: Optional[str] = None,
     font_size: int = 10,
     cache_dir: Optional[PathLike] = None,
-    # Currently only usable with TTFs
+    # Only meaningful for TTFs
     force_provides: Iterable[str] = None,
 ) -> RasterFont:
 
-    if not source_type:
+    if not format_name:
         if source == '-':
             raise PipingFromStdinRequiresFontFormat()
+        format_name = FormatReader.guess_format_name(source)
 
-        source_type = guess_source_type(source)
-        if source_type is None:
-            raise UnclearSourceFontFormat(source, source_type)
+    reader_type: Optional[Type[FormatReader]] = FormatReader.by_format_name.get(format_name, None)
+    if reader_type is None:
+        raise UnclearSourceFontFormat(source, format_name)
 
-    reader = FormatReader.by_format_name[source_type](get_cache)
-    font = reader.load_source(source)
+    reader = reader_type(get_cache)
+    font = reader.load_source(
+        source,
+        font_size=font_size,
+        force_provided_glyphs=force_provides)
     return font
 
 
 def write_font(
     font: RasterFont,
     output: PathLikeOrHasWrite,
-    output_format: Optional[str] = None,
+    format_name: Optional[str] = None,
     glyph_sequence: Iterable[str] = None
 ) -> None:
 
-    if not output_format:
+    if not format_name:
         if output == '-':
             raise PipingToStdoutRequiresFontFormat()
+        format_name = FormatWriter.guess_format_name(output)
 
-        output_format = guess_output_type(output)
-        if output_format is None:
-            raise UnclearOutputFontFormat(output, output_format)
+    writer_type: Optional[Type[FormatWriter]] = FormatWriter.by_format_name.get(format_name, None)
+    if writer_type is None:
+        raise UnclearOutputFontFormat(output, format_name)
 
-    writer = FormatWriter.by_format_name[output_format]()
+    writer = writer_type()
     writer.write_output(font, output, glyph_sequence=glyph_sequence)

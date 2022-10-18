@@ -26,7 +26,7 @@ def main(parsed_args, help_callback: Optional[Callable] = None):
         font = load_font(
             parsed_args.input_path,
             font_size=parsed_args.font_size_points,
-            source_type=parsed_args.input_type)
+            format_name=parsed_args.input_type)
 
     # Handle only reasonably expected exception types
     except (UnclearSourceFontFormat, PipingFromStdinRequiresFontFormat) as e:
@@ -36,4 +36,4 @@ def main(parsed_args, help_callback: Optional[Callable] = None):
 
     # Set glyph sequence and attempt conversion
     glyph_sequence = getattr(parsed_args, 'glyph_sequence', font.provided_glyphs)
-    write_font(font, parsed_args.output_path, output_format=parsed_args.output_type, glyph_sequence=glyph_sequence)
+    write_font(font, parsed_args.output_path, format_name=parsed_args.output_type, glyph_sequence=glyph_sequence)

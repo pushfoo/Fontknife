@@ -12,7 +12,7 @@ from octofont3.utils import generate_glyph_sequence
 class TrueTypeReader(BinaryReader):
     format_name = 'truetype'
     file_extensions = ['ttf']
-    wrapped_creation_func = ImageFont.truetype
+    wrapped_callable = ImageFont.truetype
 
     def load_source(
             self, source: Union[PathLike, HasRead],
@@ -22,7 +22,8 @@ class TrueTypeReader(BinaryReader):
         if force_provided_glyphs is None:
             force_provided_glyphs = generate_glyph_sequence()
         with StdOrFile(source, 'rb') as wrapped:
-            raw_font = self.__class__.wrapped_creation_func(wrapped.raw)
+            raw_font = self.__class__.wrapped_callable(
+                wrapped.raw, size=font_size)
             path = get_resource_filesystem_path(source)
 
         raw_glyph_table = copy_glyphs(raw_font, glyphs=force_provided_glyphs)
