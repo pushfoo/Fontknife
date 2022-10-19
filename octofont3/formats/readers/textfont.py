@@ -8,7 +8,7 @@ from PIL import Image
 from octofont3.custom_types import PathLike, HasRead, HasReadline, GlyphMapping, GlyphDict, Size
 from octofont3.formats import RasterFont
 from octofont3.formats.common import FormatReader
-from octofont3.formats.common.textfont import TEXTFONT_GLYPH_HEADER
+from octofont3.formats.common.textfont import GLYPH_HEADER, FULL_PIXEL, EMPTY_PIXEL
 from octofont3.iohelpers import StdOrFile, get_resource_filesystem_path, header_regex, InputHelper, \
     strip_end_comments_and_space
 from octofont3.utils import empty_core
@@ -42,7 +42,7 @@ class TextFontParser:
     """
 
     # Use regexes for now because metaclasses are overkill for this format
-    glyph_header_regex = header_regex(TEXTFONT_GLYPH_HEADER, glyph=str)
+    glyph_header_regex = header_regex(GLYPH_HEADER, glyph=str)
 
     def _read_glyph_raw_pixels(
         self,
@@ -222,8 +222,8 @@ class TextFontParser:
         self,
         allow_duplicates: bool = True,
         max_allowed_glyph_size: Size = (64, 64),
-        empty_char: str = '.',
-        full_char: str = 'X',
+        empty_char: str = EMPTY_PIXEL,
+        full_char: str = FULL_PIXEL,
     ):
         """
         Create a TextFontParser object that can load Textfonts.

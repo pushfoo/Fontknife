@@ -5,7 +5,7 @@ from typing import Iterable, Optional, Any, Union
 from octofont3.custom_types import PathLike, HasWrite, PathLikeOrHasWrite
 from octofont3.formats import RasterFont
 from octofont3.formats.common import FormatWriter
-from octofont3.formats.common.textfont import TEXTFONT_GLYPH_HEADER, TEXTFONT_COMMENT_PREFIX
+from octofont3.formats.common.textfont import GLYPH_HEADER, COMMENT_PREFIX, FULL_PIXEL, EMPTY_PIXEL
 from octofont3.iohelpers import OutputHelper, StdOrFile
 from octofont3.utils import print_dataclass_info, find_max_dimensions
 
@@ -42,8 +42,8 @@ class FontRenderer:
         stream: HasWrite[str],
         include_padding: bool = True,
         verbose: int = 0,
-        fill_character: str = 'X',
-        empty_character: str = '.',
+        fill_character: str = FULL_PIXEL,
+        empty_character: str = EMPTY_PIXEL,
     ):
         if not isinstance(stream, TextFontStream):
             stream = TextFontStream(stream)
@@ -66,7 +66,7 @@ class FontRenderer:
 
         # Emit the header using an easy to parse format
         end = ' ' if comment_raw_glyph else '\n'
-        stream.header(TEXTFONT_GLYPH_HEADER, json.dumps(glyph), end=end)
+        stream.header(GLYPH_HEADER, json.dumps(glyph), end=end)
         if comment_raw_glyph:
             if glyph == '"':
                 quote = "'"
@@ -147,7 +147,7 @@ class FontRenderer:
         s.queue_comment_field(f"Exported glyphs", '')
         s.write_comment_field_block()
 
-        s.write_iterable_data(glyph_sequence, line_prefix=TEXTFONT_COMMENT_PREFIX + " ")
+        s.write_iterable_data(glyph_sequence, line_prefix=COMMENT_PREFIX + " ")
 
         for glyph in glyph_sequence:
             self.emit_character(font, glyph)
