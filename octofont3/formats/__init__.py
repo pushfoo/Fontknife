@@ -13,6 +13,10 @@ from octofont3.formats.common.caching import get_cache, load_and_cache_bitmap_fo
 from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
 from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
 
+# Import built-in format handlers, triggering auto-registration
+import octofont3.formats.readers
+import octofont3.formats.writers
+
 # Matches anything that is approximately a non-dunder python module name.
 # Digits are allowed after the first character for convenience.
 VALID_FORMAT_NAME_REGEX = re.compile(r'^[a-z][a-z\d]*(_[a-z\d])*$')
@@ -26,7 +30,8 @@ def load_format_plugins(
     Attempt to import .py files matching ``regex`` in location(s).
 
     Note: this project is not yet stable enough for plugins to be
-    expected to continue working smoothly. Everything might break.
+    expected to continue working smoothly. Everything might break,
+    including this method.
 
     Since format subclasses are registered by __init_subclass__ on their
     base class, the actual modules do not have to be returned. However,
@@ -57,14 +62,6 @@ def load_format_plugins(
             spec.loader.exec_module(loaded_raw)
 
     return discovered
-
-
-_here = Path(__file__).parent
-
-
-# Load reader plugins
-default_readers = load_format_plugins(_here / 'readers')
-default_writers = load_format_plugins(_here / 'writers')
 
 
 def load_font(
