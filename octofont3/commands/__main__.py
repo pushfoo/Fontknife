@@ -6,7 +6,7 @@ from typing import Optional, Callable, Any, Mapping, Dict
 
 from octofont3.commands.convert import main as convert
 from octofont3.commands.emit_code import main as emit_code
-
+from octofont3.formats import FormatReader, FormatWriter
 
 base_parser = argparse.ArgumentParser(
     description="A utility with multiple sub-commands for manipulating fonts."
@@ -36,7 +36,7 @@ COMMON_COMMAND_TEMPLATE = {
     },
     'input-type': {
         'short_flag': '-I',
-        'type': str, 'default': None, 'choices': ['textfont', 'bdf', 'pcf', 'ttf'],
+        'type': str, 'default': None, 'choices': list(FormatReader.by_format_name.keys()),
         'help': 'Use the specified input type instead of auto-detecting it.'
     },
     'glyph-sequence': {
@@ -168,7 +168,7 @@ def add_named_subcommand(
 
 convert_parser = add_named_subcommand(
     subparsers, 'convert', convert,
-    changes={'output-type': {'choices': ['textfont']}},
+    changes={'output-type': {'choices': list(FormatWriter.by_format_name.keys())}},
     description="Convert fonts between different font representation formats.")
 
 
