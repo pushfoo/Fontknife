@@ -10,16 +10,18 @@ IO & Streams heavily lean on Protocols for annotating file-like objects
 per Guido van Rossum's advice on the subject:
 https://github.com/python/typing/discussions/829#discussioncomment-1150579
 """
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from array import array
 from collections import namedtuple
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence, \
-    Mapping, Dict
+    Mapping, Dict, Iterable
 
+T = TypeVar('T')
 ValidatorFunc = Callable[[Any, ], bool]
-
+SelectorCallable = Union[Callable[[T, ...], T], Callable[[Iterable[T]], T]]
 
 # Partial workaround for there being no way to represent buffer protocol
 # support via typing. Relevant PEP: https://peps.python.org/pep-0687/
@@ -79,13 +81,9 @@ class BoundingBox(Protocol):
     It covers the original bounding box tuple behavior, as well as the
     class-based bounding boxes that mimic it.
     """
-    left: int
-    top: int
-    right: int
-    bottom: int
 
     def __len__(self) -> int:
-        ...
+        return 4
 
     def __iter__(self):
         ...
@@ -97,6 +95,10 @@ class BoundingBox(Protocol):
 BboxSimple = Tuple[int, int, int, int]
 
 
+# Convenience constant for BboxClassABC subclasses
+BBOX_PROP_NAMES = ('left', 'top', 'right', 'bottom')
+
+
 class BboxClassABC(ABC):
     """Common functionality for Bounding Box-like classes."""
 
@@ -104,19 +106,29 @@ class BboxClassABC(ABC):
         return 4
 
     @abstractmethod
-    def __getitem__(self, item: int):
-        ...
+    def __getitem__(self, item) -> int:
+        raise NotImplementedError()
+
+    def __eq__(self, other: BoundingBox) -> bool:
+        if len(other) != 4:
+            raise ValueError(
+                f"Invalid comparison: Bounding boxes must be of value 4, but got {other}")
+
+        for i in range(4):
+            if self[i] != other[i]:
+                return False
+        return True
 
     def __iter__(self):
-        yield self.left
-        yield self.top
-        yield self.right
-        yield self.bottom
+        yield self[0]
+        yield self[1]
+        yield self[2]
+        yield self[3]
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, eq=False)
 class BboxFancy(BboxClassABC):
-    """A Bounding Box with pre-calcualted convenience attributes"""
+    """A Bounding Box with pre-calculated convenience attributes"""
     left: int
     top: int
     right: int
@@ -129,10 +141,23 @@ class BboxFancy(BboxClassABC):
         default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self):
+        # This workaround allows setting instance attributes on a
+        # frozen dataclass.
         object.__setattr__(self, 'width', self.right - self.left)
         object.__setattr__(self, 'height', self.bottom - self.top)
         object.__setattr__(self, 'size', SizeFancy(self.width, self.height))
         object.__setattr__(self, '_cached_tuple', tuple(self))
+
+    def __hash__(self) -> int:
+        """
+        Hash the bbox in a way that will collide with matching tuples.
+
+        This allows the bounding box to be used interchangeably with
+        pillow-style bounding boxes.
+
+        :return:
+        """
+        return hash(tuple(self))
 
     def __iter__(self):
         yield self.left
@@ -142,6 +167,10 @@ class BboxFancy(BboxClassABC):
 
     def __getitem__(self, index: int):
         return self._cached_tuple[index]
+
+    @classmethod
+    def convert(cls, other: BoundingBox) -> BboxFancy:
+        return cls(*other)
 
 
 @runtime_checkable

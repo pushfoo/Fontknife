@@ -9,5 +9,6 @@ setup(
         "console_scripts": [
             "octofont3=octofont3.commands.__main__:main",
         ]
-    }
+    },
+    tests_require=['pytest~=7.*']
 )

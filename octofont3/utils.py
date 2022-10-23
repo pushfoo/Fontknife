@@ -4,13 +4,13 @@ import sys
 from collections import defaultdict
 from dataclasses import asdict
 from itertools import chain, filterfalse
-from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping
+from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload
 from collections.abc import Mapping as MappingABC
 
 from PIL import Image, ImageDraw
 
-from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, ValidatorFunc, ImageCoreLike, \
-    BboxSimple, BboxClassABC
+from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, ValidatorFunc,\
+    ImageCoreLike, BboxClassABC, BBOX_PROP_NAMES, SelectorCallable, T
 
 
 def generate_glyph_sequence(
@@ -98,8 +98,8 @@ def print_dataclass_info(dataclass_instance, prefix: str = "#", file=sys.stdout)
         print(f"{prefix}   {field.ljust(just_length)} : {value!r}", file=file)
 
 
-def filternone(iterable: Iterable):
-    return filter(lambda a: a is None, iterable)
+def filter_none(iterable: Iterable[T]) -> Iterable[T]:
+    return filter(lambda a: a is not None, iterable)
 
 
 def get_glyph_bbox(font: ImageFontLike, g: str) -> BoundingBox:
@@ -283,22 +283,74 @@ class PropUninitializedError(ValueError):
             f" Please initialize it!")
 
 
+@overload
+def _select_not_none(chooser: SelectorCallable, candidates: Iterable[T]) -> T:
+    return _select_not_none(chooser, *candidates)
+
+
+@overload
+def _select_not_none(chooser: SelectorCallable, *candidates: T) -> T:
+    return _select_not_none(chooser, *candidates)
+
+
+def _select_not_none(chooser: SelectorCallable, *candidates: Optional[T]) -> T:
+    if len(candidates) == 1:
+        candidates = candidates[0]
+    return chooser(tuple(filter_none(candidates)))
+
+
+@overload
+def max_not_none(candidates: Iterable[Optional[T]]) -> T:
+    return max_not_none(*candidates)
+
+
+@overload
+def max_not_none(*candidates: Optional[T]) -> T:
+    return max_not_none(*candidates)
+
+
+def max_not_none(*candidates: Optional[T]) -> T:
+    return _select_not_none(max, *candidates)
+
+@overload
+def min_not_none(candidates: Iterable[Optional[T]]) -> T:
+    return min_not_none(*candidates)
+
+
+@overload
+def min_not_none(*candidates: Optional[T]) -> T:
+    return min_not_none(*candidates)
+
+
+def min_not_none(*candidates: Optional[T]) -> T:
+    return _select_not_none(min, *candidates)
+
+
 class BboxEnclosingAll(BboxClassABC):
     """
-    Grows to enclose all bboxes it's updated from
+    This class grows to enclose all bboxes it's updated from.
 
-    Raises PropUninitializedError when used without being updated.
+    It has some caveats to its usage:
+
+        1. Because it is mutable, it cannot be hashed. Convert it to a
+           tuple or a ``BboxFancy`` first.
+
+        2. Attempts to access properties without updating it with values
+           will raise a PropUninitializedError.
+
     """
 
     def __init__(self, *bboxes: BoundingBox):
-        self._left, self._top = None, None
-        self._right, self._bottom = 0, 0
+        self._left: Optional[int] = None
+        self._top: Optional[int] = None
+        self._right: Optional[int] = None
+        self._bottom: Optional[int] = None
 
         if bboxes:
             self.update(*bboxes)
 
     def __getitem__(self, item: int):
-        return getattr(self, ('left', 'top', 'right', 'bottom')[item])
+        return getattr(self, BBOX_PROP_NAMES[item])
 
     @property
     def left(self) -> int:
@@ -307,40 +359,52 @@ class BboxEnclosingAll(BboxClassABC):
         return self._left
 
     @property
-    def top(self) -> Optional[int]:
+    def top(self) -> int:
         if self._top is None:
             raise PropUninitializedError('top')
         return self._top
 
     @property
-    def right(self) -> Optional[int]:
-        return self._bottom
+    def right(self) -> int:
+        if self._right is None:
+            raise PropUninitializedError('right')
+        return self._right
 
     @property
-    def bottom(self) -> Optional[int]:
+    def bottom(self) -> int:
+        if self._bottom is None:
+            raise PropUninitializedError('bottom')
         return self._bottom
 
     def update(self, *boxes: BoundingBox) -> None:
         """
-        Grow to fit all bounding boxes passed.
+        Grow to enclose all bounding boxes passed.
 
         :param boxes:
         :return:
         """
         # locals for fast access
-        left, top = self._left, self._top
-        right, bottom = self._right, self._bottom
+        min_left = self._left
+        min_top = self._top
+        max_right = self._right
+        max_bottom = self._bottom
 
         for box in boxes:
-            left = box.left if left is None else min(left, box.left)
-            top = box.top if top is None else min(top, box.top)
-            right = max(right, box.right)
-            bottom = max(bottom, box.bottom)
+            left, top, right, bottom = box
 
-        self._left, self._top = left, top
-        self._right, self._bottom = right, bottom
+            min_left = min_not_none(min_left, left)
+            min_top = min_not_none(min_top, top)
+            max_right = max_not_none(max_right, right)
+            max_bottom = max_not_none(max_bottom, bottom)
+
+        self._left = min_left
+        self._top = min_top
+        self._right = max_right
+        self._bottom = max_bottom
 
     def reset(self, *boxes: BoundingBox) -> None:
-        self._left, self._top = None, None
-        self._right, self._bottom = 0, 0
+        self._left = None
+        self._top = None
+        self._right = None
+        self._bottom = None
         self.update(*boxes)
