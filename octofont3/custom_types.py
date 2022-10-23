@@ -17,7 +17,7 @@ from collections import namedtuple
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence, \
-    Mapping, Dict, Iterable
+    Mapping, Dict, Iterable, overload
 
 T = TypeVar('T')
 ValidatorFunc = Callable[[Any, ], bool]
@@ -134,9 +134,9 @@ class BboxFancy(BboxClassABC):
     right: int
     bottom: int
 
-    width: Optional[int] = field(default=None)
-    height: Optional[int] = field(default=None)
-    size: Optional[SizeFancy] = field(default=None)
+    width: Optional[int] = field(default=None, init=False)
+    height: Optional[int] = field(default=None, init=False)
+    size: Optional[SizeFancy] = field(default=None, init=False)
     _cached_tuple: Optional[BboxSimple] = field(
         default=None, init=False, repr=False, compare=False)
 
@@ -169,8 +169,29 @@ class BboxFancy(BboxClassABC):
         return self._cached_tuple[index]
 
     @classmethod
-    def convert(cls, other: BoundingBox) -> BboxFancy:
-        return cls(*other)
+    @overload
+    def convert(cls, bbox: BoundingBox):
+        cls.convert(*bbox)
+
+    @classmethod
+    @overload
+    def convert(cls, size: Size):
+        cls.convert(*size)
+
+    @classmethod
+    def convert(cls, *args: int) -> BboxFancy:
+        argc = len(args)
+
+        # handle single length values for size and bbox
+        if argc == 1:
+            args = args[0]
+            argc = len(args)
+
+        # handle a size object, otherwise assume it's 4 long
+        if argc == 2:
+            args = (0, 0) + args
+
+        return cls(*args)
 
 
 @runtime_checkable
