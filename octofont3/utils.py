@@ -9,8 +9,8 @@ from collections.abc import Mapping as MappingABC
 
 from PIL import Image, ImageDraw
 
-from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, ValidatorFunc,\
-    ImageCoreLike, BboxClassABC, BBOX_PROP_NAMES, SelectorCallable, T
+from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, ValidatorFunc, \
+    ImageCoreLike, BBOX_PROP_NAMES, SelectorCallable, T, CompareByLenAndElementsMixin
 
 
 def generate_glyph_sequence(
@@ -326,7 +326,7 @@ def min_not_none(*candidates: Optional[T]) -> T:
     return _select_not_none(min, *candidates)
 
 
-class BboxEnclosingAll(BboxClassABC):
+class BboxEnclosingAll(CompareByLenAndElementsMixin):
     """
     This class grows to enclose all bboxes it's updated from.
 
@@ -351,6 +351,15 @@ class BboxEnclosingAll(BboxClassABC):
 
     def __getitem__(self, item: int):
         return getattr(self, BBOX_PROP_NAMES[item])
+
+    def __len__(self) -> int:
+        return 4
+
+    def __iter__(self):
+        yield self._left
+        yield self._top
+        yield self._right
+        yield self._bottom
 
     @property
     def left(self) -> int:
@@ -407,4 +416,6 @@ class BboxEnclosingAll(BboxClassABC):
         self._top = None
         self._right = None
         self._bottom = None
-        self.update(*boxes)
+
+        if boxes:
+            self.update(*boxes)

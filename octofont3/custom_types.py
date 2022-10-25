@@ -11,13 +11,14 @@ per Guido van Rossum's advice on the subject:
 https://github.com/python/typing/discussions/829#discussioncomment-1150579
 """
 from __future__ import annotations
-from abc import ABC, abstractmethod
 from array import array
 from collections import namedtuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence, \
-    Mapping, Dict, Iterable, overload
+    Mapping, Dict, Iterable, overload, Iterator
+
+from typing_extensions import Self
 
 T = TypeVar('T')
 ValidatorFunc = Callable[[Any, ], bool]
@@ -69,12 +70,53 @@ PathLikeOrHasStreamFunc = Union[
     HasReadline[StreamTypeVar]]
 
 
-Size = Tuple[int, int]
+class SequenceLike(Protocol[T]):
+    """
+    Baseclass for sequence-like Protocols to inherit from.
+
+    It helps define protocols covering both the original sequences and
+    classes that imitate sequences without subclassing a sequence type.
+    """
+    def __iter__(self) -> Iterator[T]:
+        ...
+
+    @overload
+    def __getitem__(self, item: int) -> T:
+        ...
+
+    @overload
+    def __getitem__(self, item: slice) -> SequenceLike[T]:
+        ...
+
+    def __getitem__(self, item: Union[int, slice]) -> Union[int, SequenceLike[T]]:
+        ...
+
+    def __len__(self) -> int:
+        ...
+
+
+@runtime_checkable
+class Coord(SequenceLike[int], Protocol):
+
+    def __len__(self) -> int:
+        return 2
+
+
+CoordFancy = namedtuple('CoordFancy', ['x', 'y'])
+
+
+@runtime_checkable
+class Size(SequenceLike[int], Protocol):
+
+    def __len__(self) -> int:
+        return 2
+
+
 SizeFancy = namedtuple('SizeFancy', ['width', 'height'])
 
 
 @runtime_checkable
-class BoundingBox(Protocol):
+class BoundingBox(SequenceLike[int], Protocol):
     """
     Protocol to cover all bounding box behavior.
 
@@ -85,12 +127,6 @@ class BoundingBox(Protocol):
     def __len__(self) -> int:
         return 4
 
-    def __iter__(self):
-        ...
-
-    def __getitem__(self, index: int):
-        ...
-
 
 BboxSimple = Tuple[int, int, int, int]
 
@@ -99,99 +135,108 @@ BboxSimple = Tuple[int, int, int, int]
 BBOX_PROP_NAMES = ('left', 'top', 'right', 'bottom')
 
 
-class BboxClassABC(ABC):
-    """Common functionality for Bounding Box-like classes."""
+class CompareByLenAndElementsMixin:
+    """
+    Ease compatibility when comparing against other sequences.
+    """
 
-    def __len__(self) -> int:
-        return 4
-
-    @abstractmethod
-    def __getitem__(self, item) -> int:
-        raise NotImplementedError()
-
-    def __eq__(self, other: BoundingBox) -> bool:
-        if len(other) != 4:
+    def __eq__(self: SequenceLike, other: SequenceLike) -> bool:
+        len_self = len(self)
+        if len(other) != len_self:
             raise ValueError(
                 f"Invalid comparison: Bounding boxes must be of value 4, but got {other}")
 
-        for i in range(4):
+        for i in range(len_self):
             if self[i] != other[i]:
                 return False
         return True
 
-    def __iter__(self):
-        yield self[0]
-        yield self[1]
-        yield self[2]
-        yield self[3]
 
+class HashAsTupleMixin:
+    """
+    Allows classes to be hashed as if they were tuples.
 
-@dataclass(frozen=True, eq=False)
-class BboxFancy(BboxClassABC):
-    """A Bounding Box with pre-calculated convenience attributes"""
-    left: int
-    top: int
-    right: int
-    bottom: int
+    Requirements for use:
 
-    width: Optional[int] = field(default=None, init=False)
-    height: Optional[int] = field(default=None, init=False)
-    size: Optional[SizeFancy] = field(default=None, init=False)
-    _cached_tuple: Optional[BboxSimple] = field(
-        default=None, init=False, repr=False, compare=False)
-
-    def __post_init__(self):
-        # This workaround allows setting instance attributes on a
-        # frozen dataclass.
-        object.__setattr__(self, 'width', self.right - self.left)
-        object.__setattr__(self, 'height', self.bottom - self.top)
-        object.__setattr__(self, 'size', SizeFancy(self.width, self.height))
-        object.__setattr__(self, '_cached_tuple', tuple(self))
-
-    def __hash__(self) -> int:
-        """
-        Hash the bbox in a way that will collide with matching tuples.
-
-        This allows the bounding box to be used interchangeably with
-        pillow-style bounding boxes.
-
-        :return:
-        """
+        1. This is placed early enough in the parent class order to
+           ensure __hash__ isn't overridden. Putting this class first
+           may be easiest.
+        2. The parent class will be in an immutable state when it is
+           hashed.
+        3. The subclass is sufficiently Sequence-like for tuple() to
+           convert it.
+    """
+    def __hash__(self: SequenceLike):
         return hash(tuple(self))
 
-    def __iter__(self):
-        yield self.left
-        yield self.top
-        yield self.right
-        yield self.bottom
 
-    def __getitem__(self, index: int):
-        return self._cached_tuple[index]
+class BboxFancy(HashAsTupleMixin, CompareByLenAndElementsMixin, tuple):
 
-    @classmethod
     @overload
-    def convert(cls, bbox: BoundingBox):
-        cls.convert(*bbox)
+    def __new__(cls, left: int, top: int, right: int, bottom: int) -> BboxFancy:
+        return cls.__new__(cls, left, top, right, bottom)
 
-    @classmethod
     @overload
-    def convert(cls, size: Size):
-        cls.convert(*size)
+    def __new__(cls, right: int, bottom: int) -> BboxFancy:
+        return cls.__new__(cls, 0, 0, right, bottom)
 
-    @classmethod
-    def convert(cls, *args: int) -> BboxFancy:
-        argc = len(args)
+    @overload
+    def __new__(cls, size: Size):
+        return cls.__new__(cls, 0, 0, size[0], size[1])
 
-        # handle single length values for size and bbox
-        if argc == 1:
-            args = args[0]
-            argc = len(args)
+    @overload
+    def __new__(cls, sequence: Sequence) -> BboxFancy:
+        return cls.__new__(cls, sequence)
 
-        # handle a size object, otherwise assume it's 4 long
-        if argc == 2:
-            args = (0, 0) + args
+    def __new__(cls, *args):
 
-        return cls(*args)
+        if len(args) == 1:
+            # Unpack a single collection from the arguments
+            args = tuple(args[0])
+
+        if len(args) == 2:
+            # If args variable is of length 2, treat it as the end position
+            args = (0, 0) + tuple(args)
+
+        if len(args) != 4:
+            raise ValueError('Must be a sequence of length 4!')
+
+        return super(BboxFancy, cls).__new__(cls, args)
+
+    # *args is included to match __new__'s signature
+    # so type checkers behave correctly.
+    def __init__(self, *args):
+        self._size = SizeFancy(
+            self.right - self.left,
+            self.bottom - self.top)
+
+    @property
+    def size(self) -> Size:
+        return self._size
+
+    @property
+    def left(self) -> int:
+        return self[0]
+
+    @property
+    def top(self) -> int:
+        return self[1]
+
+    @property
+    def right(self) -> int:
+        return self[2]
+
+    @property
+    def bottom(self) -> int:
+        return self[3]
+
+    @property
+    def width(self) -> int:
+        return self._size.width
+
+    @property
+    def height(self) -> int:
+        return self._size.height
 
 
 @runtime_checkable

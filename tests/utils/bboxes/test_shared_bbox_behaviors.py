@@ -1,7 +1,7 @@
 import pytest
 
-from octofont3.custom_types import BboxClassABC, BboxFancy
-
+from octofont3.custom_types import BboxFancy, BoundingBox, BBOX_PROP_NAMES
+from octofont3.utils import BboxEnclosingAll
 
 from . import (
     bbox_type,
@@ -11,8 +11,8 @@ from . import (
 )
 
 
-@pytest.fixture(params=BboxClassABC.__subclasses__())
-def prefilled_abc_subclass_instance(request, prefilled_bbox_values) -> BboxClassABC:
+@pytest.fixture(params=(BboxFancy, BboxEnclosingAll))
+def prefilled_abc_subclass_instance(request, prefilled_bbox_values) -> BoundingBox:
     type_ = request.param
     if type_ is BboxFancy:
         bbox = type_(*prefilled_bbox_values)
@@ -41,8 +41,9 @@ def test_eq_with_wrong_length_raises_value_error(
     wrong_length,
     sequence_type
 ):
+    wrong_length_sequence = sequence_type((i for i in range(wrong_length)))
+
     with pytest.raises(ValueError):
-        wrong_length_sequence = sequence_type((i for i in range(wrong_length)))
         result = prefilled_abc_subclass_instance == wrong_length_sequence
 
 
@@ -60,5 +61,5 @@ def test_name_properties(
     prefilled_abc_subclass_instance,
     prefilled_bbox_values,
 ):
-    for expected_value, prop_name in zip(prefilled_bbox_values, ('left', 'top', 'right', 'bottom')):
+    for expected_value, prop_name in zip(prefilled_bbox_values, BBOX_PROP_NAMES):
         assert getattr(prefilled_abc_subclass_instance, prop_name) == expected_value

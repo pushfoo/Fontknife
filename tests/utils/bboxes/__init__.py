@@ -9,7 +9,7 @@ from octofont3.utils import BboxEnclosingAll
 BBOX_TYPE_FACTORIES: Tuple[Callable[[BboxSimple, ], BoundingBox], ...] = (
     tuple,
     list,
-    BboxFancy.convert,
+    BboxFancy,
     BboxEnclosingAll,
 )
 
