@@ -29,13 +29,15 @@ def test_bbox_fancy_init_works_with_valid_objects(good_source_args):
 
 
 @pytest.mark.parametrize(
-    ['args', 'expected_width', 'expected_height'], (
-    ((2, 2), 2, 2),
-    (((2, 2),), 2, 2),
-    ((SizeFancy(3, 3),), 3, 3),
-    ((1, 1, 3, 6), 2, 5),
-    (((1, 1, 3, 6),), 2, 5)
-))
+    ['args', 'expected_width', 'expected_height'],
+    (
+        ((2, 2), 2, 2),
+        (((2, 2),), 2, 2),
+        ((SizeFancy(3, 3),), 3, 3),
+        ((1, 1, 3, 6), 2, 5),
+        (((1, 1, 3, 6),), 2, 5)
+    )
+)
 def test_bbox_fancy_init_sets_size_attributes_correctly(args, expected_width, expected_height):
     bbox = BboxFancy(*args)
     assert bbox.width == expected_width

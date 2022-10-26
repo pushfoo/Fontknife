@@ -10,7 +10,7 @@ from collections.abc import Mapping as MappingABC
 from PIL import Image, ImageDraw
 
 from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, ValidatorFunc, \
-    ImageCoreLike, BBOX_PROP_NAMES, SelectorCallable, T, CompareByLenAndElementsMixin
+    ImageCoreLike, BBOX_PROP_NAMES, SelectorCallable, T, CompareByLenAndElementsMixin, BboxEnclosureMixin
 
 
 def generate_glyph_sequence(
@@ -326,7 +326,7 @@ def min_not_none(*candidates: Optional[T]) -> T:
     return _select_not_none(min, *candidates)
 
 
-class BboxEnclosingAll(CompareByLenAndElementsMixin):
+class BboxEnclosingAll(CompareByLenAndElementsMixin, BboxEnclosureMixin):
     """
     This class grows to enclose all bboxes it's updated from.
 

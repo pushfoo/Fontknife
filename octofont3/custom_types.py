@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence, \
     Mapping, Dict, Iterable, overload, Iterator
 
-from typing_extensions import Self
 
 T = TypeVar('T')
 ValidatorFunc = Callable[[Any, ], bool]
@@ -70,6 +69,7 @@ PathLikeOrHasStreamFunc = Union[
     HasReadline[StreamTypeVar]]
 
 
+@runtime_checkable
 class SequenceLike(Protocol[T]):
     """
     Baseclass for sequence-like Protocols to inherit from.
@@ -135,6 +135,60 @@ BboxSimple = Tuple[int, int, int, int]
 BBOX_PROP_NAMES = ('left', 'top', 'right', 'bottom')
 
 
+def _unpack_single_args_member(raw_args: Union[Sequence[SequenceLike[Any]], SequenceLike[Any]]) -> SequenceLike:
+    """
+    Unwrap a single SequenceLike or return raw_args unmodified.
+
+    Unwrap means that a sequence consisting of a single SequenceLike
+    will have that element returned.
+
+    :param raw_args: The args list to unpack.
+    :return:
+    """
+    if len(raw_args) and isinstance(raw_args[0], SequenceLike) == 1:
+        return tuple(raw_args[0])
+    return raw_args
+
+
+def _prefix_if_not_long_enough(
+    prefix: SequenceLike[T],
+    arg_seq: Union[Sequence[SequenceLike[Any]], SequenceLike[Any]],
+    goal_length: int = 4,
+) -> SequenceLike[T]:
+    """
+    Unwrap ``arg_seq``. Return it if long enough, otherwise prefix it.
+
+    This is intended to speed writing __init__ and __new__ methods which
+    may take multiple lengths of *args or a single SequenceLike
+    equivalent to those lengths of *args.
+
+    :param prefix: The prefix that will be prepended to meet goal length
+    :param arg_seq: A potentially wrapped SequenceLike to process.
+    :param goal_length: How long the returned SequenceLike should be
+    :return:
+    """
+    # Unwrap the first element if it's an iterable
+    unpacked_seq = _unpack_single_args_member(arg_seq)
+
+    seq_len = len(unpacked_seq)
+    prefix_len = len(prefix)
+
+    # Return the unwrapped version if it's already the right length
+    if seq_len == goal_length:
+        return unpacked_seq
+
+    # Raise a value error if we cannot achieve the goal length
+    if seq_len + prefix_len != goal_length:
+        raise ValueError(
+            f"Cannot reach goal length {goal_length}"
+            f" by prefixing {prefix!r} of length {prefix_len} to "
+            f"{arg_seq!r} of length {seq_len}"
+        )
+
+    # Return a prefixed version
+    return tuple(prefix) + tuple(unpacked_seq)
+
+
 class CompareByLenAndElementsMixin:
     """
     Ease compatibility when comparing against other sequences.
@@ -150,6 +204,28 @@ class CompareByLenAndElementsMixin:
             if self[i] != other[i]:
                 return False
         return True
+
+
+class BboxEnclosureMixin:
+
+    left: int
+    top: int
+    right: int
+    bottom: int
+
+    def encloses(self, other: Union[Coord, BoundingBox]) -> bool:
+        """
+        True if the Coord or BoundingBox fits inside this Bbox.
+
+        Coordinates will be treated as a bounding box with their starts
+        and ends equal to the coordinate.
+
+        :param other: The object to check for enclosure.
+        :return:
+        """
+        other = _prefix_if_not_long_enough(other, other)
+        left, top, right, bottom = other
+        return self.left <= left and self.top <= top and right <= self.right and bottom <= self.bottom
 
 
 class HashAsTupleMixin:
@@ -170,7 +246,7 @@ class HashAsTupleMixin:
         return hash(tuple(self))
 
 
-class BboxFancy(HashAsTupleMixin, CompareByLenAndElementsMixin, tuple):
+class BboxFancy(HashAsTupleMixin, BboxEnclosureMixin, CompareByLenAndElementsMixin, tuple):
 
     @overload
     def __new__(cls, left: int, top: int, right: int, bottom: int) -> BboxFancy:
@@ -189,22 +265,11 @@ class BboxFancy(HashAsTupleMixin, CompareByLenAndElementsMixin, tuple):
         return cls.__new__(cls, sequence)
 
     def __new__(cls, *args):
-
-        if len(args) == 1:
-            # Unpack a single collection from the arguments
-            args = tuple(args[0])
-
-        if len(args) == 2:
-            # If args variable is of length 2, treat it as the end position
-            args = (0, 0) + tuple(args)
-
-        if len(args) != 4:
-            raise ValueError('Must be a sequence of length 4!')
-
+        args = _prefix_if_not_long_enough((0, 0), args)
         return super(BboxFancy, cls).__new__(cls, args)
 
     # *args is included to match __new__'s signature
-    # so type checkers behave correctly.
+    # to make type checkers behave correctly.
     def __init__(self, *args):
         self._size = SizeFancy(
             self.right - self.left,
