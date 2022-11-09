@@ -5,10 +5,11 @@ from pathlib import Path
 from typing import Pattern, Any, Dict, Union, Iterable, Optional, Type
 
 from octofont3.custom_types import PathLike, HasRead, PathLikeOrHasWrite
-from octofont3.formats.common import RasterFont, get_cache, PipingToStdoutRequiresFontFormat, \
-    UnclearSourceFontFormat, PipingFromStdinRequiresFontFormat, \
-    FormatReader, PipingToStdoutRequiresFontFormat, UnclearOutputFontFormat, \
-    FormatWriter
+from octofont3.formats.common import RasterFont, get_cache, FormatReader, FormatWriter
+from octofont3.formats.common.exceptions import (
+    UnclearSourceFontFormat, UnclearOutputFontFormat,
+    PipingFromStdinRequiresFontFormat, PipingToStdoutRequiresFontFormat
+)
 from octofont3.formats.common.caching import get_cache, load_and_cache_bitmap_font
 from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
 from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
