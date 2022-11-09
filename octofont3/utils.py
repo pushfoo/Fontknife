@@ -4,13 +4,18 @@ import sys
 from collections import defaultdict
 from dataclasses import asdict
 from itertools import chain, filterfalse
-from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload
+from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, List, TypeVar
 from collections.abc import Mapping as MappingABC
 
 from PIL import Image, ImageDraw
 
-from octofont3.custom_types import BoundingBox, Size, ImageFontLike, SizeFancy, BboxFancy, ValidatorFunc, \
-    ImageCoreLike, BBOX_PROP_NAMES, SelectorCallable, T, CompareByLenAndElementsMixin, BboxEnclosureMixin
+from octofont3.custom_types import (
+    SequenceLike,
+    T, Size, SizeFancy, BoundingBox, BboxFancy,
+    ImageFontLike, ValidatorFunc,
+    ImageCoreLike, SelectorCallable,
+    CompareByLenAndElementsMixin, BboxEnclosureMixin, BBOX_PROP_NAMES
+)
 
 
 def generate_glyph_sequence(
@@ -257,6 +262,123 @@ def has_all_attributes(
         if not hasattr(obj, attribute):
             return False
         if validator and not validator[attribute](getattr(obj, attribute)):
+            return False
+    return True
+
+
+DT = TypeVar('DT')
+
+
+@overload
+def get_index(sequence: Optional[SequenceLike[T]], index: int, default: DT) -> Union[T, DT]:
+    """
+    Attempt to get sequence[index], returning default on any failure.
+
+    Invalid indices will also cause the default to be returned.
+
+    :param sequence: The sequence to fetch from
+    :param index: An integer to attempt to use as the index
+    :param default: This value will be returned on any failure
+    :return:
+    """
+    return get_index(sequence, index, default)
+
+
+@overload
+def get_index(sequence: SequenceLike[T], index: int) -> T:
+    """
+    Identical to sequence[index], provided for consistency.
+
+    :param sequence: The sequence to fetch from.
+    :param index: The index to get from.
+    :return:
+    """
+    return get_index(sequence, index)
+
+
+def get_index(sequence: Optional[SequenceLike[T]], index: int, *args: DT) -> Union[T, DT]:
+    """
+    Get sequence[index] if index valid, raise, or return passed default
+
+    This is wrapped by the overload functions above.
+
+    :param sequence:
+    :param index:
+    :param args:
+    :return:
+    """
+    if type(index) != int:
+        raise TypeError('Index must be an integer')
+
+    # Detect any passed default and use it
+    args_len = len(args)
+    if args_len not in (0, 1):
+        raise ValueError('get_index only accepts 1 extra positional argument!')
+    default = None
+    use_default = bool(args_len)
+    if use_default:
+        default = args[0]
+
+    try:
+        return sequence[index]
+
+    # Return any provided default on failure, otherwise re-raise exception
+    except (IndexError, TypeError) as e:
+        if use_default:
+            return default
+        raise e
+
+
+def get_attrs(obj: Any, attrs: Iterable[str]) -> Dict[str, Any]:
+    """
+    Attempt to get requested attrs; a mapping will trigger defaults mode
+
+    If a non-mapping Iterable is passed, no defaults will be passed to
+    getattr, and a missing attribute will raise an exception.
+
+    Pairs well with collections.defaultdict.
+
+    :param obj: The object to get attributes from.
+    :param attrs: An iterable of attributes to fetch, with mappings
+                  treated as default values.
+    :return:
+    """
+    result: Dict[str, Any] = {}
+
+    if isinstance(attrs, Mapping):
+        for attr_name, default_value in attrs.items():
+            result[attr_name] = getattr(obj, attr_name, default_value)
+    else:
+        for attr_name in attrs:
+            result[attr_name] = getattr(obj, attr_name)
+
+    return result
+
+
+def attrs_eq(a: Any, b: Any, attrs: Iterable[str]) -> bool:
+    """
+    Compare the requested attributes on a and b.
+
+    If attrs is a list, tuple, or other non-mapping, all attributes will be
+    a hard requirement. If attrs is a mapping, it will be used as defaults
+    per the description of get_attrs.
+
+    :param a: Any object.
+    :param b: Any object.
+    :param attrs: An iterable of attribute names. Any mapping passed will
+                  be used as a source of defaults per get_attrs.
+    :return:
+    """
+
+    # Does not exit early when a is b because of an edge case where:
+    #   1. a is b
+    #   2. accessing a property causes its return value to change
+
+    a_values = get_attrs(a, attrs).values()
+    b_values = get_attrs(b, attrs).values()
+
+    for a_value, b_value in zip(a_values, b_values):
+        if a_value != b_value:
             return False
     return True
 
