@@ -195,10 +195,15 @@ class CompareByLenAndElementsMixin:
     """
 
     def __eq__(self: SequenceLike, other: SequenceLike) -> bool:
+        if other is None:
+            return False
+
         len_self = len(self)
+
         if len(other) != len_self:
             raise ValueError(
-                f"Invalid comparison: Bounding boxes must be of value 4, but got {other}")
+                f"Invalid comparison: Bounding boxes must be sequence-like of"
+                f" length 4, but got {other}")
 
         for i in range(len_self):
             if self[i] != other[i]:

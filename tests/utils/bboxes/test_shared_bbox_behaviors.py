@@ -25,6 +25,10 @@ def test_eq_works_with_self(prefilled_custom_bbox_instance):
     assert prefilled_custom_bbox_instance == prefilled_custom_bbox_instance
 
 
+def test_returns_false_when_comparing_to_none(prefilled_custom_bbox_instance):
+    assert not prefilled_custom_bbox_instance == None
+
+
 def test_eq_returns_true_on_matching_bbox(prefilled_custom_bbox_instance, prefilled_bbox_of_type):
     assert prefilled_custom_bbox_instance == prefilled_bbox_of_type
 
