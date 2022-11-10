@@ -13,12 +13,12 @@ _ATTR_DUMMY_FIELD_NAMES = ('a', 'b', 'c')
 
 
 @pytest.fixture
-def attr_dummy_field_names():
+def attr_dummy_field_names() -> Tuple[str, ...]:
     return _ATTR_DUMMY_FIELD_NAMES
 
 
 @pytest.fixture(params=_ATTR_DUMMY_FIELD_NAMES)
-def attr_dummy_single_field(request):
+def attr_dummy_single_field(request) -> str:
     return request.param
 
 
@@ -28,7 +28,17 @@ def attr_dummy_default_values(attr_dummy_field_names) -> Tuple[int, ...]:
 
 
 @pytest.fixture
-def attr_dummy_defaults_dict(attr_dummy_field_names, attr_dummy_default_values):
+def num_default_fields(attr_dummy_default_values) -> int:
+    return len(attr_dummy_default_values)
+
+
+@pytest.fixture
+def attr_dummy_defaults_dict(
+    attr_dummy_field_names,
+    attr_dummy_default_values
+    # Return type left without annotation because of
+    # type checker issues in next fixture.
+):
     return {k: v for k, v in zip(attr_dummy_field_names, attr_dummy_default_values)}
 
 

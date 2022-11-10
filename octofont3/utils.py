@@ -4,7 +4,7 @@ import sys
 from collections import defaultdict
 from dataclasses import asdict
 from itertools import chain, filterfalse
-from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, TypeVar, cast
+from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, TypeVar, cast, Hashable
 from collections.abc import Mapping as MappingABC
 
 from PIL import Image, ImageDraw
@@ -410,6 +410,32 @@ def copy_from_mapping(
             copied_dict[key] = source.get(key)
 
     return copied_dict
+
+
+# Legibility helpers, not really important
+OldKey = TypeVar('OldKey', bound=Hashable)
+NewKey = TypeVar('NewKey', bound=Hashable)
+
+
+def remap(
+    source: Mapping[OldKey, T],
+    remapping_table: Mapping[OldKey, NewKey],
+) -> Dict[NewKey, T]:
+    """
+    Copy specified elements to a new dict under replacement names.
+
+    Important: unlike other collection helpers, there are no ways
+    to specify defaults. All keys must be in the dictionary.
+
+    :param source: A mapping to copy from
+    :param remapping_table: pairs of old_key, new_key to store values
+                            under.
+    :return:
+    """
+    remapped = {}
+    for old_key, new_key in remapping_table.items():
+        remapped[new_key] = source[old_key]
+    return remapped
 
 
 def has_method(obj: Any, method_name: str) -> bool:
