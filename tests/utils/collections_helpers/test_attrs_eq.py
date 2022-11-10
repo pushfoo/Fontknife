@@ -1,25 +1,25 @@
+from dataclasses import dataclass, field
+
 import pytest
 from octofont3.utils import attrs_eq
 
-from . import (
-    AttrDummy,
-    MutatesPropertyOnAccess,
-    HasAProp,
-    HasBProp,
-    mutates_prop_on_access_instance,
-    attr_dummy_single_field,
-    attr_dummy_field_names,
-    attr_dummy_reference_instance,
-    value_for_default_arg
-)
+
+@dataclass
+class HasAProp:
+    a: int = field(default=0)
+
+
+@dataclass
+class HasBProp:
+    b: int = field(default=1)
 
 
 @pytest.fixture
-def equals_reference_instance():
-    return AttrDummy()
+def equals_reference_instance(attr_dummy_type):
+    return attr_dummy_type()
 
 
-def test_reference_instance_not_same_instance_as_equals_reference_instance(
+def test_attrs_eq_returns_true_for_equal_but_different_objects_of_same_type(
     attr_dummy_reference_instance,
     equals_reference_instance
 ):
@@ -28,8 +28,8 @@ def test_reference_instance_not_same_instance_as_equals_reference_instance(
 
 
 @pytest.fixture
-def attr_dummy_single_field_different(attr_dummy_single_field):
-    return AttrDummy(**{attr_dummy_single_field: 99})
+def attr_dummy_single_field_different(attr_dummy_type, attr_dummy_single_field):
+    return attr_dummy_type(**{attr_dummy_single_field: 99})
 
 
 def test_attrs_eq_returns_true_when_comparing_single_equal_value(
@@ -80,12 +80,10 @@ def test_attrs_eq_returns_false_when_comparing_multiple_fields_and_some_equal(
     )
 
 
-def test_attrs_eq_uses_dict_as_source_of_default_values():
-    # Use dictionary as padding default for both of these items.
+def test_attrs_eq_uses_dict_as_source_of_default_values(attr_dummy_defaults_dict):
     a = HasAProp()
     b = HasBProp()
-    default = {'a': 0, 'b': 1}
-    assert attrs_eq(a, b, default)
+    assert attrs_eq(a, b, attr_dummy_defaults_dict)
 
 
 def test_attrs_eq_returns_false_when_same_object_as_a_and_b_with_mutating_property(

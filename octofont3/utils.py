@@ -4,7 +4,7 @@ import sys
 from collections import defaultdict
 from dataclasses import asdict
 from itertools import chain, filterfalse
-from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, List, TypeVar
+from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, TypeVar, cast
 from collections.abc import Mapping as MappingABC
 
 from PIL import Image, ImageDraw
@@ -381,6 +381,35 @@ def attrs_eq(a: Any, b: Any, attrs: Iterable[str]) -> bool:
         if a_value != b_value:
             return False
     return True
+
+
+def copy_from_mapping(
+    source: Mapping,
+    which_keys: Optional[Iterable[str]] = None,
+) -> Dict[str, Any]:
+    """
+    Copy keys in which_keys from source, optionally using defaults
+
+    If which_keys is a mapping, its values will be used as a source of
+    defaults whenever a key is missing from source.
+
+    :param source: A mapping to copy from.
+    :param which_keys: An iterable of keys. May be a dict to set defaults.
+    :return:
+    """
+
+    if which_keys is None:
+        return dict(source)
+
+    copied_dict = {}
+    if isinstance(which_keys, Mapping):
+        for key in which_keys:
+            copied_dict[key] = source.get(key, which_keys[key])
+    else:
+        for key in cast(Iterable[str], which_keys):
+            copied_dict[key] = source.get(key)
+
+    return copied_dict
 
 
 def has_method(obj: Any, method_name: str) -> bool:

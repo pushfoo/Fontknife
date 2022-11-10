@@ -2,12 +2,6 @@ import pytest
 
 from octofont3.utils import get_attrs
 
-from . import (
-    AttrDummy,
-    attr_dummy_field_names,
-    attr_dummy_reference_instance
-)
-
 
 @pytest.fixture
 def return_value(attr_dummy_field_names):

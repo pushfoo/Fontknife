@@ -3,7 +3,7 @@ from enum import Enum, auto
 import pytest
 
 from octofont3.utils import get_index
-from . import value_for_default_arg
+
 
 @pytest.fixture
 def sequence_raw_values():
