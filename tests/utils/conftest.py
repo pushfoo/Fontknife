@@ -62,9 +62,19 @@ def non_mapping_iterable_type(request):
     return request.param
 
 
+@pytest.fixture(params=(dict,))
+def mapping_iterable_type(request):
+    return request.param
+
+
 @pytest.fixture
 def empty_non_mapping_iterable(non_mapping_iterable_type):
     return non_mapping_iterable_type(tuple())
+
+
+@pytest.fixture
+def empty_mapping_iterable(mapping_iterable_type):
+    return mapping_iterable_type({})
 
 
 @pytest.fixture

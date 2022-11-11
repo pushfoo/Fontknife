@@ -140,7 +140,10 @@ def find_max_dimensions(
     return SizeFancy(max_width, max_height)
 
 
-def tuplemap(callable: Callable, iterable: Iterable) -> Tuple:
+ValueT = TypeVar('ValueT')
+
+
+def tuplemap(callable: Callable, iterable: Iterable[ValueT]) -> Tuple:
     return tuple(map(callable, iterable))
 
 
@@ -413,14 +416,14 @@ def copy_from_mapping(
 
 
 # Legibility helpers, not really important
-OldKey = TypeVar('OldKey', bound=Hashable)
-NewKey = TypeVar('NewKey', bound=Hashable)
+KeyT = TypeVar('KeyT', bound=Hashable)
+NewKeyT = TypeVar('NewKeyT', bound=Hashable)
 
 
 def remap(
-    source: Mapping[OldKey, T],
-    remapping_table: Mapping[OldKey, NewKey],
-) -> Dict[NewKey, T]:
+    source: Mapping[KeyT, T],
+    remapping_table: Mapping[KeyT, NewKeyT],
+) -> Dict[NewKeyT, T]:
     """
     Copy specified elements to a new dict under replacement names.
 
@@ -435,6 +438,26 @@ def remap(
     remapped = {}
     for old_key, new_key in remapping_table.items():
         remapped[new_key] = source[old_key]
+    return remapped
+
+
+def remap_prefixed_keys(
+    source: Mapping[str, T],
+    prefix: str,
+    unprefixed_keys: Iterable[str]
+) -> Dict[str, T]:
+    """
+    Return the prefixed key names into a dict of unprefixed versions
+
+    Allows differentiating between src-* and out-* arg versions
+
+    :param source: A mapping with string keys
+    :param prefix: The string prefix to use
+    :param unprefixed_keys: The keys without their prefix
+    :return:
+    """
+    remapping_table = {f"{prefix}{s}": s for s in unprefixed_keys}
+    remapped = remap(source, remapping_table)
     return remapped
 
 
