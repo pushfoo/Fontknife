@@ -1,3 +1,5 @@
+from dataclasses import asdict
+
 import pytest
 
 
@@ -21,6 +23,16 @@ class MutatesPropertyOnAccess:
         value_at_access_time = self._times_accessed_prop
         self._times_accessed_prop += 1
         return value_at_access_time
+
+
+@pytest.fixture
+def empty_dict():
+    return {}
+
+
+@pytest.fixture
+def reference_dict(attr_dummy_reference_instance):
+    return asdict(attr_dummy_reference_instance)
 
 
 @pytest.fixture

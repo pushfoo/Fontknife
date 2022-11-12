@@ -1,10 +1,12 @@
 import math
+import re
 import string
 import sys
 from collections import defaultdict
 from dataclasses import asdict
 from itertools import chain, filterfalse
-from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, TypeVar, cast, Hashable
+from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, TypeVar, cast, Hashable, \
+    Pattern
 from collections.abc import Mapping as MappingABC
 
 from PIL import Image, ImageDraw
@@ -439,6 +441,30 @@ def remap(
     for old_key, new_key in remapping_table.items():
         remapped[new_key] = source[old_key]
     return remapped
+
+
+def ensure_compiled(pattern: Union[str, Pattern]) -> Pattern:
+    if isinstance(pattern, Pattern):
+        return pattern
+    return re.compile(pattern)
+
+
+def extract_matching_keys(
+    source: Iterable[str],
+    pattern: Union[str, Pattern],
+) -> Tuple[str, ...]:
+    """
+    Return a tuple of all keys which match the pattern.
+
+    This can be used with both Dict[str, Any] and simple iterables.
+
+    :param source: an iterable of string keys to search
+    :param pattern: a regex as a string or compiled Pattern
+    :return: all keys which match the pattern.
+    """
+    compiled = ensure_compiled(pattern)
+    matching_keys = tuple(filter(compiled.match, source))
+    return matching_keys
 
 
 def remap_prefixed_keys(

@@ -1,18 +1,6 @@
-from dataclasses import asdict
-
 import pytest
 
 from octofont3.utils import copy_from_mapping
-
-
-@pytest.fixture
-def empty_dict():
-    return {}
-
-
-@pytest.fixture
-def reference_dict(attr_dummy_reference_instance):
-    return asdict(attr_dummy_reference_instance)
 
 
 @pytest.fixture
