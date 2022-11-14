@@ -27,6 +27,11 @@ def attr_dummy_single_field(request) -> str:
 
 
 @pytest.fixture
+def attr_dummy_field_names_minus_single_field(attr_dummy_single_field, attr_dummy_field_names):
+    return tuple(name for name in attr_dummy_field_names if name != attr_dummy_single_field)
+
+
+@pytest.fixture
 def attr_dummy_default_values(attr_dummy_field_names) -> Tuple[int, ...]:
     return tuple(range(len(attr_dummy_field_names)))
 

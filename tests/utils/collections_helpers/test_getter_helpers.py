@@ -1,7 +1,7 @@
 import pytest
 
 from octofont3.custom_types import StarArgsLengthError
-from octofont3.utils import getvalue, detect_getter_for_source
+from octofont3.utils import getvalue, popvalue, detect_getter_for_source
 
 
 @pytest.fixture
@@ -14,40 +14,53 @@ def not_a_field_name() -> str:
     return 'z'
 
 
-def test_get_value_gets_correct_value_for_attr(
+def test_mapping_getter_gets_correct_value_for_attr(
+    mapping_getter,
     attr_dummy_defaults_dict,
     attr_dummy_single_field,
     attr_dummy_value_for_single_field
 ):
-   gotten = getvalue(attr_dummy_defaults_dict, attr_dummy_single_field)
+   gotten = mapping_getter(attr_dummy_defaults_dict, attr_dummy_single_field)
    assert gotten == attr_dummy_value_for_single_field
 
 
-def test_get_value_uses_default_if_provided(
+def test_mapping_getter_uses_default_if_provided(
+    mapping_getter,
     attr_dummy_defaults_dict,
     not_a_field_name,
 ):
-    gotten = getvalue(attr_dummy_defaults_dict, not_a_field_name, 'default_value')
+    gotten = mapping_getter(attr_dummy_defaults_dict, not_a_field_name, 'default_value')
     assert gotten == 'default_value'
 
 
-def test_get_value_raises_attribute_error_when_attr_missing_and_no_default_passed(
+def test_mapping_getter_raises_attribute_error_when_value_missing_and_no_default_passed(
+    mapping_getter,
     attr_dummy_defaults_dict,
     not_a_field_name
 ):
     with pytest.raises(KeyError):
-        getvalue(attr_dummy_defaults_dict, not_a_field_name)
+        mapping_getter(attr_dummy_defaults_dict, not_a_field_name)
 
 
-def test_get_value_raises_exception_when_too_many_defaults(
+def test_mapping_getter_raises_exception_when_too_many_defaults(
+    mapping_getter,
     attr_dummy_defaults_dict,
     too_many_default_values
 ):
     with pytest.raises(StarArgsLengthError):
-        getvalue(
+        mapping_getter(
             attr_dummy_defaults_dict,
             'a',
             *too_many_default_values)
+
+
+def test_popvalue_removes_keys_from_mapping_correctly(
+    attr_dummy_defaults_dict,
+    attr_dummy_single_field,
+    attr_dummy_field_names_minus_single_field
+):
+    popvalue(attr_dummy_defaults_dict, attr_dummy_single_field)
+    assert tuple(attr_dummy_defaults_dict.keys()) == attr_dummy_field_names_minus_single_field
 
 
 def test_detect_getter_for_source_returns_get_value_for_mapping():

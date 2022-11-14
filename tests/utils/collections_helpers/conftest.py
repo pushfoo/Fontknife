@@ -2,6 +2,8 @@ from dataclasses import asdict
 
 import pytest
 
+from octofont3.utils import getvalue, popvalue
+
 
 @pytest.fixture
 def attr_dummy_reference_instance(attr_dummy_type):
@@ -42,4 +44,9 @@ def mutates_prop_on_access_instance():
 
 @pytest.fixture(params=['Default string', None])
 def value_for_default_arg(request):
+    return request.param
+
+
+@pytest.fixture(params=[getvalue, popvalue])
+def mapping_getter(request):
     return request.param

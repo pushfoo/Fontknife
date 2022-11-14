@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import asdict
 from itertools import chain, filterfalse
 from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, TypeVar, Hashable, \
-    Pattern, Generator, Protocol, runtime_checkable
+    Pattern, Generator, MutableMapping
 from collections.abc import Mapping as MappingABC
 
 from PIL import Image, ImageDraw
@@ -344,13 +344,18 @@ ValueSource = Union[object, MappingT]
 ReturnDict = Dict[KeyT, ValueT]
 
 
-# This is ugly, but it's very clear and compensates for overloads
-# interfering with clean type hinting.
+# Ugly but explicitly clear workaround for overloads not working
+# with type hinting as initially expected.
 GetterCallable = Union[
+    # Attribute-based getters such as getattr
     Callable[[object, str, ValueT], ValueT],
     Callable[[object, str], ValueT],
+    # Non-modifying mapping getters
     Callable[[MappingT, KeyT, ValueT], ValueT],
     Callable[[MappingT, KeyT], ValueT],
+    # Destructive getters for removing items from mappings
+    Callable[[MutableMapping[KeyT, ValueT], KeyT, ValueT], ValueT],
+    Callable[[MutableMapping[KeyT, ValueT], KeyT], ValueT],
 ]
 GetterPartialArgs = Union[Tuple[KeyT], Tuple[KeyT, Optional[KeyT]]]
 
@@ -561,6 +566,7 @@ def attrs_eq(a: Any, b: Any, attrs: Iterable[str]) -> bool:
 def copy_from_mapping(
     source: Mapping,
     which_keys: Optional[Iterable[str]] = None,
+    getter: GetterCallable = getvalue
 ) -> Dict[str, Any]:
     """
     Copy keys in which_keys from source, optionally using defaults
@@ -568,15 +574,19 @@ def copy_from_mapping(
     If which_keys is a mapping, its values will be used as a source of
     defaults whenever a key is missing from source.
 
+    This function's behavior can be changed by passing a custom getter,
+    such as using a getter which deletes items from the dict.
+
     :param source: A mapping to copy from.
     :param which_keys: An iterable of keys. Mappings will be used as
                        sources of defaults.
+    :param getter: A getter function. Override to customize behavior.
     :return:
     """
 
     if which_keys is None:
         return dict(source)
-    return get_all(source, which_keys, getter=getvalue)
+    return get_all(source, which_keys, getter=getter)
 
 
 def remap(
@@ -630,9 +640,11 @@ def remap_prefixed_keys(
     unprefixed_keys: Iterable[str]
 ) -> Dict[str, T]:
     """
-    Return the prefixed key names into a dict of unprefixed versions
+    Transfer the prefixed k/v pairs to a new dict under unprefixed names
 
-    Allows differentiating between src-* and out-* arg versions
+    Initially added to ease separating src-* and out-* arg versions as a
+    replacement for ambiguous and difficult-to-implement positionally
+    interpreted repeated arguments for the input and output.
 
     :param source: A mapping with string keys
     :param prefix: The string prefix to use
@@ -642,6 +654,84 @@ def remap_prefixed_keys(
     remapping_table = {f"{prefix}{s}": s for s in unprefixed_keys}
     remapped = remap(source, remapping_table)
     return remapped
+
+
+@overload
+def popvalue(source: MutableMapping[KeyT, ValueT], key: KeyT, default: KeyT) -> ValueT:
+    return popvalue(source, key, default)
+
+
+@overload
+def popvalue(source: MutableMapping[KeyT, ValueT], key: KeyT) -> ValueT:
+    return popvalue(source, key)
+
+
+def popvalue(
+    source: MutableMapping[KeyT, ValueT],
+    key: KeyT,
+    *default: Optional[ValueT]
+) -> ValueT:
+    """
+    Pop for key off of source, with default as a fallback if provided
+
+    If no default is provided, a KeyError will be raised if key is not
+    in source.
+
+    :param source: A mapping to remove a value from
+    :param key: The key to remove the value for
+    :param default: Optional, returned if key not in source
+    :return:
+    """
+    default_len = len(default)
+    if default_len > 1:
+        raise StarArgsLengthError(default_len, max_args=1, args_name='default')
+    elif default_len and key not in source:
+        return default[0]
+
+    return source.pop(key)
+
+
+def pop_items(
+    source: MutableMapping[KeyT, ValueT],
+    keys_or_defaults: Optional[KeyAndOrDefaultSource] = None
+) -> Dict[KeyT, ValueT]:
+    """
+    Transfer key/value pairs to new mapping, using defaults if provided
+
+    When keys_or_defaults is a simple iterable, all keys are mandatory.
+    If it is a mapping, the values for each key will be used as a
+    fallback default if the key is not found. See get_all for more
+    information.
+
+    :param source: The mapping to transfer values from.
+    :param keys_or_defaults: An iterable of keys or key / default value
+                             mapping.
+    :return:
+    """
+    result = copy_from_mapping(source, keys_or_defaults, getter=popvalue)
+    return result
+
+
+def pop_values(
+    source: MutableMapping[KeyT, ValueT],
+    keys_or_defaults: KeyAndOrDefaultSource
+) -> Tuple[ValueT, ...]:
+    """
+    Remove values for keys from source, using defaults if provided
+
+    When keys_or_defaults is a simple iterable, all keys are mandatory.
+    If it is a mapping, the values for each key will be used as a
+    fallback default if the key is not found. See get_all for more
+    information.
+
+    :param source: The mapping to transfer values from.
+    :param keys_or_defaults: An iterable of keys or key / default value
+                             mapping.
+    :return:
+    """
+    dict_raw = pop_items(source, keys_or_defaults)
+    as_tuple = tuple(dict_raw.values())
+    return as_tuple
 
 
 def has_method(obj: Any, method_name: str) -> bool:
