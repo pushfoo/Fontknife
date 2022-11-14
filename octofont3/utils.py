@@ -5,8 +5,8 @@ import sys
 from collections import defaultdict
 from dataclasses import asdict
 from itertools import chain, filterfalse
-from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, TypeVar, cast, Hashable, \
-    Pattern
+from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, TypeVar, Hashable, \
+    Pattern, Generator, Protocol, runtime_checkable
 from collections.abc import Mapping as MappingABC
 
 from PIL import Image, ImageDraw
@@ -16,7 +16,8 @@ from octofont3.custom_types import (
     T, Size, SizeFancy, BoundingBox, BboxFancy,
     ImageFontLike, ValidatorFunc,
     ImageCoreLike, SelectorCallable,
-    CompareByLenAndElementsMixin, BboxEnclosureMixin, BBOX_PROP_NAMES
+    CompareByLenAndElementsMixin,
+    BboxEnclosureMixin, BBOX_PROP_NAMES, StarArgsLengthError
 )
 
 
@@ -334,29 +335,195 @@ def get_index(sequence: Optional[SequenceLike[T]], index: int, *args: DT) -> Uni
         raise e
 
 
-def get_attrs(obj: Any, attrs: Iterable[str]) -> Dict[str, Any]:
+# Typing helpers for mappings
+KeyT = TypeVar('KeyT', bound=Hashable)
+NewKeyT = TypeVar('NewKeyT', bound=Hashable)
+MappingT = Mapping[KeyT, ValueT]
+KeyAndOrDefaultSource = Union[Iterable[KeyT], Mapping[KeyT, ValueT]]
+ValueSource = Union[object, MappingT]
+ReturnDict = Dict[KeyT, ValueT]
+
+
+# This is ugly, but it's very clear and compensates for overloads
+# interfering with clean type hinting.
+GetterCallable = Union[
+    Callable[[object, str, ValueT], ValueT],
+    Callable[[object, str], ValueT],
+    Callable[[MappingT, KeyT, ValueT], ValueT],
+    Callable[[MappingT, KeyT], ValueT],
+]
+GetterPartialArgs = Union[Tuple[KeyT], Tuple[KeyT, Optional[KeyT]]]
+
+
+@overload
+def getvalue(source: MappingT, key: KeyT) -> ValueT:
+    return getvalue(source, key)
+
+
+@overload
+def getvalue(source: MappingT, key: KeyT, default: Optional[ValueT]) -> Optional[ValueT]:
+    return getvalue(source, key, default)
+
+
+def getvalue(source: MappingT, key: KeyT, *default: ValueT) -> ValueT:
+    """
+    Get a value from source, or raise a KeyError if absent + no default
+
+    Mimics the signature and behavior of getvalue to allow more
+    consistent iteration behavior.
+
+    :param source: The mapping to get a value from.
+    :param key: The key to get a value for.
+    :param default: The default to use if not found.
+    :return:
+    """
+    default_len = len(default)
+
+    if default_len > 1:
+        raise StarArgsLengthError(default_len, max_args=1, args_name='default')
+
+    elif default_len and key not in source:
+        return default[0]
+
+    return source[key]
+
+
+def detect_getter_for_source(value_source: ValueSource) -> GetterCallable:
+    return getvalue if isinstance(value_source, Mapping) else getattr
+
+
+@overload
+def get(
+    value_source: ValueSource,
+    key: str,
+    getter: Optional[GetterCallable] = None
+) -> ValueT:
+    return get(value_source, key, getter=getter)
+
+
+@overload
+def get(
+    value_source: ValueSource,
+    key: str,
+    default: ValueT,
+    getter: Optional[GetterCallable] = None
+) -> ValueT:
+    return get(value_source, key, default, getter=getter)
+
+
+def get(
+    value_source: ValueSource,
+    key: str,
+    *default: ValueT,
+    getter: Optional[GetterCallable] = None
+) -> ValueT:
+    """
+    Generic getter for single attribute calls on mappings or generic objects.
+
+    You may specify a getter to override auto-detection for cases such as
+    a mapping object with an attribute you would like to fetch.
+
+    :param value_source: An object to get a value from.
+    :param key: The mapping key or attribute name to get.
+    :param default: An single optional value to get.
+    :param getter: Override getter auto-detection. If not specified,
+                   getvalue will be used if value_source is a mapping,
+                   otherwise get_attr will be used.
+    :return:
+    """
+    getter = getter or detect_getter_for_source(value_source)
+
+    default_len = len(default)
+
+    if default_len > 1:
+        raise StarArgsLengthError(default_len, max_args=1, args_name='default')
+    elif default_len:
+        return getter(value_source, key, default[0])
+
+    return getter(value_source, key)
+
+
+def yield_partial_getter_args(key_source: KeyAndOrDefaultSource) -> Generator[GetterPartialArgs, None, None]:
+    """
+    Generate partial args for a getter for each entry in key_source
+
+    If key_source is a mapping, this will be (key, value). Otherwise, it
+    will be a 1-length tuple consisting only of the key.
+
+    :param key_source: An iterable of keys.
+    :return:
+    """
+
+    if isinstance(key_source, Mapping):
+        for pair in key_source.items():
+            yield pair
+    else:
+        for key in key_source:
+            yield key,
+
+
+def get_all(
+    value_source: ValueSource,
+    keys_and_or_defaults: KeyAndOrDefaultSource,
+    getter: Optional[GetterCallable] = None
+) -> Dict[KeyT, ValueT]:
+    """
+    Get values by their names/keys from an object or mapping.
+
+    It homogenizes access to make passing config easier. You can
+    override getter behavior detection by passing a specific getter
+    function for ambiguous cases such as copying attributes from mapping
+    objects.
+
+    If no getter is passed, then keys_and_or_defaults will be handled
+    in one of two ways:
+
+        1. If getter is a simple linear iterable, all keys/attributes
+           in keys_or_defaults must be present. If any are missing, a
+           KeyError or AttributeError will be raised.
+
+        2. If getter is a mapping, any keys or attributes missing from
+           value_source will be filled using a corresponding value. This
+           works well with dicts or defaultdicts to provide fillers or
+           defaults.
+
+    This function omits built-in index-based access because:
+        1. It may be unnecessary with the new CLI flag design
+        2. It would make this function more complicated
+
+    :param value_source: Where to get values from.
+    :param keys_and_or_defaults: A simple linear iterable or mapping.
+    :param getter: Manually specify a getter function. If not specified,
+                   getvalue will be used if value_source is a mapping,
+                   otherwise get_attr will.
+    :return:
+    """
+    getter = getter or detect_getter_for_source(value_source)
+
+    result = dict()
+
+    for partial_args in yield_partial_getter_args(keys_and_or_defaults):
+        result[partial_args[0]] = getter(value_source, *partial_args)
+
+    return result
+
+
+def get_attrs(obj: Any, attrs: Iterable[str]) -> Dict[str, ValueT]:
     """
     Attempt to get requested attrs; a mapping will trigger defaults mode
 
-    If a non-mapping Iterable is passed, no defaults will be passed to
-    getattr, and a missing attribute will raise an exception.
+    If attrs is a non-mapping Iterable, any missing attributes will raise
+    an AttributeError. See the documentation for get for more information.
 
-    Pairs well with collections.defaultdict.
+    If attrs is a mapping, its values will be used as defaults. Pairs well
+    with `collections.defaultdict`.
 
     :param obj: The object to get attributes from.
     :param attrs: An iterable of attributes to fetch, with mappings
                   treated as default values.
     :return:
     """
-    result: Dict[str, Any] = {}
-
-    if isinstance(attrs, Mapping):
-        for attr_name, default_value in attrs.items():
-            result[attr_name] = getattr(obj, attr_name, default_value)
-    else:
-        for attr_name in attrs:
-            result[attr_name] = getattr(obj, attr_name)
-
+    result = get_all(obj, attrs, getter=getattr)
     return result
 
 
@@ -364,9 +531,8 @@ def attrs_eq(a: Any, b: Any, attrs: Iterable[str]) -> bool:
     """
     Compare the requested attributes on a and b.
 
-    If attrs is a list, tuple, or other non-mapping, all attributes will be
-    a hard requirement. If attrs is a mapping, it will be used as defaults
-    per the description of get_attrs.
+    If attrs is a simple non-mapping iterable, all attributes are required.
+    If attrs is a mapping, its values will be used as default values.
 
     :param a: Any object.
     :param b: Any object.
@@ -379,12 +545,16 @@ def attrs_eq(a: Any, b: Any, attrs: Iterable[str]) -> bool:
     #   1. a is b
     #   2. accessing a property causes its return value to change
 
-    a_values = get_attrs(a, attrs).values()
-    b_values = get_attrs(b, attrs).values()
+    # Does not use get_all to ensure compatibility with consumable
+    # iterables such as generators.
 
-    for a_value, b_value in zip(a_values, b_values):
-        if a_value != b_value:
+    for partial_args in yield_partial_getter_args(attrs):
+        a_val = get(a, *partial_args, getter=getattr)
+        b_val = get(b, *partial_args, getter=getattr)
+
+        if a_val != b_val:
             return False
+
     return True
 
 
@@ -399,33 +569,20 @@ def copy_from_mapping(
     defaults whenever a key is missing from source.
 
     :param source: A mapping to copy from.
-    :param which_keys: An iterable of keys. May be a dict to set defaults.
+    :param which_keys: An iterable of keys. Mappings will be used as
+                       sources of defaults.
     :return:
     """
 
     if which_keys is None:
         return dict(source)
-
-    copied_dict = {}
-    if isinstance(which_keys, Mapping):
-        for key in which_keys:
-            copied_dict[key] = source.get(key, which_keys[key])
-    else:
-        for key in cast(Iterable[str], which_keys):
-            copied_dict[key] = source.get(key)
-
-    return copied_dict
-
-
-# Legibility helpers, not really important
-KeyT = TypeVar('KeyT', bound=Hashable)
-NewKeyT = TypeVar('NewKeyT', bound=Hashable)
+    return get_all(source, which_keys, getter=getvalue)
 
 
 def remap(
-    source: Mapping[KeyT, T],
+    source: Mapping[KeyT, ValueT],
     remapping_table: Mapping[KeyT, NewKeyT],
-) -> Dict[NewKeyT, T]:
+) -> Dict[NewKeyT, ValueT]:
     """
     Copy specified elements to a new dict under replacement names.
 
@@ -537,6 +694,7 @@ def max_not_none(*candidates: Optional[T]) -> T:
 
 def max_not_none(*candidates: Optional[T]) -> T:
     return _select_not_none(max, *candidates)
+
 
 @overload
 def min_not_none(candidates: Iterable[Optional[T]]) -> T:

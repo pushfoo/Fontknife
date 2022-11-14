@@ -31,6 +31,25 @@ PathLike = Union[Path, str, bytes]
 StreamTypeVar = TypeVar('StreamTypeVar')
 
 
+class StarArgsLengthError(TypeError):
+    def __init__(
+        self,
+        num_args: int,
+        min_args: int = 0,
+        max_args: int = 1,
+        args_name: str = 'args'
+    ):
+        message =\
+            f"Expected {min_args} <= n <= {max_args} arguments in *{args_name}, "\
+            f"but got {num_args} args."
+
+        super().__init__(self, message)
+        self.num_args = num_args
+        self.min_args = min_args
+        self.max_args = max_args
+        self.args_name = args_name
+
+
 # Generic stream method Protocols
 @runtime_checkable
 class HasWrite(Protocol[StreamTypeVar]):

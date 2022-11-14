@@ -8,6 +8,10 @@ def as_map_iterator(it: Iterable):
     return map(lambda b: b, it)
 
 
+def as_consumable_generator(it: Iterable):
+    for elt in it:
+        yield elt
+
 # Use fixtures to access this instead of imports
 _ATTR_DUMMY_FIELD_NAMES = ('a', 'b', 'c')
 
@@ -43,6 +47,11 @@ def attr_dummy_defaults_dict(
 
 
 @pytest.fixture
+def attr_dummy_value_for_single_field(attr_dummy_single_field, attr_dummy_defaults_dict):
+    return attr_dummy_defaults_dict[attr_dummy_single_field]
+
+
+@pytest.fixture
 def attr_dummy_type(attr_dummy_defaults_dict) -> type:
     # Some type checkers get confused if this is inlined
     template = [(k, int, field(default=v)) for k, v in attr_dummy_defaults_dict.items()]
@@ -57,7 +66,7 @@ def attr_dummy_field_names_as_non_mapping_iterable(
     return non_mapping_iterable_type(attr_dummy_field_names)
 
 
-@pytest.fixture(params=(list, tuple, as_map_iterator))
+@pytest.fixture(params=(list, tuple, as_map_iterator, as_consumable_generator))
 def non_mapping_iterable_type(request):
     return request.param
 
