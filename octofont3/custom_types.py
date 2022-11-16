@@ -16,12 +16,12 @@ from collections import namedtuple
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence, \
-    Mapping, Dict, Iterable, overload, Iterator
+    Mapping, Dict, overload, Iterator, cast, Iterable
 
 
 T = TypeVar('T')
 ValidatorFunc = Callable[[Any, ], bool]
-SelectorCallable = Union[Callable[[T, ...], T], Callable[[Iterable[T]], T]]
+
 
 # Partial workaround for there being no way to represent buffer protocol
 # support via typing. Relevant PEP: https://peps.python.org/pep-0687/
@@ -150,18 +150,23 @@ class BoundingBox(SequenceLike[int], Protocol):
 BboxSimple = Tuple[int, int, int, int]
 
 
+BboxArgsLikeValue = Union[
+    # An *args value that consists of a single sequence-like
+    Sequence[SequenceLike[int]],
+    # An *args value that is a series of arg
+    SequenceLike[int]
+]
+
+
 # Convenience constant for BboxClassABC subclasses
-BBOX_PROP_NAMES = ('left', 'top', 'right', 'bottom')
+BBOX_EDGE_NAMES = ('left', 'top', 'right', 'bottom')
 
 
-def _unpack_single_args_member(raw_args: Union[Sequence[SequenceLike[Any]], SequenceLike[Any]]) -> SequenceLike:
+def _unpack_single_args_member(raw_args: BboxArgsLikeValue) -> SequenceLike:
     """
-    Unwrap a single SequenceLike or return raw_args unmodified.
+    Return inner SequenceLike for 1-lengths, otherwise return raw_args.
 
-    Unwrap means that a sequence consisting of a single SequenceLike
-    will have that element returned.
-
-    :param raw_args: The args list to unpack.
+    :param raw_args: A sequence-like to unpack or return
     :return:
     """
     if len(raw_args) and isinstance(raw_args[0], SequenceLike) == 1:
@@ -170,10 +175,10 @@ def _unpack_single_args_member(raw_args: Union[Sequence[SequenceLike[Any]], Sequ
 
 
 def _prefix_if_not_long_enough(
-    prefix: SequenceLike[T],
-    arg_seq: Union[Sequence[SequenceLike[Any]], SequenceLike[Any]],
+    prefix: SequenceLike,
+    arg_seq: BboxArgsLikeValue,
     goal_length: int = 4,
-) -> SequenceLike[T]:
+) -> SequenceLike:
     """
     Unwrap ``arg_seq``. Return it if long enough, otherwise prefix it.
 
@@ -208,6 +213,23 @@ def _prefix_if_not_long_enough(
     return tuple(prefix) + tuple(unpacked_seq)
 
 
+def _no_negatives(seq: SequenceLike[T]) -> bool:
+    if any(map(lambda a: a < 0, seq)):
+        raise ValueError(
+            f"All values must be >= 0, but {seq!r} contains negatives")
+    return True
+
+
+def _validate_and_unpack_bbox_like_args(
+    prefix: SequenceLike[int],
+    arg_seq: BboxArgsLikeValue
+):
+    unpacked_seq = _unpack_single_args_member(arg_seq)
+    _no_negatives(unpacked_seq)
+    prefixed = _prefix_if_not_long_enough(prefix, unpacked_seq)
+    return prefixed
+
+
 class CompareByLenAndElementsMixin:
     """
     Ease compatibility when comparing against other sequences.
@@ -230,28 +252,6 @@ class CompareByLenAndElementsMixin:
         return True
 
 
-class BboxEnclosureMixin:
-
-    left: int
-    top: int
-    right: int
-    bottom: int
-
-    def encloses(self, other: Union[Coord, BoundingBox]) -> bool:
-        """
-        True if the Coord or BoundingBox fits inside this Bbox.
-
-        Coordinates will be treated as a bounding box with their starts
-        and ends equal to the coordinate.
-
-        :param other: The object to check for enclosure.
-        :return:
-        """
-        other = _prefix_if_not_long_enough(other, other)
-        left, top, right, bottom = other
-        return self.left <= left and self.top <= top and right <= self.right and bottom <= self.bottom
-
-
 class HashAsTupleMixin:
     """
     Allows classes to be hashed as if they were tuples.
@@ -270,7 +270,7 @@ class HashAsTupleMixin:
         return hash(tuple(self))
 
 
-class BboxFancy(HashAsTupleMixin, BboxEnclosureMixin, CompareByLenAndElementsMixin, tuple):
+class BboxFancy(HashAsTupleMixin, CompareByLenAndElementsMixin, tuple):
 
     @overload
     def __new__(cls, left: int, top: int, right: int, bottom: int) -> BboxFancy:
@@ -285,15 +285,33 @@ class BboxFancy(HashAsTupleMixin, BboxEnclosureMixin, CompareByLenAndElementsMix
         return cls.__new__(cls, 0, 0, size[0], size[1])
 
     @overload
-    def __new__(cls, sequence: Sequence) -> BboxFancy:
-        return cls.__new__(cls, sequence)
+    def __new__(cls, bbox_sequence: BoundingBox) -> BboxFancy:
+        return cls.__new__(cls, bbox_sequence)
 
     def __new__(cls, *args):
-        args = _prefix_if_not_long_enough((0, 0), args)
+        args = _validate_and_unpack_bbox_like_args((0, 0), args)
         return super(BboxFancy, cls).__new__(cls, args)
 
-    # *args is included to match __new__'s signature
-    # to make type checkers behave correctly.
+    # __init__ must be overloaded to match __new__ to make
+    # autocomplete to work in IDEs such as PyCharm.
+    @overload
+    def __init__(self, left: int, top: int, right: int, bottom: int):
+        self.__init__(left, right, top, bottom)
+
+    @overload
+    def __init__(self, right: int, bottom: int):
+        self.__init__(right, bottom)
+
+    @overload
+    def __init__(self, size: Size):
+        self.__init__(size)
+
+    @overload
+    def __init__(self, bbox_sequence: BoundingBox):
+        self.__init__(bbox_sequence)
+
+    # Setting the indexed values is done by __new__ since this is a
+    # tuple subclass, but the other values must be set by __init__
     def __init__(self, *args):
         self._size = SizeFancy(
             self.right - self.left,
@@ -326,6 +344,31 @@ class BboxFancy(HashAsTupleMixin, BboxEnclosureMixin, CompareByLenAndElementsMix
     @property
     def height(self) -> int:
         return self._size.height
+
+    def encloses(self, other: Union[Coord, BoundingBox]) -> bool:
+        """
+        True if the Coord or BoundingBox fits inside this Bbox.
+
+        Coordinates will be treated as a bounding box with their starts
+        and ends equal to the coordinate.
+
+        :param other: The object to check for enclosure.
+        :return:
+        """
+        unpacked = _validate_and_unpack_bbox_like_args(other, other)
+        left, top, right, bottom = unpacked
+        return self.left <= left and self.top <= top and right <= self.right and bottom <= self.bottom
+
+    def __or__(self, other: Union[BoundingBox, Size]) -> BboxFancy:
+        args = _validate_and_unpack_bbox_like_args((0, 0), other)
+        return BboxFancy(
+            # Casting is necessary because zip has ongoing issues with
+            # detection as an iterable:
+            # https://github.com/python/mypy/issues/8454
+            # https://github.com/python/typeshed/pull/3830 (reverted)
+            *map(min, cast(Iterable, zip(self[:2], args[:2]))),
+            *map(max, cast(Iterable, zip(self[2:], args[2:])))
+        )
 
 
 @runtime_checkable

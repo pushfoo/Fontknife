@@ -5,7 +5,7 @@ from PIL import Image
 
 from octofont3.custom_types import ImageFontLike, ImageCoreLike, GlyphMapping, GlyphMetadata, BboxFancy, PathLike, Size, \
     BoundingBox
-from octofont3.utils import BboxEnclosingAll, generate_missing_character_core
+from octofont3.utils import generate_missing_character_core
 
 
 def copy_glyphs(source_font: ImageFontLike, glyphs: Iterable[str]) -> Dict[str, ImageCoreLike]:
@@ -96,9 +96,13 @@ class RasterFont:
         # It doesn't seem worth optimizing given present expectations:
         #  1. Fonts will not change frequently
         #  2. Fonts will not frequently exceed 256 glyphs
-        tile_max_bbox = BboxEnclosingAll()
+        tile_max_bbox = None
         for metadata in self._glyph_metadata.values():
-            tile_max_bbox.update(metadata.glyph_bbox)
+            current = metadata.glyph_bbox
+            if tile_max_bbox is None:
+                tile_max_bbox = current
+            else:
+                tile_max_bbox |= current
             # bitmap_max_bbox .update(metadata.bitmap_bbox)
 
         self._max_tile_bbox: BboxFancy = BboxFancy(*tile_max_bbox)
