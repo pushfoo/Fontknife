@@ -1,6 +1,6 @@
 import json
 from collections import deque
-from typing import Iterable, Optional, Any, Union
+from typing import Iterable, Optional, Any
 
 from octofont3.custom_types import PathLike, HasWrite, PathLikeOrHasWrite
 from octofont3.formats import RasterFont
@@ -158,7 +158,8 @@ class TextFontWriter(FormatWriter):
     def write_output(
         self, font: RasterFont,
         destination: PathLikeOrHasWrite,
-        glyph_sequence: Optional[Iterable[str]] = None
+        glyph_sequence: Optional[Iterable[str]] = None,
+        **kwargs
     ) -> None:
 
         with StdOrFile(destination, 'w') as file:

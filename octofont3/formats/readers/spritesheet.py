@@ -1,46 +1,47 @@
-from dataclasses import dataclass
-from itertools import filterfalse
-from typing import Dict, Tuple, overload, Iterable
+from typing import Iterable, Optional, Union, cast
 
 from PIL import Image
 
-from octofont3.custom_types import ImageCoreLike
+from octofont3.custom_types import PathLikeOrHasRead, BytesLike, Size, BoundingBox, BboxFancy
+from octofont3.formats import RasterFont
+from octofont3.formats.common import BinaryReader
+from octofont3.formats.common.spritesheet import GridMapper, DEFAULT_SHEET_GLYPHS
 
 
-@dataclass
-class SpritesheetMetadata:
+class SpritesheetGridReader(BinaryReader):
+    format_name = 'spritesheet-grid'
+    file_extensions = ('png', 'jpg', 'gif', 'tga', 'bmp')
 
-    sheet_size_px: Tuple[int, int] = None
-    sheet_size_tiles: Tuple[int, int] = None
-    tile_size_px: Tuple[int, int] = None
+    def load_source(
+        self,
+        source: PathLikeOrHasRead[BytesLike],
+        font_size: int = 16,
+        glyph_sequence: Optional[Iterable[str]] = None,
+        bounds_px: Optional[Union[Size, BoundingBox]] = None,
+        sheet_size_tiles: Optional[Size] = None,
+        tile_size_px: Optional[Size] = None,
+        tile_spacing_px: Size = (0, 0),
+        **kwargs
+    ) -> RasterFont:
+        source_image = Image.open(source)
+        source_image.load()
 
-    def __post_init__(self):
-        """
-        Calculate any missing dimensions
-        :return:
-        """
-        num = len(list(filterfalse([self.sheet_size_px, self.sheet_size_tiles, self.tile_size_px])))
-        if num < 2:
-            raise ValueError("Must provide at least 2/3 arguments to SpritesheetBoundsData")
+        glyph_sequence = glyph_sequence or DEFAULT_SHEET_GLYPHS
+        if bounds_px is None:
+            bounds_px = BboxFancy(source_image.size)
 
+        grid_mapper = GridMapper(
+            sheet_bounds_px=bounds_px,
+            sheet_size_tiles=sheet_size_tiles,
+            tile_size_px=tile_size_px,
+        )
 
-def calculate_bounds(
+        # Build the glyph table
+        glyph_table = {}
+        for index, glyph in enumerate(glyph_sequence):
+            glyph_image = source_image.crop(cast(tuple, grid_mapper[index]))
+            glyph_table[glyph] = glyph_image
 
-) -> Tuple[Tuple[int,int], Tuple[int, int]]:
-    """
-    Calculate the bounds for
-    :param sheet_size_px:
-    :param sheet_size_tiles:
-    :param tile_size_px:
-    :return:
-    """
-    pass
-
-def load_spritesheet_glyphs(
-    sheet_size_tiles: Tuple[int, int],
-    tile_size_px: Tuple[int, int],
-    glyph_sequence: Iterable[str]
-) -> Dict[str, ImageCoreLike]:
-    pass
-
+        raster_font = RasterFont(glyph_table)
+        return raster_font
 

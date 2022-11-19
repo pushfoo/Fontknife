@@ -253,8 +253,7 @@ class TextFontReader(FormatReader):
 
     def load_source(
         self, source: Union[PathLike, HasRead],
-        font_size: int = 16,
-        force_provided_glyphs: Optional[Iterable[str]] = None
+        **kwargs
     ) -> RasterFont:
         parser = TextFontParser()
 

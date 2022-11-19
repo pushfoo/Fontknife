@@ -67,45 +67,39 @@ def load_format_plugins(
 
 def load_font(
     source: Union[PathLike, HasRead],
-    format_name: Optional[str] = None,
-    font_size: int = 10,
-    cache_dir: Optional[PathLike] = None,
-    # Only meaningful for TTFs
-    force_provides: Iterable[str] = None,
+    format: Optional[str] = None,
+    **kwargs
 ) -> RasterFont:
 
-    if not format_name:
+    if not format:
         if source == '-':
             raise PipingFromStdinRequiresFontFormat()
-        format_name = FormatReader.guess_format_name(source)
+        format = FormatReader.guess_format_name(source)
 
-    reader_type: Optional[Type[FormatReader]] = FormatReader.by_format_name.get(format_name, None)
+    reader_type: Optional[Type[FormatReader]] = FormatReader.by_format_name.get(format, None)
     if reader_type is None:
-        raise UnclearSourceFontFormat(source, format_name)
+        raise UnclearSourceFontFormat(source, format)
 
     reader = reader_type(get_cache)
-    font = reader.load_source(
-        source,
-        font_size=font_size,
-        force_provided_glyphs=force_provides)
+    font = reader.load_source(source, **kwargs)
     return font
 
 
 def write_font(
     font: RasterFont,
     output: PathLikeOrHasWrite,
-    format_name: Optional[str] = None,
-    glyph_sequence: Iterable[str] = None
+    format: Optional[str] = None,
+    **kwargs
 ) -> None:
 
-    if not format_name:
+    if not format:
         if output == '-':
             raise PipingToStdoutRequiresFontFormat()
-        format_name = FormatWriter.guess_format_name(output)
+        format = FormatWriter.guess_format_name(output)
 
-    writer_type: Optional[Type[FormatWriter]] = FormatWriter.by_format_name.get(format_name, None)
+    writer_type: Optional[Type[FormatWriter]] = FormatWriter.by_format_name.get(format, None)
     if writer_type is None:
-        raise UnclearOutputFontFormat(output, format_name)
+        raise UnclearOutputFontFormat(output, format)
 
     writer = writer_type()
-    writer.write_output(font, output, glyph_sequence=glyph_sequence)
+    writer.write_output(font, output, **kwargs)
