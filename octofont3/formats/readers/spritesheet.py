@@ -10,7 +10,7 @@ from octofont3.formats.common.spritesheet import GridMapper, DEFAULT_SHEET_GLYPH
 
 class SpritesheetGridReader(BinaryReader):
     format_name = 'spritesheet-grid'
-    file_extensions = ('png', 'jpg', 'gif', 'tga', 'bmp')
+    file_extensions = ('png', 'jpg', 'tga', 'bmp')
 
     def load_source(
         self,
