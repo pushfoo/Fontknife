@@ -3,7 +3,7 @@ from typing import Iterable, Dict, Optional, KeysView
 
 from PIL import Image
 
-from octofont3.custom_types import ImageFontLike, ImageCoreLike, GlyphMapping, GlyphMetadata, BboxFancy, PathLike, Size, \
+from octofont3.custom_types import ImageFontLike, ImageCoreLike, GlyphMaskMapping, GlyphMetadata, BboxFancy, PathLike, Size, \
     BoundingBox
 from octofont3.utils import generate_missing_character_core
 
@@ -27,7 +27,7 @@ class RasterFont:
 
     def __init__(
         self,
-        glyph_table: Optional[GlyphMapping] = None,
+        glyph_table: Optional[GlyphMaskMapping] = None,
         text_tracking_px: int = 0,
         size_points: Optional[int] = None,
         **font_metadata

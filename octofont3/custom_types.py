@@ -429,8 +429,7 @@ class ImageFontLike(Protocol):
         ...
 
 
-GlyphMapping = Mapping[str, ImageCoreLike]
-GlyphDict = Dict[str, ImageCoreLike]
+GlyphMaskMapping = Mapping[str, ImageCoreLike]
 
 
 @dataclass
@@ -471,6 +470,9 @@ class GlyphMetadata:
             bitmap_size=SizeFancy(*bitmap.size),
             bitmap_len_bytes=len(bitmap)
         )
+
+
+GlyphMetadataMapping = Mapping[str, GlyphMetadata]
 
 
 class MissingGlyphError(Exception):

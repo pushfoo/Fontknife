@@ -5,7 +5,7 @@ from typing import Union, Optional, Iterable, List
 
 from PIL import Image
 
-from octofont3.custom_types import PathLike, HasRead, HasReadline, GlyphMapping, GlyphDict, Size
+from octofont3.custom_types import PathLike, HasRead, HasReadline, GlyphMaskMapping, Size
 from octofont3.formats import RasterFont
 from octofont3.formats.common import FormatReader
 from octofont3.formats.common.textfont import GLYPH_HEADER, FULL_PIXEL, EMPTY_PIXEL
@@ -163,7 +163,7 @@ class TextFontParser:
     def parse(
         self,
         source: HasReadline[str]
-    ) -> GlyphMapping:
+    ) -> GlyphMaskMapping:
         """
         Load all glyphs in the file to the internal glyph table.
 
@@ -176,7 +176,7 @@ class TextFontParser:
         if not source:
             raise TypeError('Got {file}, but file must be a path stream-like object')
 
-        glyph_table: GlyphDict = {}
+        glyph_table: GlyphMaskMapping = {}
 
         # Set up a context to clean up any files opened
         with ExitStack() as close_at_end:
