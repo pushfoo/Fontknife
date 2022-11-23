@@ -3,6 +3,7 @@ from typing import Iterable, Optional, Union, cast
 from PIL import Image
 
 from octofont3.custom_types import PathLikeOrHasRead, BytesLike, Size, BoundingBox, BboxFancy
+from octofont3.formats.common.raster_font import GlyphMetadata
 from octofont3.formats import RasterFont
 from octofont3.formats.common import BinaryReader
 from octofont3.formats.common.spritesheet import GridMapper, DEFAULT_SHEET_GLYPHS
@@ -37,11 +38,20 @@ class SpritesheetGridReader(BinaryReader):
         )
 
         # Build the glyph table
-        glyph_table = {}
+        glyph_masks = {}
+        glyph_metadata = {}
+
         for index, glyph in enumerate(glyph_sequence):
             glyph_image = source_image.crop(cast(tuple, grid_mapper[index]))
-            glyph_table[glyph] = glyph_image
+            glyph_bbox = BboxFancy(glyph_image.size)
+            glyph_mask = glyph_image.im
 
-        raster_font = RasterFont(glyph_table)
+            glyph_masks[glyph] = glyph_mask
+            glyph_metadata[glyph] = GlyphMetadata.from_font_glyph(glyph_bbox, glyph_mask)
+
+        raster_font = RasterFont(
+            glyph_table=glyph_masks,
+            glyph_metadata=glyph_metadata
+        )
         return raster_font
 

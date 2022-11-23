@@ -11,8 +11,8 @@ from octofont3.formats.common.exceptions import (
     PipingFromStdinRequiresFontFormat, PipingToStdoutRequiresFontFormat
 )
 from octofont3.formats.common.caching import get_cache, load_and_cache_bitmap_font
-from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
-from octofont3.formats.common.raster_font import copy_glyphs, RasterFont
+from octofont3.formats.common.raster_font import rasterize_font_to_tables, RasterFont
+from octofont3.formats.common.raster_font import rasterize_font_to_tables, RasterFont
 
 # Import built-in format handlers, triggering auto-registration
 import octofont3.formats.readers

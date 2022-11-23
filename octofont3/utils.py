@@ -148,52 +148,77 @@ def tuplemap(callable: Callable, iterable: Iterable[ValueT]) -> Tuple:
     return tuple(map(callable, iterable))
 
 
-def image_from_core(core: ImageCoreLike, mode="L") -> Image.Image:
-    # note that this has to start out in mode L or it doesn't work
-    initial = Image.frombytes("L", core.size, bytes(core))
-    if initial.mode != mode:
-        return initial.convert(mode)
-    return initial
+def empty_image(size: Size, mode: str = '1', fill=0) -> Image.Image:
+    return Image.new(mode, size, fill)
 
 
-def show_core(core: ImageCoreLike, mode: str = "L"):
-    image_from_core(core, mode=mode).show()
+def image_from_core(
+    core: ImageCoreLike,
+    image_size: Optional[Size] = None,
+    mode: Optional[str] = None,
+    fill=0
+) -> Image.Image:
+    """
+    Convert bare bitmap cores to images.
+
+    .. warning:: Set `image_size` to prevent errors on 0-length cores!
+
+                 Although PIL allows zero-size images to be created,
+                 they will raise SystemErrors about tiles extending
+                 outside images when composing images.
+
+    If `image_size` is larger than the core, the value of `fill` will
+    be visible in the background behind the pasted core.
+
+    This function is primarily useful for inspecting glyph mask data.
+    Drawing RasterFont objects with the ImageDraw module is more
+    effective and efficient for working with sprite sheets.
+
+    :param core: An imaging core object.
+    :param image_size: Force an image size instead of the core's size.
+    :param mode: A valid PIL image mode.
+    :param fill: Fill the image background with this before pasting.
+    :return:
+    """
+    if image_size is None:
+        image_size = core.size
+    composite = Image.new(mode or core.mode, tuple(image_size), color=fill)
+
+    # Skip pasting if there's no image data
+    if len(core):
+        # Convert to image of the goal color mode and paste into composite
+        to_paste = Image.frombytes(core.mode, tuple(core.size), bytes(core))
+        if to_paste.mode != mode:
+            to_paste = to_paste.convert(mode)
+        composite.paste(to_paste)
+
+    return composite
+
+
+def show_core(core: ImageCoreLike, image_size: Size = None, mode: Optional[str] = None, fill = 0) -> None:
+    """
+    Preview the contents of a core using a system image viewer.
+
+    .. warning:: Set `image_size` to prevent errors on 0-length cores!
+
+                 Although PIL allows zero-size images to be created,
+                 they will raise SystemErrors about tiles extending
+                 outside images when previewing images.
+
+    If `image_size` is larger than the core, the value of `fill` will
+    be visible in the background behind the pasted core.
+
+    :param core: A PIL image core.
+    :param image_size: An image size to force.
+    :param mode: A valid PIL image mode.
+    :param fill: A valid PIL fill value.
+    :return:
+    """
+    image_from_core(core, image_size=image_size, mode=mode or core.mode, fill=fill).show()
 
 
 def empty_core(width: int = 0, height: int = 0, mode: str = '1') -> ImageCoreLike:
     return Image.new(mode, (width, height), 0).im
-
-
-def generate_missing_character_core(
-    image_size: Size,
-    rectangle_bbox: Optional[BoundingBox] = None,
-    mode: str = 'L',
-    rectangle_margins_px: int = 1
-) -> ImageCoreLike:
-    """
-    Generate a missing glyph "tofu" square as an image core object.
-
-    :param tofu_size:
-    :param mode:
-    :return:
-    """
-    # Calculate dimensions
-    image_size = SizeFancy(*image_size)
-    if rectangle_bbox is None:
-       rectangle_bbox = (
-           rectangle_margins_px,
-           rectangle_margins_px,
-           image_size.width - (1 + rectangle_margins_px),
-           image_size.height - (1 + rectangle_margins_px)
-       )
-
-    # Draw a rectangle on the image
-    image = Image.new(mode, image_size, 0)
-    draw = ImageDraw.Draw(image, mode)
-    draw.rectangle(rectangle_bbox, outline=255)
-
-    # Return the core for use as a mask
-    return image.im
 
 
 def first_attribute_present(obj: Any, attr_iterable: Iterable[str]) -> Optional[str]:

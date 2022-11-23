@@ -5,7 +5,8 @@ from typing import Union, Optional, Iterable, List
 
 from PIL import Image
 
-from octofont3.custom_types import PathLike, HasRead, HasReadline, GlyphMaskMapping, Size
+from octofont3.custom_types import PathLike, HasRead, HasReadline, Size
+from octofont3.formats.common.raster_font import GlyphMaskMapping
 from octofont3.formats import RasterFont
 from octofont3.formats.common import FormatReader
 from octofont3.formats.common.textfont import GLYPH_HEADER, FULL_PIXEL, EMPTY_PIXEL
@@ -261,6 +262,6 @@ class TextFontReader(FormatReader):
             raw_data = parser.parse(file.raw)
 
         path = get_resource_filesystem_path(source)
-        font = RasterFont(glyph_table=raw_data)
+        font = RasterFont(glyph_table=raw_data, path=path)
 
         return font

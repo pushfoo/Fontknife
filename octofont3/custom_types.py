@@ -1,5 +1,5 @@
 """
-Custom types used as annotations or building blocks of larger types.
+Common annotations and building blocks used throughout the project
 
 Module members fall into two categories:
 
@@ -13,10 +13,9 @@ https://github.com/python/typing/discussions/829#discussioncomment-1150579
 from __future__ import annotations
 from array import array
 from collections import namedtuple
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence, \
-    Mapping, Dict, overload, Iterator, cast, Iterable
+    overload, Iterator, cast, Iterable
 
 
 T = TypeVar('T')
@@ -427,52 +426,6 @@ class ImageFontLike(Protocol):
 
     def getbbox(self, text: str) -> Optional[BoundingBox]:
         ...
-
-
-GlyphMaskMapping = Mapping[str, ImageCoreLike]
-
-
-@dataclass
-class GlyphMetadata:
-    """
-    Keep track of bounding box information about glyphs.
-
-    Glyphs can have empty actual data despite having a bounding box. In
-    this case, bitmap_bbox will be None.
-
-    This class does not store the PIL.Image.core object itself because
-    doing so causes issues with dataclass library internals.
-    """
-    bitmap_bbox: Optional[BboxFancy]
-    glyph_bbox: BboxFancy
-    bitmap_size: Size
-    bitmap_len_bytes: int
-
-    @classmethod
-    def from_font_glyph(
-        cls,
-        bitmap: ImageCoreLike,
-        glyph_bbox: BoundingBox
-    ) -> "GlyphMetadata":
-
-        # get the stated values
-        glyph_bbox = BboxFancy(*glyph_bbox)
-        bitmap_bbox = None
-
-        if bitmap is not None:
-            bitmap_bbox = bitmap.getbbox()
-            if bitmap_bbox is not None:
-                bitmap_bbox = BboxFancy(*bitmap_bbox)
-
-        return cls(
-            glyph_bbox=glyph_bbox,
-            bitmap_bbox=bitmap_bbox,
-            bitmap_size=SizeFancy(*bitmap.size),
-            bitmap_len_bytes=len(bitmap)
-        )
-
-
-GlyphMetadataMapping = Mapping[str, GlyphMetadata]
 
 
 class MissingGlyphError(Exception):

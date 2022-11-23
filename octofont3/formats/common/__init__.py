@@ -19,7 +19,7 @@ from typing import Dict, Type, Set, Callable, Optional, Iterable
 from octofont3.custom_types import PathLike, PathLikeOrHasRead, PathLikeOrHasWrite, PathLikeOrHasStreamFunc, \
     BytesLike
 from octofont3.formats.common.caching import get_cache, load_and_cache_bitmap_font
-from octofont3.formats.common.raster_font import RasterFont, copy_glyphs
+from octofont3.formats.common.raster_font import RasterFont, rasterize_font_to_tables
 from octofont3.iohelpers import get_resource_filesystem_path, SeekableBinaryFileCopy
 
 # Matches capitalized words in class names
@@ -239,8 +239,8 @@ class CachingReader(BinaryReader, ABC):
             source, self.wrapped_callable, cache=self.cache)
         actual_path = getattr(raw_font, 'file')
         force_provided_glyphs = self.cache[original_path].provided_glyphs
-        raw_glyphs = copy_glyphs(raw_font, force_provided_glyphs)
-        result = RasterFont(raw_glyphs, size_points=font_size, path=actual_path)
+        raw_glyph_data = rasterize_font_to_tables(raw_font, force_provided_glyphs)
+        result = RasterFont(**raw_glyph_data, size_points=font_size, path=actual_path)
         return result
 
 

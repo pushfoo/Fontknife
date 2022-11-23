@@ -2,11 +2,11 @@ import math
 from typing import Optional, Iterable
 
 import PIL.Image
+import PIL.ImageDraw
 
 from octofont3.custom_types import PathLikeOrHasWrite
 from octofont3.formats import RasterFont, FormatWriter
 from octofont3.formats.common.spritesheet import GridMapper
-from octofont3.utils import image_from_core
 
 
 class SpriteSheetGridWriter(FormatWriter):
@@ -18,7 +18,7 @@ class SpriteSheetGridWriter(FormatWriter):
         font: RasterFont,
         destination: PathLikeOrHasWrite,
         glyph_sequence: Optional[Iterable[str]] = None,
-        mode='RGB',
+        mode='1',
         **kwargs
     ) -> None:
 
@@ -49,13 +49,13 @@ class SpriteSheetGridWriter(FormatWriter):
         if glyph_sequence is None:
             glyph_sequence = font.provided_glyphs
 
-        # Paste all glyphs into new image
-
+        # Draw all glyphs into the sprite sheet
         dest_image = PIL.Image.new(mode, grid_mapper.sheet_bounds_px[2:])
+        dest_draw = PIL.ImageDraw.Draw(dest_image)
+
         for index, glyph in enumerate(glyph_sequence):
             paste_bbox = grid_mapper.bbox_for_sheet_index(index)
-            tile_image = image_from_core(font.getmask(glyph), mode=mode)
-            dest_image.paste(tile_image, paste_bbox[:2])
+            dest_draw.text(paste_bbox[:2], glyph, fill=255, font=font)
 
         dest_image.save(destination)
 
