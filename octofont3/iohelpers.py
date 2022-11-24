@@ -585,18 +585,3 @@ class SeekableBinaryFileCopy(BytesIO):
         copy = load_binary_source(source, cls)
         return copy
 
-
-def looks_like_stream_with_read_support(
-        obj: Any,
-        required_attributes: Iterable[str] = ('read', 'readline'),
-        error_on_missing: bool = False
-) -> bool:
-    """
-    True if the given stream has all the required attributes to be readable
-
-    Checking if the attributes are callable ensures that
-    :param obj:
-    :param required_attributes:
-    :return:
-    """
-    return has_all_methods(obj, required_attributes)
