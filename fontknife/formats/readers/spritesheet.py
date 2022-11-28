@@ -2,11 +2,11 @@ from typing import Iterable, Optional, Union, cast
 
 from PIL import Image
 
-from octofont3.custom_types import PathLikeOrHasRead, BytesLike, Size, BoundingBox, BboxFancy
-from octofont3.formats.common.raster_font import GlyphMetadata
-from octofont3.formats import RasterFont
-from octofont3.formats.common import BinaryReader
-from octofont3.formats.common.spritesheet import GridMapper, DEFAULT_SHEET_GLYPHS
+from fontknife.custom_types import PathLikeOrHasRead, BytesLike, Size, BoundingBox, BboxFancy
+from fontknife.formats.common.raster_font import GlyphMetadata
+from fontknife.formats import RasterFont
+from fontknife.formats.common import BinaryReader
+from fontknife.formats.common.spritesheet import GridMapper, DEFAULT_SHEET_GLYPHS
 
 
 class SpritesheetGridReader(BinaryReader):

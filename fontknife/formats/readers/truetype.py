@@ -2,12 +2,12 @@ from typing import Union, Optional, Iterable, Tuple, cast
 
 from PIL import ImageFont, ImageDraw, Image
 
-from octofont3.custom_types import PathLike, HasRead, BoundingBox, ImageCoreLike, Size
-from octofont3.formats import RasterFont, rasterize_font_to_tables
-from octofont3.formats.common import BinaryReader
-from octofont3.formats.common.raster_font import GlyphRasterizerCallable
-from octofont3.iohelpers import StdOrFile, get_resource_filesystem_path
-from octofont3.utils import generate_glyph_sequence
+from fontknife.custom_types import PathLike, HasRead, BoundingBox, ImageCoreLike, Size
+from fontknife.formats import RasterFont, rasterize_font_to_tables
+from fontknife.formats.common import BinaryReader
+from fontknife.formats.common.raster_font import GlyphRasterizerCallable
+from fontknife.iohelpers import StdOrFile, get_resource_filesystem_path
+from fontknife.utils import generate_glyph_sequence
 
 
 def ttf_bbox_and_mask_getter(

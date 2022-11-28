@@ -7,7 +7,7 @@ import re
 
 import pytest
 
-from octofont3.utils import extract_matching_keys
+from fontknife.utils import extract_matching_keys
 
 
 @pytest.fixture(params=[str, re.compile])

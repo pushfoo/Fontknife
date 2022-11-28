@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Optional, Any
 
-from octofont3.custom_types import PathLike
+from fontknife.custom_types import PathLike
 
 
 class FontFormatError(Exception, ABC):

@@ -1,6 +1,6 @@
 import pytest
 
-from octofont3.utils import copy_from_mapping, pop_items
+from fontknife.utils import copy_from_mapping, pop_items
 
 
 @pytest.fixture

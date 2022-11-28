@@ -16,11 +16,11 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, Type, Set, Callable, Optional, Iterable
 
-from octofont3.custom_types import PathLike, PathLikeOrHasRead, PathLikeOrHasWrite, PathLikeOrHasStreamFunc, \
+from fontknife.custom_types import PathLike, PathLikeOrHasRead, PathLikeOrHasWrite, PathLikeOrHasStreamFunc, \
     BytesLike
-from octofont3.formats.common.caching import get_cache, load_and_cache_bitmap_font
-from octofont3.formats.common.raster_font import RasterFont, rasterize_font_to_tables
-from octofont3.iohelpers import get_resource_filesystem_path, SeekableBinaryFileCopy
+from fontknife.formats.common.caching import get_cache, load_and_cache_bitmap_font
+from fontknife.formats.common.raster_font import RasterFont, rasterize_font_to_tables
+from fontknife.iohelpers import get_resource_filesystem_path, SeekableBinaryFileCopy
 
 # Matches capitalized words in class names
 PASCAL_CASE_WORD_REGEX = re.compile(r'[A-Z][a-z]*')

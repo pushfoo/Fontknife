@@ -4,19 +4,19 @@ import re
 from pathlib import Path
 from typing import Pattern, Any, Dict, Union, Iterable, Optional, Type
 
-from octofont3.custom_types import PathLike, HasRead, PathLikeOrHasWrite
-from octofont3.formats.common import RasterFont, get_cache, FormatReader, FormatWriter
-from octofont3.formats.common.exceptions import (
+from fontknife.custom_types import PathLike, HasRead, PathLikeOrHasWrite
+from fontknife.formats.common import RasterFont, get_cache, FormatReader, FormatWriter
+from fontknife.formats.common.exceptions import (
     UnclearSourceFontFormat, UnclearOutputFontFormat,
     PipingFromStdinRequiresFontFormat, PipingToStdoutRequiresFontFormat
 )
-from octofont3.formats.common.caching import get_cache, load_and_cache_bitmap_font
-from octofont3.formats.common.raster_font import rasterize_font_to_tables, RasterFont
-from octofont3.formats.common.raster_font import rasterize_font_to_tables, RasterFont
+from fontknife.formats.common.caching import get_cache, load_and_cache_bitmap_font
+from fontknife.formats.common.raster_font import rasterize_font_to_tables, RasterFont
+from fontknife.formats.common.raster_font import rasterize_font_to_tables, RasterFont
 
 # Import built-in format handlers, triggering auto-registration
-import octofont3.formats.readers
-import octofont3.formats.writers
+import fontknife.formats.readers
+import fontknife.formats.writers
 
 # Matches anything that is approximately a non-dunder python module name.
 # Digits are allowed after the first character for convenience.

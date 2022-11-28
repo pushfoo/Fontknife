@@ -2,7 +2,7 @@ from typing import Dict
 
 import pytest
 
-from octofont3.utils import remap_prefixed_keys
+from fontknife.utils import remap_prefixed_keys
 
 
 @pytest.fixture

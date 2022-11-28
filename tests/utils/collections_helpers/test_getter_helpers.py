@@ -1,7 +1,7 @@
 import pytest
 
-from octofont3.custom_types import StarArgsLengthError
-from octofont3.utils import getvalue, popvalue, detect_getter_for_source
+from fontknife.custom_types import StarArgsLengthError
+from fontknife.utils import getvalue, popvalue, detect_getter_for_source
 
 
 @pytest.fixture

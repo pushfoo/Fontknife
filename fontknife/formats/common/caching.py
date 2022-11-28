@@ -10,8 +10,8 @@ from typing import Callable, Dict, Optional, Union, BinaryIO, Set, Any, Tuple
 
 from PIL import ImageFont
 
-from octofont3.custom_types import PathLike, HasReadline, HasRead, PathLikeOrHasRead
-from octofont3.iohelpers import ensure_folder_exists, load_binary_source, get_resource_filesystem_path, absolute_path
+from fontknife.custom_types import PathLike, HasReadline, HasRead, PathLikeOrHasRead
+from fontknife.iohelpers import ensure_folder_exists, load_binary_source, get_resource_filesystem_path, absolute_path
 
 
 def hash_binary_stream(source: BinaryIO, hash_algo: Callable = hashlib.sha1, block_size: int = 2 ** 16):
@@ -258,7 +258,7 @@ def get_cache(cache_directory: Optional[PathLike] = None) -> FileMetadataCache[P
 
     if creating_temp_cache:
         temp_dir = Path(tempfile.gettempdir())
-        cache_directory = temp_dir / 'octofont3'
+        cache_directory = temp_dir / 'fontknife'
 
     ensure_folder_exists(cache_directory)
     cache = FileMetadataCache.load_from_disk(cache_directory)

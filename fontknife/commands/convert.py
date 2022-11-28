@@ -3,8 +3,8 @@ Convert between formats.
 """
 from typing import Any, Mapping
 
-from octofont3.custom_types import PathLike
-from octofont3.formats import write_font, RasterFont
+from fontknife.custom_types import PathLike
+from fontknife.formats import write_font, RasterFont
 
 
 def main(font: RasterFont, output: PathLike, output_args: Mapping[str, Any]):

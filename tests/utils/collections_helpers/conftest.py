@@ -2,7 +2,7 @@ from dataclasses import asdict
 
 import pytest
 
-from octofont3.utils import getvalue, popvalue
+from fontknife.utils import getvalue, popvalue
 
 
 @pytest.fixture

@@ -2,12 +2,12 @@ import json
 from collections import deque
 from typing import Iterable, Optional, Any
 
-from octofont3.custom_types import PathLike, HasWrite, PathLikeOrHasWrite
-from octofont3.formats import RasterFont
-from octofont3.formats.common import FormatWriter
-from octofont3.formats.common.textfont import GLYPH_HEADER, COMMENT_PREFIX, FULL_PIXEL, EMPTY_PIXEL
-from octofont3.iohelpers import OutputHelper, StdOrFile
-from octofont3.utils import print_dataclass_info, find_max_dimensions
+from fontknife.custom_types import PathLike, HasWrite, PathLikeOrHasWrite
+from fontknife.formats import RasterFont
+from fontknife.formats.common import FormatWriter
+from fontknife.formats.common.textfont import GLYPH_HEADER, COMMENT_PREFIX, FULL_PIXEL, EMPTY_PIXEL
+from fontknife.iohelpers import OutputHelper, StdOrFile
+from fontknife.utils import print_dataclass_info, find_max_dimensions
 
 
 class TextFontStream(OutputHelper):

@@ -6,7 +6,7 @@ from typing import Iterable, Dict, Optional, KeysView, Union, Mapping, Tuple, Pr
 
 from PIL import Image, ImageDraw
 
-from octofont3.custom_types import ImageFontLike, ImageCoreLike, BboxFancy, PathLike, \
+from fontknife.custom_types import ImageFontLike, ImageCoreLike, BboxFancy, PathLike, \
     Size, BoundingBox, SizeFancy
 
 

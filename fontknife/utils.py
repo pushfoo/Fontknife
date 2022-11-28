@@ -10,7 +10,7 @@ from collections.abc import Mapping as MappingABC
 
 from PIL import Image, ImageDraw
 
-from octofont3.custom_types import (
+from fontknife.custom_types import (
     SequenceLike,
     T, Size, SizeFancy, BoundingBox, BboxFancy,
     ImageFontLike, ValidatorFunc,

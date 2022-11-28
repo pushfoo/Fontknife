@@ -1,14 +1,14 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='octofont3',
+    name='fontknife',
     version='0.1',
     install_requires=['pillow'],
-    packages=find_packages(include=['octofont3', 'octofont3.*']),
+    packages=find_packages(include=['fontknife', 'fontknife.*']),
     entry_points={
         "console_scripts": [
-            "octofont3=octofont3.commands.__main__:main",
+            "fontknife=fontknife.commands.__main__:main",
         ]
     },
-    tests_require=['pytest~=7.*']
+    tests_require=['pytest>=7,<8']
 )

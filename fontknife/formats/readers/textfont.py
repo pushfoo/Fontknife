@@ -5,14 +5,14 @@ from typing import Union, Optional, Iterable, List
 
 from PIL import Image
 
-from octofont3.custom_types import PathLike, HasRead, HasReadline, Size
-from octofont3.formats.common.raster_font import GlyphMaskMapping
-from octofont3.formats import RasterFont
-from octofont3.formats.common import FormatReader
-from octofont3.formats.common.textfont import GLYPH_HEADER, FULL_PIXEL, EMPTY_PIXEL
-from octofont3.iohelpers import StdOrFile, get_resource_filesystem_path, header_regex, InputHelper, \
+from fontknife.custom_types import PathLike, HasRead, HasReadline, Size
+from fontknife.formats.common.raster_font import GlyphMaskMapping
+from fontknife.formats import RasterFont
+from fontknife.formats.common import FormatReader
+from fontknife.formats.common.textfont import GLYPH_HEADER, FULL_PIXEL, EMPTY_PIXEL
+from fontknife.iohelpers import StdOrFile, get_resource_filesystem_path, header_regex, InputHelper, \
     strip_end_comments_and_space
-from octofont3.utils import empty_core
+from fontknife.utils import empty_core
 
 
 class TextFontParseError(BaseException):

@@ -1,6 +1,6 @@
 from typing import Dict, Iterable
 
-# from octofont3.custom_types import Size, BoundingBox, ImageFontLike, BboxFancy
+# from fontknife.custom_types import Size, BoundingBox, ImageFontLike, BboxFancy
 
 
 def calculate_alignments(vert_center: Iterable[str] = None, vert_top: Iterable[str] = None) -> Dict:

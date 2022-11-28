@@ -9,8 +9,8 @@ from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from typing import Optional, Tuple, Iterable, Union, Mapping, Callable, Any, BinaryIO, TypeVar
 
-from octofont3.custom_types import PathLike, HasReadline, HasWrite, PathLikeOrHasRead, HasRead, PathLikeOrHasStreamFunc
-from octofont3.utils import has_all_methods, value_of_first_attribute_present
+from fontknife.custom_types import PathLike, HasReadline, HasWrite, PathLikeOrHasRead, HasRead, PathLikeOrHasStreamFunc
+from fontknife.utils import has_all_methods, value_of_first_attribute_present
 
 
 PairTypeStr = Tuple[type, str]

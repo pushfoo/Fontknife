@@ -1,10 +1,10 @@
 from contextlib import ExitStack
 from typing import Any, Mapping
 
-from octofont3.custom_types import PathLike
-from octofont3.formats import RasterFont
-from octofont3.iohelpers import StdOrFile
-from octofont3.octo import emit_octo
+from fontknife.custom_types import PathLike
+from fontknife.formats import RasterFont
+from fontknife.iohelpers import StdOrFile
+from fontknife.octo import emit_octo
 
 
 def main(font: RasterFont, output: PathLike, output_args: Mapping[str, Any]):

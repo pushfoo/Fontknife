@@ -1,6 +1,6 @@
 import pytest
 
-from octofont3.utils import remap, tuplemap
+from fontknife.utils import remap, tuplemap
 
 
 def increment_ord(base: str, increment: int):

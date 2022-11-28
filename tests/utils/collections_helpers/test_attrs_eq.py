@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 
 import pytest
-from octofont3.utils import attrs_eq
+from fontknife.utils import attrs_eq
 
 
 @dataclass

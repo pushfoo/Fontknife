@@ -4,9 +4,9 @@ from typing import Optional, Iterable
 import PIL.Image
 import PIL.ImageDraw
 
-from octofont3.custom_types import PathLikeOrHasWrite
-from octofont3.formats import RasterFont, FormatWriter
-from octofont3.formats.common.spritesheet import GridMapper
+from fontknife.custom_types import PathLikeOrHasWrite
+from fontknife.formats import RasterFont, FormatWriter
+from fontknife.formats.common.spritesheet import GridMapper
 
 
 class SpriteSheetGridWriter(FormatWriter):

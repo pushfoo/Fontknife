@@ -3,9 +3,9 @@ from functools import cache
 from math import log
 from typing import Iterable, Optional
 
-from octofont3.formats import RasterFont
-from octofont3.iohelpers import OutputHelper, padded_hex, exit_error
-from octofont3.custom_types import HasWrite
+from fontknife.formats import RasterFont
+from fontknife.iohelpers import OutputHelper, padded_hex, exit_error
+from fontknife.custom_types import HasWrite
 
 
 class OctoStream(OutputHelper):

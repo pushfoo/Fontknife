@@ -5,13 +5,13 @@ import textwrap
 from collections import ChainMap
 from typing import Optional, Callable, Any, Mapping, Dict, Union, Tuple, Pattern, Iterable
 
-from octofont3.commands.convert import main as convert
-from octofont3.commands.emit_code import main as emit_code
-from octofont3.formats import FormatReader, FormatWriter, load_font, UnclearSourceFontFormat, \
+from fontknife.commands.convert import main as convert
+from fontknife.commands.emit_code import main as emit_code
+from fontknife.formats import FormatReader, FormatWriter, load_font, UnclearSourceFontFormat, \
     PipingFromStdinRequiresFontFormat
-from octofont3.formats.common.exceptions import FontFormatError
-from octofont3.iohelpers import exit_error
-from octofont3.utils import remap_prefixed_keys, extract_matching_keys, tuplemap
+from fontknife.formats.common.exceptions import FontFormatError
+from fontknife.iohelpers import exit_error
+from fontknife.utils import remap_prefixed_keys, extract_matching_keys, tuplemap
 
 base_parser = argparse.ArgumentParser(
     description="A utility with multiple sub-commands for manipulating fonts."

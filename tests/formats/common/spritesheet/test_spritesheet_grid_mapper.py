@@ -8,8 +8,8 @@ possible.
 """
 import pytest
 
-from octofont3.formats.common.spritesheet import GridMapper, GRID_MAPPER_DIM_NAMES
-from octofont3.utils import get_attrs
+from fontknife.formats.common.spritesheet import GridMapper, GRID_MAPPER_DIM_NAMES
+from fontknife.utils import get_attrs
 
 
 @pytest.fixture

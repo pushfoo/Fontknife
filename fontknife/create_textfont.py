@@ -2,9 +2,9 @@
 import sys
 import getopt
 
-from octofont3 import calculate_alignments
-from octofont3.formats import load_font
-from octofont3.formats.writers.textfont import FontRenderer
+from fontknife import calculate_alignments
+from fontknife.formats import load_font
+from fontknife.formats.writers.textfont import FontRenderer
 
 
 def main():

@@ -1,6 +1,6 @@
 import pytest
 
-from octofont3.utils import get_attrs
+from fontknife.utils import get_attrs
 
 
 @pytest.fixture

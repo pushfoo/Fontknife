@@ -2,8 +2,8 @@ from itertools import combinations_with_replacement
 
 import pytest
 
-from octofont3.custom_types import BboxFancy, BBOX_EDGE_NAMES
-from octofont3.utils import tuplemap
+from fontknife.custom_types import BboxFancy, BBOX_EDGE_NAMES
+from fontknife.utils import tuplemap
 
 
 # Named functions of lambdas to increase readability in the pytest

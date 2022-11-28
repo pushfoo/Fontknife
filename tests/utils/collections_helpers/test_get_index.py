@@ -2,7 +2,7 @@ from enum import Enum, auto
 
 import pytest
 
-from octofont3.utils import get_index
+from fontknife.utils import get_index
 
 
 @pytest.fixture
