@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='fontknife',
     version='0.1',
-    install_requires=['pillow'],
+    install_requires=['pillow>=9.3,<10'],
     packages=find_packages(include=['fontknife', 'fontknife.*']),
     entry_points={
         "console_scripts": [
