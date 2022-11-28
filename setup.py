@@ -7,7 +7,7 @@ long_description = (CWD / 'README.md').read_text()
 
 setup(
     name='fontknife',
-    version='0.1.1',
+    version='0.1.2',
     author='pushfoo',
     url='https://github.com/pushfoo/fontknife',
     description="Rasterize only the glyphs you need.",
