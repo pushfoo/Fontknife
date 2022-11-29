@@ -83,7 +83,7 @@ to improve upon with a paint bucket tool in your preferred image editor.
 | `-P` | `--src-font-size-points` | A point size to render a TTF at. Ignored for non-TTF fonts. |
 | `-G` | `--src-glyph-sequence`   | The glyphs to use and the order to render them in.          |
 
-*Note: Although multi-codepoint emoji ( ⛈️ , country and region flags, etc) are not yet supported,
+*Note: Although multi-character graphemes ( ⛈️ , country and region flags, etc) are not yet supported,
 adding support is a high priority due to their usefulness for asset generation and LCD hardware projects.*
 
 ### 3. Export Fonts to Octo Code
@@ -145,7 +145,7 @@ Features I'd like to add, roughly in order of descending priority:
 * Upscaling flags to apply during rasterization and after sprite sheet creation
 * Image folder export format, 1 glyph per file
 * Support for automatically reading TTF glyph tables
-* Multi-codepoint emoji (examples: ⛈️ , 🌶️, country/region flags)
+* Multi-character grapheme support (examples: ⛈️ , 🌶️, country/region flags)
 * Fix ugly caching behavior
 * Regex-like expressions for glyph selection
 * C header code generation
