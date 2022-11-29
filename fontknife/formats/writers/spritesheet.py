@@ -18,7 +18,7 @@ class SpriteSheetGridWriter(FormatWriter):
         font: RasterFont,
         destination: PathLikeOrHasWrite,
         glyph_sequence: Optional[Iterable[str]] = None,
-        mode='1',
+        mode: str = '1',
         **kwargs
     ) -> None:
 
