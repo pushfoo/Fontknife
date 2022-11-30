@@ -279,6 +279,16 @@ convert_parser = add_named_subcommand(
                 the tile size if it was provided.
                 '''
         },
+        'out-sheet-scale': {
+            'short_flag': '-m', 'default': 1, 'type': int,
+            'help': '''\
+                The scale multiplier for the sprite sheet. Must be an integer
+                value of 1 or greater.
+ 
+                If it is greater than 1, the sheet will be scaled up using
+                the provided multiplier via nearest neighbor scaling.
+            '''
+        },
         'out-tile-size-px': {
             'short_flag': '-t', 'default': None, 'type': int, 'nargs': 2,
             'help': '''\

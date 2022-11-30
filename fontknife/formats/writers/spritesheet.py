@@ -19,6 +19,7 @@ class SpriteSheetGridWriter(FormatWriter):
         destination: PathLikeOrHasWrite,
         glyph_sequence: Optional[Iterable[str]] = None,
         mode: str = '1',
+        sheet_scale: int = 1,
         **kwargs
     ) -> None:
 
@@ -56,6 +57,17 @@ class SpriteSheetGridWriter(FormatWriter):
         for index, glyph in enumerate(glyph_sequence):
             paste_bbox = grid_mapper.bbox_for_sheet_index(index)
             dest_draw.text(paste_bbox[:2], glyph, fill=255, font=font)
+
+        if not isinstance(sheet_scale, int):
+            raise TypeError('Sheet scale must be an integer with value 1 or greater')
+        elif sheet_scale < 1:
+            raise ValueError('Sheet scale must be an integer with value 1 or greater')
+        elif sheet_scale != 1:
+            dest_image = dest_image.resize(
+                (
+                    dest_image.size[0] * sheet_scale,
+                    dest_image.size[1] * sheet_scale
+                ))
 
         dest_image.save(destination)
 
