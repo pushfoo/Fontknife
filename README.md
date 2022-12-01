@@ -132,7 +132,7 @@ If you want a longer history:
    Octo support
 
 The project began shifting focus and gaining inertia at roughly item 4. I've
-been using the project as an opportunity to applying new techniques and Python
+been using the project as an opportunity to apply new techniques and Python
 features I've learned about when appropriate.
 
 ## When will you add X?
