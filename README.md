@@ -142,16 +142,16 @@ When I have time or if I merge a PR.
 Features I'd like to add, roughly in order of descending priority:
 
 * Export with a transparent background color
-* Upscaling flags to apply during rasterization and after sprite sheet creation
 * Image folder export format, 1 glyph per file
 * Support for automatically reading TTF glyph tables
 * Multi-character grapheme support (examples: ⛈️ , 🌶️, country/region flags)
 * Fix ugly caching behavior
 * Regex-like expressions for glyph selection
-* C header code generation
+* Better scaling flags with features such as downsampling when rasterizing glyphs
+* Customizing foreground colors
+* Color TTF support
 * Refactor Octo generation
+* C header code generation
 * Additional font formats, both old
   ([FNT](https://web.archive.org/web/20110513200924/http://support.microsoft.com/kb/65123), etc)
   and new ([UXF](https://wiki.xxiivv.com/site/ufx_format.html), etc).
-* Additional color support
-* Color TTF support
