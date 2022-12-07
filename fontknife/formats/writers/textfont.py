@@ -1,4 +1,5 @@
 import json
+import unicodedata
 from collections import deque
 from typing import Iterable, Optional, Any
 
@@ -65,14 +66,12 @@ class FontRenderer:
         stream = self.stream
 
         # Emit the header using an easy to parse format
-        end = ' ' if comment_raw_glyph else '\n'
-        stream.header(GLYPH_HEADER, json.dumps(glyph), end=end)
         if comment_raw_glyph:
             if glyph == '"':
                 quote = "'"
             else:
                 quote = '"'
-            stream.comment(f"Raw glyph: {quote}{glyph}{quote}")
+            stream.comment(f"{quote}{glyph}{quote} : {unicodedata.name(glyph).lower()}")
 
         # Get dimensions for the glyph with padding and the raw data inside
         if bitmap_bbox is None:
@@ -89,6 +88,8 @@ class FontRenderer:
         else:
             stream.comment(f"Glyph Size : {glyph_width, glyph_height}")
             stream.comment(f"Data Size  : {data_width, data_height}")
+
+        stream.header(GLYPH_HEADER, json.dumps(glyph))
 
         # Calculate padding values and output padding
         px_empty = self.empty_character
