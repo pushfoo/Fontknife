@@ -90,7 +90,7 @@ COMMON_COMMAND_TEMPLATE = {
             '''
     },
     'src-tile-spacing-px': {
-        'short_flag': '-S', 'default': [0,0], 'type': int, 'nargs': 2,
+        'short_flag': '-S', 'default': [0, 0], 'type': int, 'nargs': 2,
         'help': '''\
             Spacing between spritesheet tiles as a pair of pixel lengths.
 
@@ -284,7 +284,7 @@ convert_parser = add_named_subcommand(
             'help': '''\
                 The scale multiplier for the sprite sheet. Must be an integer
                 value of 1 or greater.
- 
+
                 If it is greater than 1, the sheet will be scaled up using
                 the provided multiplier via nearest neighbor scaling.
             '''
