@@ -6,8 +6,8 @@ from fontknife.custom_types import PathLike, HasRead, BoundingBox, ImageCoreLike
 from fontknife.formats import RasterFont, rasterize_font_to_tables
 from fontknife.formats.common import BinaryReader
 from fontknife.formats.common.raster_font import GlyphRasterizerCallable
+from fontknife.graphemes import ASCII_COMMON_SHEET_MEMBERS
 from fontknife.iohelpers import StdOrFile, get_resource_filesystem_path
-from fontknife.utils import generate_glyph_sequence
 
 
 def ttf_bbox_and_mask_getter(
@@ -57,8 +57,8 @@ class TrueTypeReader(BinaryReader):
             glyph_sequence: Optional[Iterable[str]] = None,
             **kwargs
     ) -> RasterFont:
-        if glyph_sequence is None:
-            glyph_sequence = generate_glyph_sequence()
+        if glyph_sequence is None:  # Attempt to get common characters
+            glyph_sequence = ASCII_COMMON_SHEET_MEMBERS
 
         with StdOrFile(source, 'rb') as wrapped:
             raw_font = self.__class__.wrapped_callable(

@@ -8,6 +8,7 @@ from PIL import Image, ImageDraw
 
 from fontknife.custom_types import ImageFontLike, ImageCoreLike, BboxFancy, PathLike, \
     Size, BoundingBox, SizeFancy
+from fontknife.graphemes import parse_graphemes
 
 
 @dataclass
@@ -274,25 +275,26 @@ class RasterFont:
         return self._size_points
 
     def getsize(self, text: str) -> Size:
+
+        graphemes = parse_graphemes(text)
+        last_index = len(graphemes) - 1
+
         total_width = 0
         total_height = 0
 
-        last_index = len(text) - 1
-        for char_index, char_code in enumerate(text):
-
-            char_image = self.get_glyph(text)
-
-            width, height = char_image.size
+        for grapheme_index, grapheme in enumerate(graphemes):
+            metadata = self.get_glyph_metadata(grapheme)
+            width, height = metadata.glyph_bbox[2:]
 
             total_height = max(total_height, height)
             total_width += width
 
-            if char_index < last_index:
+            if grapheme_index < last_index:
                 total_width += self._text_tracking_px
 
         return total_width, total_height
 
-    def getmask(self, text: str, mode: str = '') -> ImageCoreLike:
+    def getmask(self, text: str, mode: str = '1') -> ImageCoreLike:
         """
         Get an imaging core object to use as a drawing mask.
 
@@ -303,19 +305,25 @@ class RasterFont:
         :return:
         """
         size = self.getsize(text)
-        mode = mode or '1'
+
+        graphemes = parse_graphemes(text)
+        last_index = len(graphemes) - 1
+
         mask_image = Image.new(mode, size)
-        last_index = len(text) - 1
+
         current_x, current_y = 0, 0
-        for i, char in enumerate(text):
-            char_image = self.get_glyph(char)
+        for grapheme_index, grapheme in enumerate(graphemes):
+            char_image = self.get_glyph(grapheme)
             width, height = char_image.size
 
+            # Does this need an offset calculated for the image and stored?
+            # Don't really have one now...
             mask_image.paste(
                 char_image,
                 (current_x, current_y, current_x + width, current_y + height))
             current_x += width
-            if i < last_index:
+
+            if grapheme_index < last_index:
                 current_x += self._text_tracking_px
 
         return mask_image.im

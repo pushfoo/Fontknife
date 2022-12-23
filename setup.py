@@ -13,7 +13,10 @@ setup(
     description="Rasterize only the glyphs you need.",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    install_requires=['pillow>=9.3,<10'],
+    install_requires=[
+        'pillow>=9.3,<10',
+        'regex=2022.10.31'  # Provides unicode grapheme support
+    ],
     packages=find_packages(include=['fontknife', 'fontknife.*']),
     entry_points={
         "console_scripts": [

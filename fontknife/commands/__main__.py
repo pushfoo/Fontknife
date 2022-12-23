@@ -10,8 +10,10 @@ from fontknife.commands.emit_code import main as emit_code
 from fontknife.formats import FormatReader, FormatWriter, load_font, UnclearSourceFontFormat, \
     PipingFromStdinRequiresFontFormat
 from fontknife.formats.common.exceptions import FontFormatError
+from fontknife.graphemes import cli_grapheme_arg
 from fontknife.iohelpers import exit_error
 from fontknife.utils import remap_prefixed_keys, extract_matching_keys, tuplemap
+
 
 base_parser = argparse.ArgumentParser(
     description="A utility with multiple sub-commands for manipulating fonts."
@@ -45,7 +47,7 @@ COMMON_COMMAND_TEMPLATE = {
     },
     'src-glyph-sequence': {
         'short_flag': '-G',
-        'type': str, 'default': None,
+        'type': cli_grapheme_arg, 'default': None,
         'help': '''\
             Manually specify the glyphs provided by the source font.
 
@@ -116,7 +118,7 @@ COMMON_COMMAND_TEMPLATE = {
     },
     'out-glyph-sequence': {
         'short_flag': '-g',
-        'type': str, 'default': None,
+        'type': cli_grapheme_arg, 'default': None,
         'help': '''\
             Manually override the order of the emitted glyphs.
 

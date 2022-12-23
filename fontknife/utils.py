@@ -1,9 +1,7 @@
 import re
-import string
 import sys
 from collections import defaultdict
 from dataclasses import asdict
-from itertools import chain, filterfalse
 from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, TypeVar, Hashable, \
     Pattern, Generator, MutableMapping
 from collections.abc import Mapping as MappingABC
@@ -17,52 +15,6 @@ from fontknife.custom_types import (
     ImageCoreLike,
     StarArgsLengthError
 )
-
-
-def generate_glyph_sequence(
-    raw_character_sequence: Optional[Iterable[str]] = None,
-    exclude: [Union[Callable,Iterable[str]]] = None
-) -> Tuple[str, ...]:
-    """
-    Generate an output order of strings as keys to glyph data.
-
-    If no arguments are provided, it will return the following ordering::
-
-        0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
-
-    Digits are placed first to eliminate offset math for displaying
-    scores when working in retro development environments.
-
-    If you desire a different order, pass a value to
-    ``raw_character_sequence``. Use ``exclude`` to filter the iterables
-
-
-    :param raw_character_sequence:
-    :param exclude:
-    :return:
-    """
-
-    # If passed a function, use it to exclude
-    if callable(exclude):
-        exclude_func = exclude
-
-    else: # We need to generate an exclusion function
-        if exclude is None:
-            # Exclude everything before space and after base ASCII
-            exclude = set(chr(i) for i in chain(range(0, 31), range(128, 255)))
-        else:
-            # Convert the iterable to a set for efficient lookup
-            exclude = set(exclude)
-
-        def exclude_func(s):
-            return s in exclude
-
-    if not raw_character_sequence:
-        raw_character_sequence = string.printable
-
-    glyph_sequence = tuple(filterfalse(exclude_func, raw_character_sequence))
-
-    return glyph_sequence
 
 
 def get_bbox_size(bbox: BoundingBox) -> Size:
