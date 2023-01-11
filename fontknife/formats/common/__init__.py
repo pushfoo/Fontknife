@@ -75,7 +75,7 @@ def __init_subclass__(cls: Type["FormatHandlerRegistryABC"]):
     if wrapped is not None and not callable(wrapped):
         raise TypeError('wrapped_callable must be a callable!')
 
-    # Use a specified format if it was given
+    # If a format name wasn't provided, parse it from the class name
     format_name = getattr(cls, 'format', None)
 
     if not format_name:
@@ -87,7 +87,7 @@ def __init_subclass__(cls: Type["FormatHandlerRegistryABC"]):
 
     cls.by_format_name[format_name] = cls
 
-    # Use format as an extension if no extensions are specified
+    # Use format_name as a default when no extension(s) specified
     file_extensions = getattr(cls, 'file_extensions', None)
     if not file_extensions:
         file_extensions = (format_name,)
