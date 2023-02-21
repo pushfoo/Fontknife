@@ -4,6 +4,7 @@ from typing import Optional, Iterable
 import PIL.Image
 import PIL.ImageDraw
 
+from fontknife.colors import RGBA_WHITE, RGBA_BLACK
 from fontknife.custom_types import PathLikeOrHasWrite
 from fontknife.formats import RasterFont, FormatWriter
 from fontknife.formats.common.spritesheet import GridMapper
@@ -18,8 +19,10 @@ class SpriteSheetGridWriter(FormatWriter):
         font: RasterFont,
         destination: PathLikeOrHasWrite,
         glyph_sequence: Optional[Iterable[str]] = None,
-        mode: str = '1',
+        mode: str = 'RGBA',
         sheet_scale: int = 1,
+        foreground_color=RGBA_WHITE,
+        background_color=RGBA_BLACK,
         **kwargs
     ) -> None:
 
@@ -51,12 +54,12 @@ class SpriteSheetGridWriter(FormatWriter):
             glyph_sequence = font.provided_glyphs
 
         # Draw all glyphs into the sprite sheet
-        dest_image = PIL.Image.new(mode, grid_mapper.sheet_bounds_px[2:])
+        dest_image = PIL.Image.new(mode, grid_mapper.sheet_bounds_px[2:], color=background_color)
         dest_draw = PIL.ImageDraw.Draw(dest_image)
 
         for index, glyph in enumerate(glyph_sequence):
             paste_bbox = grid_mapper.bbox_for_sheet_index(index)
-            dest_draw.text(paste_bbox[:2], glyph, fill=255, font=font)
+            dest_draw.text(paste_bbox[:2], glyph, fill=foreground_color, font=font)
 
         if not isinstance(sheet_scale, int):
             raise TypeError('Sheet scale must be an integer with value 1 or greater')
