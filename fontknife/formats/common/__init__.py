@@ -107,8 +107,8 @@ class FormatHandlerRegistryABC(ABC):
     Base class for all format registries.
 
     All immediate subclasses will be handler registries. Handler
-    registries store information about any subclass of theirs which
-    does not have ABC as an immediate baseclass.
+    registries store information about every subclass which does
+    not have ABC as an immediate baseclass.
 
     This is a workaround for the limitations of Python. See the
     ``__init_subclass__`` function at the top of this file for more
@@ -173,7 +173,8 @@ class FormatReader(FormatHandlerRegistryABC, ABC):
         Baseclass for all font format readers.
 
         These classes handle loading from a file to a RasterFont.
-        :param caching_strategy:
+
+        :param caching_strategy: a factory callable for a cache.
         """
         self.cache = caching_strategy()
 
