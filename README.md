@@ -65,9 +65,9 @@ for information on how to select specific glyphs.*
 
 Imagine you're making a farming game. You need filler assets ASAP.
 
-Use this tool with a
-[Noto Emoji Font](https://fonts.google.com/noto/specimen/Noto+Emoji)
-variant to rapidly generate filler assets:
+Use this tool with a symbol font, such as 
+[Noto Emoji](https://fonts.google.com/noto/specimen/Noto+Emoji),
+to rapidly generate filler assets:
 
 ```commandline
 fontknife convert -P 48 -G "🌽🍇🍎🍏🫐🍓🍒🍐🍅🥕🥔🥒🍑🥑🧅🍈" NotoEmoji-Regular.ttf fruits_and_veggies.png
