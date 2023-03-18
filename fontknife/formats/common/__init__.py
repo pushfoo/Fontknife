@@ -79,7 +79,7 @@ def __init_subclass__(cls: Type["FormatHandlerRegistryABC"]):
     format_name = getattr(cls, 'format', None)
 
     if not format_name:
-        # Remove strippable words from the end & convert to lower case
+        # Remove extraneous class name parts & convert to lower case
         name_parts = PASCAL_CASE_WORD_REGEX.findall(cls.__name__)
         if name_parts[-1] in ('Reader', 'Writer'):
             name_parts.pop()
