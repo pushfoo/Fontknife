@@ -15,7 +15,7 @@ setup(
     long_description_content_type='text/markdown',
     install_requires=[
         'pillow>=9.3,<10',
-        'regex=2022.10.31'  # Provides unicode grapheme support
+        'regex==2022.10.31'  # Provides unicode grapheme support
     ],
     packages=find_packages(include=['fontknife', 'fontknife.*']),
     entry_points={
