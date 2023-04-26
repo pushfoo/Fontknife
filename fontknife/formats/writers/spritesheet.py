@@ -11,6 +11,7 @@ from fontknife.formats.common.spritesheet import GridMapper
 
 
 class SpriteSheetGridWriter(FormatWriter):
+
     format_name = 'spritesheet-grid'
     file_extensions = ('png', 'jpg', 'tga', 'bmp')
 
