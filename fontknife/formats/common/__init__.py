@@ -202,7 +202,7 @@ class FormatWriter(FormatHandlerRegistryABC, ABC):
         destination: PathLikeOrHasWrite,
         glyph_sequence: Optional[Iterable[str]] = None,
         **kwargs
-    ) -> RasterFont:
+    ) -> None:
         pass
 
 
