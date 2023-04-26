@@ -20,7 +20,7 @@ See the end of this file for planned features.
 
 ### Requirements
 
-1. Python 3.7+
+1. Python 3.8+
 2. Enough disk space to install [pillow](https://pillow.readthedocs.io/en/stable/)
    and its dependencies
 3. The ability to [create virtual environments](https://docs.python.org/3/library/venv.html)
