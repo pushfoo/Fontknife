@@ -18,7 +18,7 @@ See the end of this file for planned features.
 
 ## How do I install it?
 
-### Requirements
+### Basic Install Requirements
 
 1. Python 3.8+
 2. Enough disk space to install [pillow](https://pillow.readthedocs.io/en/stable/)
@@ -26,13 +26,16 @@ See the end of this file for planned features.
 3. The ability to [create virtual environments](https://docs.python.org/3/library/venv.html)
    or use [pipx](https://pypa.github.io/pipx/)
 
-### Installation
+*See [CONTRIBUTING.md](https://github.com/pushfoo/fontknife/blob/master/CONTRIBUTING.md)
+for development install instructions & requirements*
+
+### User Installation
+
 Create a virtual environment and run the following:
 
 ```commandline
 pip install fontknife
 ```
-
 You can use [pipx](https://pypa.github.io/pipx/) instead if you'd like.
 
 If you want to use fontknife as a dependency in your projects, be sure to
