@@ -1,8 +1,9 @@
 from collections import deque
-from functools import cache
 from math import log
 from typing import Iterable, Optional
 
+
+from fontknife.utils import cache
 from fontknife.formats import RasterFont
 from fontknife.iohelpers import OutputHelper, padded_hex, exit_error
 from fontknife.custom_types import HasWrite
