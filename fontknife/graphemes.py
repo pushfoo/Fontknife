@@ -4,7 +4,7 @@ from typing import Tuple, cast, Optional
 import regex
 
 ASCII_COMMON_SHEET_MEMBERS = tuple(chr(i) for i in range(32, 127))  # Space through tilda (~)
-UNICODE_GRAPHEME_REGEX = regex.compile('\X')  # noqa: W605 # Allow extended regex module's escapes
+UNICODE_GRAPHEME_REGEX = regex.compile(r'\X')  # noqa: W605 # Allow extended regex module's escapes
 
 
 @lru_cache
