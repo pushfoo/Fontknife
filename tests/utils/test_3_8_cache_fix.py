@@ -5,7 +5,7 @@ def test_uses_lru_cache_to_replace_cache(monkeypatch):
 
     # Setup fake lru cache
     mock_lru_cache = Mock(return_value=lambda a: a)
-    monkeypatch.setattr('functools.lru_cache', mock_lru_cache)
+    monkeypatch.setattr('fontknife.utils._lru_cache', mock_lru_cache)
 
     # Import cache & 'decorate' the function
     from fontknife.utils import cache
