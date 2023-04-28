@@ -7,8 +7,10 @@
 3. If you get an error about `pyproject.toml`, run `pip install --upgrade pip`
    and retry
 4. Run `pytest tests` to tests after making changes
-5. Try to add tests when appropriate
+5. Try to add tests for your code when possible
 6. Be excellent to each other
+
+Bonus points for having Docker installed & [running `test_python38.sh` to test on Python 3.8](docs/DOCKER.md).
 
 ## Developer Install
 
@@ -42,7 +44,9 @@ Afterward, you should be able to re-run the first install command.
 
 ## Running Tests
 
-Tests are run with pytest as follows:
+### Testing with Your Local Python Version
+
+Run the tests with pytest as follows:
 
 ```commandline
 pytest tests
@@ -50,3 +54,10 @@ pytest tests
 
 If you are making changes such as adding or changing features, try to add or update the
 unit tests if possible. It's also ok to ask for help with this!
+
+### Dockerized Python 3.8 Tests
+
+If you have Docker installed, you can run `test_python38.sh` to automatically
+set up & run the project's tests in a self-contained Python 3.8 environment.
+
+Please see [docs/DOCKER.md](doc/DOCKER.md) for more information.
