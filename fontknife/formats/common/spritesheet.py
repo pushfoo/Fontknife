@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Mapping as MappingABC
 from typing import Union, Optional, Sequence, Generator
+from typing import Mapping as MappingABC
 
 from fontknife.custom_types import BoundingBox, Size, BboxFancy, Coord, SizeFancy
 from fontknife.utils import attrs_eq

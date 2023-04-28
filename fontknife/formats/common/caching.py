@@ -3,7 +3,6 @@ import csv
 import hashlib
 import json
 import tempfile
-from collections import UserDict
 from dataclasses import dataclass, astuple, field
 from pathlib import Path
 from typing import Callable, Dict, Optional, Union, BinaryIO, Set, Any, Tuple
@@ -162,7 +161,7 @@ class MetadataCacheEntry:
         self.provided_glyphs = tuple(included_glyphs)
 
 
-class FileMetadataCache(UserDict):
+class FileMetadataCache(Dict):
     """
     Keeps track of source files and which have already been processed.
 
@@ -253,7 +252,7 @@ class FileMetadataCache(UserDict):
 default_cache: Optional[FileMetadataCache] = None
 
 
-def get_cache(cache_directory: Optional[PathLike] = None) -> FileMetadataCache[Path, MetadataCacheEntry]:
+def get_cache(cache_directory: Optional[PathLike] = None) -> FileMetadataCache:
     creating_temp_cache = cache_directory is None
 
     if creating_temp_cache:
