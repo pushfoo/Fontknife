@@ -8,13 +8,15 @@ tl;dr test on the most troublesome supported Python version inside a Docker cont
 
 Mostly the following:
 
-1. Debian users, which [advises not using PPAs](https://wiki.debian.org/DontBreakDebian)
+1. Debian users, which [advises not using PPAs in its doc](https://wiki.debian.org/DontBreakDebian)
 2. People who don't want to risk breaking their system Python install
 3. Repeatable build enthusiasts
 
-### How do I Use This?
+### How Do I Use This?
 
-1. Be running on a *NIX system (mac, Linux, etc) with Docker installed
+First, makes you're capable of running Docker containers. For a *NIX system (mac, Linux, etc),
+the steps will be roughly as follows:
+
 2. `cd` into the project root directory
 3. Read `test_python38.sh` to make sure you understand it
 4. Run `chmod +x test_python38.sh`
@@ -32,7 +34,7 @@ Mostly the following:
 
 #### Most people
 
-For their own projects, most people should als consider one of the following:
+For their own projects, most people should also consider one of the following:
 
 * [PDM](https://pdm.fming.dev/latest/) for cross-platform Python interpreter version management
 * [The deadsnakes PPA](https://github.com/deadsnakes) for Linux users on Debian / Ubuntu
@@ -48,6 +50,6 @@ Try [rye](https://github.com/mitsuhiko/rye). I've heard good things!
 If you want something which acts like a local version of GitHub actions,
 I've found two options but haven't tried them:
 
-* [act](https://github.com/nektos/act), a well-documented golang utility
+* [act](https://github.com/nektos/act), a golang utility.
 * [Whatever Red Hat is doing](https://www.redhat.com/en/blog/testing-github-actions-locally),
   a pair of JS-based repos which seem to be pretty heavy
