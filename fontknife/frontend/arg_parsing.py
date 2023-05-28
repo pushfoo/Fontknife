@@ -1,26 +1,27 @@
 import argparse
 import re
-import sys
 import textwrap
 from collections import ChainMap
-from typing import Optional, Callable, Any, Mapping, Dict, Union, Tuple, Pattern, Iterable
+from typing import Pattern, Dict, Any, Union, Tuple, Mapping, Callable, Optional, Iterable
 
-from fontknife.commands.convert import main as convert
-from fontknife.commands.emit_code import main as emit_code
-from fontknife.formats import FormatReader, FormatWriter, load_font, UnclearSourceFontFormat, \
-    PipingFromStdinRequiresFontFormat
-from fontknife.formats.common.exceptions import FontFormatError
+from fontknife.formats import FormatReader
 from fontknife.graphemes import cli_grapheme_arg
-from fontknife.iohelpers import exit_error
-from fontknife.utils import remap_prefixed_keys, extract_matching_keys, tuplemap
-
-
-base_parser = argparse.ArgumentParser(
-    description="A utility with multiple sub-commands for manipulating fonts."
+from fontknife.utils import (
+    dashes_to_underscores,
+    extract_matching_keys,
+    tuplemap,
+    remap_prefixed_keys
 )
 
-# Important, setting dest='command' allows subcommand detection to work.
-subparsers = base_parser.add_subparsers(dest='command')
+
+def make_prefix_regex(prefix: str) -> Pattern:
+    return re.compile('^' + prefix + r'[-_]')
+
+
+SOURCE_PREFIX = 'src'
+SOURCE_PREFIX_REGEX = make_prefix_regex(SOURCE_PREFIX)
+OUTPUT_PREFIX = 'out'
+OUTPUT_PREFIX_REGEX = make_prefix_regex(OUTPUT_PREFIX)
 
 
 # Used with a builder function to reliably display help on subcommands
@@ -128,20 +129,6 @@ COMMON_COMMAND_TEMPLATE = {
 }
 
 
-def make_prefix_regex(prefix: str) -> Pattern:
-    return re.compile('^' + prefix + r'[-_]')
-
-
-SOURCE_PREFIX = 'src'
-SOURCE_PREFIX_REGEX = make_prefix_regex(SOURCE_PREFIX)
-OUTPUT_PREFIX = 'out'
-OUTPUT_PREFIX_REGEX = make_prefix_regex(OUTPUT_PREFIX)
-
-
-def dashes_to_underscores(s: str) -> str:
-    return s.replace('-', '_')
-
-
 def extract_arg_names(source: Dict[str, Any], pattern: Union[str, Pattern]) -> Tuple[str, ...]:
     raw = extract_matching_keys(source, pattern)
     dash_fixed = tuplemap(lambda s: dashes_to_underscores(s[4:]), raw)
@@ -209,9 +196,9 @@ def merge_configs(*configs: Mapping[str, Mapping[str, Any]]) -> Dict[str, Dict[s
     return merged
 
 
-# Store command details to help pass
-_source_arg_names_for_command = {}
-_output_arg_names_for_command = {}
+# Map src_ and out_ to short names
+source_arg_names_for_command = {}
+output_arg_names_for_command = {}
 
 
 def add_named_subcommand(
@@ -251,87 +238,11 @@ def add_named_subcommand(
 
     _add_argument_specification_to_parser(subparser, final_options)
 
-    _source_arg_names_for_command[name] = extract_arg_names(final_options, SOURCE_PREFIX_REGEX)
-    _output_arg_names_for_command[name] = extract_arg_names(final_options, OUTPUT_PREFIX_REGEX)
+    source_arg_names_for_command[name] = extract_arg_names(final_options, SOURCE_PREFIX_REGEX)
+    output_arg_names_for_command[name] = extract_arg_names(final_options, OUTPUT_PREFIX_REGEX)
 
     subparser.set_defaults(callback=callback)
     return subparser
-
-
-convert_parser = add_named_subcommand(
-    subparsers, 'convert', convert,
-    description="Convert fonts between different font representation formats.",
-    changes={
-        'out-format': {'choices': list(FormatWriter.by_format_name.keys())},
-        'out-sheet-bounds-px': {
-            'short_flag': '-b', 'default': None, 'type': int, 'nargs': 4,
-            'help': '''\
-                A subsection of the image to use, as left top right bottom.
-
-                If not specified, the whole image will be assumed to be valid
-                sprite sheet data.
-                '''
-        },
-        'out-sheet-size-tiles': {
-            'short_flag': '-c', 'default': None, 'type': int, 'nargs': 2,
-            'help': '''\
-                The size of the sheet as width height in rows and columns.
-
-                If no sheet size is specified, it will be calculated from
-                the tile size if it was provided.
-                '''
-        },
-        'out-sheet-scale': {
-            'short_flag': '-m', 'default': 1, 'type': int,
-            'help': '''\
-                The scale multiplier for the sprite sheet. Must be an integer
-                value of 1 or greater.
-
-                If it is greater than 1, the sheet will be scaled up using
-                the provided multiplier via nearest neighbor scaling.
-            '''
-        },
-        'out-tile-size-px': {
-            'short_flag': '-t', 'default': None, 'type': int, 'nargs': 2,
-            'help': '''\
-                Output sheet's size per tile as width height in pixels.
-
-                Does not account for inter-tile spacing. If no tile size is
-                specified, it will be calculated from the other provided
-                sheet dimensions if possible.
-                '''
-        },
-        'out-tile-spacing-px': {
-            'short_flag': '-s', 'default': [0, 0], 'type': int, 'nargs': 2,
-            'help': '''\
-                Spacing between spritesheet tiles as a pair of pixel lengths.
-
-                Leaving this unspecified is equivalent to -s 0 0
-            '''
-        },
-    })
-
-
-emit_code_parser = add_named_subcommand(
-    subparsers, 'emit-code', emit_code,
-    changes={'out-format': {'choices': ['octo-chip8']}},
-    description="Emit a font's data as code in a programming language.")
-
-
-def general_help_and_exit_if_code(exit_code: Optional[int] = None):
-    """
-    Print the list of commands, then exit if exit_code is not None
-
-    :param exit_code: An exit code to use
-    :return:
-    """
-    print("The following commands are available:\n")
-    for command_name in subparsers.choices.keys():
-        print("  ", command_name)
-    print("\nPlease use -h or --help with any command for more information.")
-
-    if exit_code is not None:
-        sys.exit(exit_code)
 
 
 def get_endpoint_path_and_args(
@@ -344,46 +255,19 @@ def get_endpoint_path_and_args(
     return path, remapped
 
 
-def main():
-    args = base_parser.parse_args()
-    command = args.command
-
-    if command is None:
-        general_help_and_exit_if_code(exit_code=2)
-
-    if len(sys.argv) == 2:
-        if command:
-            subparser = subparsers.choices[args.command]
-            subparser.print_help()
-            exit(1)
-
-        else:
-            general_help_and_exit_if_code(exit_code=2)
-
-    # Translate to a dict that works with remap
-    raw_args_dict = vars(args)
-
-    # Load the font data
-    source_path, source_kwargs = get_endpoint_path_and_args(
-        raw_args_dict, 'src_', _source_arg_names_for_command[command])
-
-    font = None
-    help_callback = subparsers.choices[args.command].print_usage
-    try:
-        font = load_font(source_path, **source_kwargs)
-
-    # Handle only reasonably expected exception types
-    except (UnclearSourceFontFormat, PipingFromStdinRequiresFontFormat) as e:
-        exit_error(e, before_message=help_callback)
-    except (FontFormatError, FileNotFoundError) as e:
-        exit_error(e)
-
-    # Generate requested output
-    output_path, output_kwargs = get_endpoint_path_and_args(
-        raw_args_dict, 'out_', _output_arg_names_for_command[command])
-
-    args.callback(font, output_path, output_kwargs)
+def get_source_path_and_args(raw_args_dict: Dict) -> Tuple[str, Dict[str, Any]]:
+    command = raw_args_dict["command"]
+    return get_endpoint_path_and_args(
+        raw_args_dict,
+        'src_',
+        source_arg_names_for_command[command]
+    )
 
 
-if __name__ == "__main__":
-    main()
+def get_output_path_and_args(raw_args_dict: Dict) -> Tuple[str, Dict[str, Any]]:
+    command = raw_args_dict["command"]
+    return get_endpoint_path_and_args(
+        raw_args_dict,
+        'out_',
+        output_arg_names_for_command[command]
+    )

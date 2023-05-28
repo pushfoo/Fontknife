@@ -46,7 +46,7 @@ dev = [
 ]
 
 [project.scripts]
-fontknife = "fontknife.commands.__main__:main"
+fontknife = "fontknife.frontend.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["fontknife", "fontknife.*"]

@@ -25,6 +25,10 @@ def cache(fn: Callable):
     return _lru_cache(maxsize=None)(fn)
 
 
+def dashes_to_underscores(s: str) -> str:
+    return s.replace('-', '_')
+
+
 def get_bbox_size(bbox: BoundingBox) -> Size:
     left, top, right, bottom = bbox
     return right - left, bottom - top
@@ -730,3 +734,4 @@ def has_all_methods(obj: Any, method_names: Iterable[str]) -> bool:
     :return:
     """
     return has_all_attributes(obj, method_names, callable)
+
