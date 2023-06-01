@@ -29,7 +29,7 @@ classifiers=[
         "Topic :: Software Development :: Libraries",
     ]
 dependencies = [
-    'pillow>=9.3,<10',
+    'pillow==9.4',
     'regex==2022.10.31'  # Provides unicode grapheme support
 ]
 
