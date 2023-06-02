@@ -105,27 +105,14 @@ def general_help_and_exit_if_code(exit_code: Optional[int] = None):
 
 def main():
     args = base_parser.parse_args()
+
     command = args.command
-
-    if command is None:
-        general_help_and_exit_if_code(exit_code=2)
-
-    if len(sys.argv) == 2:
-        if command:
-            subparser = subparsers.choices[args.command]
-            subparser.print_help()
-            exit(1)
-
-        else:
-            general_help_and_exit_if_code(exit_code=2)
-
-    # Translate to a dict that works with remap
-    raw_args_dict = vars(args)
+    raw_args_dict = vars(args)  # Need a dict for remap to work
 
     # Load the font data
     source_path, source_kwargs = get_source_path_and_args(raw_args_dict)
     font = None
-    help_callback = subparsers.choices[args.command].print_usage
+    help_callback = subparsers.choices[command].print_usage
     try:
         font = load_font(source_path, **source_kwargs)
 
