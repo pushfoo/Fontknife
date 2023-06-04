@@ -1,6 +1,6 @@
 # Temporary local testing setup for Python 3.8
 #
-# It's easiest to run this with the included Make script.
+# It's easiest to run this with the included script (test_python38.sh)
 # See doc/DOCKER.md for more info.
 
 FROM python:3.8
