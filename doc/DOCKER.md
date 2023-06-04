@@ -1,6 +1,9 @@
 # Docker for a Python 3.8 Test Shim
 
-tl;dr test on the most troublesome supported Python version inside a Docker container
+tl;dr
+1. 3.8 causes the most problems for this project
+2. If you're running tests, you probably already have docker with Python images downloaded
+3. We can use those to test on 3.8 without breaking anything else on your system
 
 ## Usage
 
@@ -8,9 +11,9 @@ tl;dr test on the most troublesome supported Python version inside a Docker cont
 
 Mostly the following:
 
-1. Debian users, which [advises not using PPAs in its doc](https://wiki.debian.org/DontBreakDebian)
-2. People who don't want to risk breaking their system Python install
-3. Repeatable build enthusiasts
+1. People who don't want to install [PDM](https://pdm.fming.dev/latest/)
+2. Debian users, who are [advised against using PPAs by the official doc](https://wiki.debian.org/DontBreakDebian)
+3. People who don't want to risk breaking their system Python install
 
 ### How Do I Use This?
 
@@ -48,8 +51,8 @@ Try [rye](https://github.com/mitsuhiko/rye). I've heard good things!
 #### GitHub Actions Enthusiasts
 
 If you want something which acts like a local version of GitHub actions,
-I've found two options but haven't tried them:
+I've found two options:
 
-* [act](https://github.com/nektos/act), a golang utility.
+* [act](https://github.com/nektos/act), a golang utility with some rough edges.
 * [Whatever Red Hat is doing](https://www.redhat.com/en/blog/testing-github-actions-locally),
-  a pair of JS-based repos which seem to be pretty heavy
+  a pair of JS-based repos which seem to be pretty heavy. I haven't tried this one.
