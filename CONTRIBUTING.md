@@ -60,4 +60,4 @@ unit tests if possible. It's also ok to ask for help with this!
 If you have Docker installed, you can run `test_python38.sh` to automatically
 set up & run the project's tests in a self-contained Python 3.8 environment.
 
-Please see [docs/DOCKER.md](doc/DOCKER.md) for more information.
+Please see [docs/DOCKER.md](docs/DOCKER.md) for more information.
