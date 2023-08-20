@@ -1,4 +1,8 @@
-# Public domain python .gitignore from https://github.com/github/gitignore
+# Modified from public domain python .gitignore at https://github.com/github/gitignore
+
+# Ignore temporary notes directory
+.scratch/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
