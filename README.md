@@ -1,5 +1,10 @@
 # Fontknife
 
+[![PyTest](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml/badge.svg)](https://github.com/pyglet/pyglet/actions/workflows/unittests.yml)
+[![Documentation Status](https://readthedocs.org/projects/fontknife/badge/?version=latest)](https://fontknife.readthedocs.io/en/latest/?badge=latest)
+[![License](https://img.shields.io/badge/License-BSD_3--Clause-brightgreen.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
+
 **Q**: How do I convert a font into a sprite sheet?<br/>
 **A**: `fontknife convert`
 
