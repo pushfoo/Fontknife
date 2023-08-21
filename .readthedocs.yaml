@@ -16,10 +16,12 @@ build:
 sphinx:
    configuration: docs/conf.py
 
-# Optionally build your docs in additional formats such as PDF and ePub
-formats:
-   - pdf
-   - epub
+# Disabled until emoji safety for each formant is better understood.
+# PDF's LaTeX-based pipeline fails when encountering any, and epub's
+# build was cancelled because of it.
+# formats:
+#   - pdf
+#   - epub
 
 # TL;DR for contributors:
 # 1. Install using pip install -e .[dev,docs]
