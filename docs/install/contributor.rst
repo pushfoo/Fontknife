@@ -41,6 +41,6 @@ Install Instructions
 #. ``cd fontknife`` to enter the directory
 #. `Create a virtual environment <creating_venvs_>`_
 #. `Activate the virtual environment <how_venvs_work_>`_
-#. Run ``pip install fontknife -e .[dev]`` to install the project and dependencies in editable mode.
+#. Run ``pip install fontknife -e .[dev,docs]`` to install the project and its dependencies in editable mode.
 #. Run ``fontknife convert --help`` to make sure it runs.
 #. Run ``pytest`` to run all unit tests.
