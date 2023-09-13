@@ -39,7 +39,7 @@ How do I pin it?
 
    .. parsed-literal::
 
-             \ |project_name|\ ==\ |current_project_release|\
+             \ |package_name|\ ==\ |release|\
 
 #. Use this table to find out if & where to paste t:
 
@@ -56,7 +56,7 @@ How do I pin it?
 
         - .. parsed-literal::
 
-             \ |project_name|\ ==\ |current_project_release|\
+             \ |package_name|\ ==\ |release|\
 
 
       * - ``pyproject.toml``
@@ -67,7 +67,7 @@ How do I pin it?
 
             [project]
             dependencies =[
-                '\ |project_name|\ ==\ |current_project_release|\'
+                '\ |package_name|\ ==\ |release|\'
             ]
 
 
