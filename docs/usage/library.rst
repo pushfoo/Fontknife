@@ -39,7 +39,7 @@ How do I pin it?
 
    .. parsed-literal::
 
-             \ |package_name|\ ==\ |release|\
+             |dependency_line|
 
 #. Use this table to find out if & where to paste t:
 
@@ -50,13 +50,13 @@ How do I pin it?
         - Where to put it
         - Example
 
-      * - ``pip`` + `requirements.txt <requirements_txt_>`_
+      * - `requirements.txt <requirements_txt_>`_
 
         - At the end of ``requirements.txt``
 
         - .. parsed-literal::
 
-             \ |package_name|\ ==\ |release|\
+             |dependency_line|
 
 
       * - ``pyproject.toml``
@@ -67,7 +67,7 @@ How do I pin it?
 
             [project]
             dependencies =[
-                '\ |package_name|\ ==\ |release|\'
+                '|dependency_line|'
             ]
 
 

@@ -48,7 +48,7 @@ version = '.'.join(release.split('.')[2:])  # This looks odd but matches sphinx 
 # Custom substitutions usable in RST doc
 # |release| and |version| are automatically added by sphinx
 PROLOG_KEYS = dict(
-    package_name=project.lower(),
+    package_name=package_name,
     min_python_version=pyproject_project_section['requires-python'][2:],
 )
 # Custom substitution definitions
@@ -58,6 +58,7 @@ rst_prolog = """
 .. |min_python_version| replace:: {min_python_version}
 .. |min_python_version_cli_name| replace:: ``python{min_python_version}``
 .. |min_python_version_plus| replace:: Python {min_python_version}+  
+.. |dependency_line| replace:: |package_name|\ ==\ |release|\ 
 """.format(
     **PROLOG_KEYS
 )
