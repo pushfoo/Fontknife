@@ -16,6 +16,8 @@ import sys
 # Use tomli on versions before tomllib was added to the core library
 if sys.version_info < (3, 11):
     import tomli as tomllib
+else:
+    import tomllib
 
 
 def multi_get(source: Mapping, *name: str, **name_default: Any):
