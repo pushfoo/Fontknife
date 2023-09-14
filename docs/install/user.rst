@@ -30,7 +30,11 @@ Requirements
 First, make sure you have |min_python_version_plus| installed:
 
 #. Open your favorite terminal application.
-#. Try running ``python``. If it says the command was not found, try ``python3`` instead.
+#. Try running ``python``. If it says the command was not found, try the following:
+
+   #. ``python3``
+   #. |min_python_version_cli_name| or later minor version numbers
+
 #. At least one of them should show something like the output below:
 
    .. code-block:: console
