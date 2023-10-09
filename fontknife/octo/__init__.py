@@ -6,7 +6,7 @@ from typing import Iterable, Optional
 from fontknife.utils import cache
 from fontknife.formats import RasterFont
 from fontknife.iohelpers import OutputHelper, padded_hex, exit_error
-from fontknife.custom_types import HasWrite
+from fontknife.custom_types import HasWrite, GlyphSequence
 
 
 class OctoStream(OutputHelper):
@@ -88,7 +88,7 @@ class OctoStream(OutputHelper):
 def emit_octo(
     out_file,
     font_data: RasterFont,
-    glyph_sequence: Optional[Iterable[int]] = None
+    glyph_sequence: Optional[GlyphSequence] = None
 ):
 
     # if glyphs is None:

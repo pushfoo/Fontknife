@@ -5,7 +5,7 @@ import PIL.Image
 import PIL.ImageDraw
 
 from fontknife.colors import RGBA_WHITE, RGBA_BLACK
-from fontknife.custom_types import PathLikeOrHasWrite
+from fontknife.custom_types import PathLikeOrHasWrite, GlyphSequence
 from fontknife.formats import RasterFont, FormatWriter
 from fontknife.formats.common.spritesheet import GridMapper
 
@@ -19,7 +19,7 @@ class SpriteSheetGridWriter(FormatWriter):
         self,
         font: RasterFont,
         destination: PathLikeOrHasWrite,
-        glyph_sequence: Optional[Iterable[str]] = None,
+        glyph_sequence: Optional[GlyphSequence] = None,
         mode: str = 'RGBA',
         sheet_scale: int = 1,
         foreground_color=RGBA_WHITE,

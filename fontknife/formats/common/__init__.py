@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Dict, Type, Set, Callable, Optional, Iterable
 
 from fontknife.custom_types import PathLike, PathLikeOrHasRead, PathLikeOrHasWrite, PathLikeOrHasStreamFunc, \
-    BytesLike
+    BytesLike, GlyphSequence
 from fontknife.formats.common.caching import get_cache, load_and_cache_bitmap_font
 from fontknife.formats.common.raster_font import RasterFont, rasterize_font_to_tables
 from fontknife.iohelpers import get_resource_filesystem_path, SeekableBinaryFileCopy
@@ -200,7 +200,7 @@ class FormatWriter(FormatHandlerRegistryABC, ABC):
         self,
         font: RasterFont,
         destination: PathLikeOrHasWrite,
-        glyph_sequence: Optional[Iterable[str]] = None,
+        glyph_sequence: Optional[GlyphSequence] = None,
         **kwargs
     ) -> None:
         pass
@@ -230,7 +230,7 @@ class CachingReader(BinaryReader, ABC):
         self,
         source: PathLikeOrHasRead[BytesLike],
         font_size: int = 16,
-        force_provided_glyphs: Optional[Iterable[str]] = None,
+        force_provided_glyphs: Optional[GlyphSequence] = None,
         **kwargs
     ) -> RasterFont:
         stream = SeekableBinaryFileCopy.copy(source)

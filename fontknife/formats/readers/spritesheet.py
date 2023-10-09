@@ -2,7 +2,7 @@ from typing import Iterable, Optional, Union, cast
 
 from PIL import Image
 
-from fontknife.custom_types import PathLikeOrHasRead, BytesLike, Size, BoundingBox, BboxFancy
+from fontknife.custom_types import PathLikeOrHasRead, BytesLike, Size, BoundingBox, BboxFancy, GlyphSequence
 from fontknife.formats.common.raster_font import GlyphMetadata
 from fontknife.formats import RasterFont
 from fontknife.formats.common import BinaryReader
@@ -18,7 +18,7 @@ class SpritesheetGridReader(BinaryReader):
         self,
         source: PathLikeOrHasRead[BytesLike],
         font_size: int = 16,
-        glyph_sequence: Optional[Iterable[str]] = None,
+        glyph_sequence: Optional[GlyphSequence] = None,
         bounds_px: Optional[Union[Size, BoundingBox]] = None,
         sheet_size_tiles: Optional[Size] = None,
         tile_size_px: Optional[Size] = None,

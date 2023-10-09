@@ -2,7 +2,7 @@ from typing import Union, Optional, Iterable, Tuple, cast
 
 from PIL import ImageFont, ImageDraw, Image
 
-from fontknife.custom_types import PathLike, HasRead, BoundingBox, ImageCoreLike, Size
+from fontknife.custom_types import PathLike, HasRead, BoundingBox, ImageCoreLike, Size, GlyphSequence
 from fontknife.formats import RasterFont, rasterize_font_to_tables
 from fontknife.formats.common import BinaryReader
 from fontknife.formats.common.raster_font import GlyphRasterizerCallable
@@ -54,7 +54,7 @@ class TrueTypeReader(BinaryReader):
     def load_source(
             self, source: Union[PathLike, HasRead],
             font_size_points: int = 16,
-            glyph_sequence: Optional[Iterable[str]] = None,
+            glyph_sequence: Optional[GlyphSequence] = None,
             **kwargs
     ) -> RasterFont:
         if glyph_sequence is None:  # Attempt to get common characters

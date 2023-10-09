@@ -3,7 +3,7 @@ import unicodedata
 from collections import deque
 from typing import Iterable, Optional, Any
 
-from fontknife.custom_types import PathLike, HasWrite, PathLikeOrHasWrite
+from fontknife.custom_types import PathLike, HasWrite, PathLikeOrHasWrite, GlyphSequence
 from fontknife.formats import RasterFont
 from fontknife.formats.common import FormatWriter
 from fontknife.formats.common.textfont import GLYPH_HEADER, COMMENT_PREFIX, FULL_PIXEL, EMPTY_PIXEL
@@ -120,7 +120,7 @@ class FontRenderer:
     def emit_textfont(
         self,
         font: RasterFont,
-        glyph_sequence: Iterable[str] = None,
+        glyph_sequence: Optional[GlyphSequence] = None,
         actual_source_path: Optional[PathLike] = None,
         max_line_width: int = 80
     ) -> None:

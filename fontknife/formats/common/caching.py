@@ -9,7 +9,7 @@ from typing import Callable, Dict, Optional, Union, BinaryIO, Set, Any, Tuple
 
 from PIL import ImageFont
 
-from fontknife.custom_types import PathLike, HasReadline, HasRead, PathLikeOrHasRead
+from fontknife.custom_types import PathLike, HasReadline, HasRead, PathLikeOrHasRead, GlyphSequence
 from fontknife.iohelpers import ensure_folder_exists, load_binary_source, get_resource_filesystem_path, absolute_path
 
 
@@ -62,7 +62,7 @@ def deserialize_optional(raw: str, converter: Optional[Callable] = None) -> Any:
     return raw
 
 
-def glyph_sequence_to_string(raw: Tuple[str, ...]) -> str:
+def glyph_sequence_to_string(raw: GlyphSequence) -> str:
     json_encode = json.dumps(raw)
     bytes_encode = json_encode.encode('utf-8')
     b64 = base64.b64encode(bytes_encode)

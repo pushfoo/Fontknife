@@ -29,6 +29,7 @@ BytesLike = Union[ByteString, array]
 PathLike = Union[Path, str, bytes]
 StreamTypeVar = TypeVar('StreamTypeVar')
 
+GlyphSequence = Iterable[str]
 
 class StarArgsLengthError(TypeError):
     def __init__(
@@ -435,12 +436,12 @@ class MissingGlyphError(Exception):
     Does not subclass Key or Index errors because the underlying
     representation below may be either.
     """
-    def __init__(self, message_header, missing_glyph_codes: Sequence[int]):
+    def __init__(self, message_header: str, missing_glyph_codes: GlyphSequence):
         super().__init__(f"{message_header} : {missing_glyph_codes}")
         self.missing_glyph_codes = missing_glyph_codes
 
     @classmethod
-    def default_msg(cls, missing_glyph_codes: Sequence[int]):
+    def default_msg(cls, missing_glyph_codes: GlyphSequence):
         cls(
-            "One or more required glyphs was found to be missing",
-            missing_glyph_codes)
+           "One or more required glyphs was found to be missing",
+           missing_glyph_codes)
