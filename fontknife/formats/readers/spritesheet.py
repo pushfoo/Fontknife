@@ -52,7 +52,7 @@ class SpritesheetGridReader(BinaryReader):
 
         raster_font = RasterFont(
             glyph_table=glyph_masks,
-            glyph_metadata=glyph_metadata
+            glyph_metadata_table=glyph_metadata
         )
         return raster_font
 
