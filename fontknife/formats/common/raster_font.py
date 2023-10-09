@@ -14,13 +14,15 @@ from fontknife.graphemes import parse_graphemes
 @dataclass
 class GlyphMetadata:
     """
-    Keep track of bounding box information about glyphs.
+    Metadata for a single glyph.
 
-    Glyphs can have empty actual data despite having a bounding box. In
-    this case, bitmap_bbox will be None.
+    There is no ``Glyph`` class because :py:class:`dataclass.dataclass`
+    breaks if you include instances of certain binary-backed classes
+    as part of it. :py:class:`PIL.Image.core` is one of them.
 
-    This class does not store the PIL.Image.core object itself because
-    doing so causes issues with dataclass library internals.
+    The ``glyph_bbox`` tracks the layout-space bbox. This is different from
+    the actual pixel data since it that be empty. In this case,
+    ``bitmap_bbox`` will be ``None``.
     """
     bitmap_bbox: Optional[BboxFancy]
     glyph_bbox: BboxFancy
@@ -52,7 +54,15 @@ GlyphMetadataMapping = Mapping[str, GlyphMetadata]
 
 
 class GlyphRasterizerCallable(Protocol):
-    def __call__(self, font: ImageFontLike, glyph: str, mode: str = '1') -> Tuple[BoundingBox, ImageCoreLike]:
+    """
+    A callable which returns a bounding box and image core.
+    """
+    def __call__(
+            self,
+            font: ImageFontLike,
+            glyph: str,
+            mode: str = '1'
+    ) -> Tuple[BoundingBox, ImageCoreLike]:
         ...
 
 
@@ -60,12 +70,15 @@ def copy_glyph_data_from_bitmap_format(
     font: ImageFontLike, glyph: str, mode: str = '1'
 ) -> Tuple[BoundingBox, ImageCoreLike]:
     """
-    Copy bitmap font data from non-TTF fonts.
+    Copy a single glyph's data from a bitmap (non-TTF) font.
 
-    TTFs report incorrect offsets with this function. The underlying
-    cause may be bugs in Pillow's TTF handling, or a quirk of the
-    TTF format. A TTF-specific rasterizer function exists in the
-    TTF format reader module as an alternative to this function.
+    .. warning:: TTFs report incorrect offsets with this function!
+
+                 The underlying cause may be bugs in Pillow's TTF
+                 handling, or a quirk of the format.
+
+    A TTF-specific rasterizer function exists in the TTF reader module
+    as an alternative to this function.
 
     :param font: The font object to extract glyph data from
     :param glyph: A string corresponding to a glyph in the font
@@ -164,7 +177,9 @@ class RasterFont:
         **font_metadata
     ):
         """
-        The common interchange structure all fonts are loaded to.
+        An interchange structure for font data.
+
+        It does not load data itself, but expects it to be provided.
 
         Compatible with PIL drawing functions, so it can be used to render
         previews or perform other tasks.
@@ -197,7 +212,7 @@ class RasterFont:
 
     def _update_max_tile_size_and_tofu(self) -> None:
         """
-        Calculate maximum size and the filler glyph for the font.
+        Calculate this font's maximum size and the filler glyph for it.
 
         Does nothing if there are no glyphs in the bitmap table.
 
