@@ -446,3 +446,15 @@ class MissingGlyphError(Exception):
         return cls(
            "One or more required glyphs was found to be missing",
            missing_glyph_codes)
+
+
+class ImageModeError(ValueError):
+    """Something has the wrong mode or invalid one"""
+    pass
+
+
+class ModeConflictError(ImageModeError):
+    """Two or more image modes contain a conflict"""
+    def __init__(self, message: str, *mismatched: str):
+        super().__init__(message, *mismatched)
+        self.mismatched = mismatched
