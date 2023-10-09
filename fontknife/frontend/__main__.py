@@ -87,23 +87,13 @@ emit_code_parser = add_named_subcommand(
     description="Emit a font's data as code in a programming language.")
 
 
-def general_help_and_exit_if_code(exit_code: Optional[int] = None):
-    """
-    Print the list of commands, then exit if exit_code is not None
+def main() -> int:
 
-    :param exit_code: An exit code to use
-    :return:
-    """
-    print("The following commands are available:\n")
-    for command_name in subparsers.choices.keys():
-        print("  ", command_name)
-    print("\nPlease use -h or --help with any command for more information.")
+    # Print help if called without args
+    if len(sys.argv) == 1:
+        base_parser.print_help()
+        return 2
 
-    if exit_code is not None:
-        sys.exit(exit_code)
-
-
-def main():
     args = base_parser.parse_args()
 
     command = args.command
@@ -126,6 +116,7 @@ def main():
     output_path, output_kwargs = get_output_path_and_args(raw_args_dict)
     args.callback(font, output_path, output_kwargs)
 
+    return 0
 
 if __name__ == "__main__":
     main()
