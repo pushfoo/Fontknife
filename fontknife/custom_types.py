@@ -16,6 +16,7 @@ from collections import namedtuple
 from pathlib import Path
 from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence, \
     overload, Iterator, cast, Iterable
+from typing_extensions import Self
 
 
 T = TypeVar('T')
@@ -441,7 +442,7 @@ class MissingGlyphError(Exception):
         self.missing_glyph_codes = missing_glyph_codes
 
     @classmethod
-    def default_msg(cls, missing_glyph_codes: GlyphSequence):
-        cls(
+    def default_msg(cls, missing_glyph_codes: GlyphSequence) -> Self:
+        return cls(
            "One or more required glyphs was found to be missing",
            missing_glyph_codes)

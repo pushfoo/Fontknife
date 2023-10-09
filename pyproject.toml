@@ -30,7 +30,8 @@ classifiers=[
     ]
 dependencies = [
     'pillow==9.4',
-    'regex==2022.10.31'  # Provides unicode grapheme support
+    'regex==2022.10.31',  # Provides unicode grapheme support
+    'typing_extensions'
 ]
 
 
