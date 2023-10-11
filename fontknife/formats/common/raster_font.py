@@ -7,8 +7,9 @@ from typing import Iterable, Dict, Optional, KeysView, Union, Mapping, Tuple, Pr
 from PIL import Image, ImageDraw
 
 from fontknife.custom_types import ImageFontLike, ImageCoreLike, BboxFancy, PathLike, \
-    Size, BoundingBox, SizeFancy
+    Size, BoundingBox, SizeFancy, MissingGlyphError, ModeConflictError
 from fontknife.graphemes import parse_graphemes
+from fontknife.utils import ordered_unique, ordered_calc_missing
 
 
 @dataclass
@@ -207,6 +208,17 @@ class RasterFont:
         self._max_bitmap_bbox: Optional[BboxFancy] = None
         self._notdef_glyph: Optional[ImageCoreLike] = None
 
+        # Validate modes & set local mode.
+        self._mode: Optional[str] = None  # For 0 glyphs.
+
+        modes = ordered_unique(map(
+            lambda i: i.mode, self._glyph_bitmaps.values()))
+        num_modes = len(modes)
+        if num_modes > 1:
+            raise ModeConflictError(f"Multiple source modes detected", *modes)
+        elif num_modes == 1:
+            self._mode = next(iter(modes))
+
         if self._glyph_metadata:
             self._update_max_tile_size_and_tofu()
 
@@ -251,6 +263,10 @@ class RasterFont:
         return self._glyph_metadata.get(glyph, self._notdef_glyph_metadata)
 
     @property
+    def mode(self) -> Optional[str]:
+        return self._mode
+
+    @property
     def font_metadata(self) -> MappingProxyType:
         return MappingProxyType(self._font_metadata)
 
@@ -292,6 +308,11 @@ class RasterFont:
     def getsize(self, text: str) -> Size:
 
         graphemes = parse_graphemes(text)
+        if missing := ordered_calc_missing(graphemes, self._glyph_bitmaps):
+            raise MissingGlyphError(
+                f"Can't calculate size for {text!r} due to missing glyphs",
+                missing)
+
         last_index = len(graphemes) - 1
 
         total_width = 0
@@ -315,16 +336,19 @@ class RasterFont:
 
         Breaks PEP naming conventions for pillow compatibility.
 
-        :param text: The text to get a mask for.
-        :param mode: Attempt to force the image mode.
-        :return:
-        """
-        size = self.getsize(text)
+        The mode conversion is not fully implemented. Ideally, you will
+        convert separately if you need to, or handle loading correctly
+        from the start.
 
+        :param text: The text to get a mask for.
+        :param mode: Attempt to force this image mode if it differs
+        :return: An imaging core or compatible object.
+        """
         graphemes = parse_graphemes(text)
+        size = self.getsize(text)
         last_index = len(graphemes) - 1
 
-        mask_image = Image.new(mode, size)
+        mask_image = Image.new(self.mode, size)
 
         current_x, current_y = 0, 0
         for grapheme_index, grapheme in enumerate(graphemes):
@@ -340,6 +364,9 @@ class RasterFont:
 
             if grapheme_index < last_index:
                 current_x += self._text_tracking_px
+
+        if mask_image.mode != mode:
+            mask_image = mask_image.convert(mode=mode)
 
         return mask_image.im
 

@@ -2,11 +2,10 @@ from collections import deque
 from math import log
 from typing import Iterable, Optional
 
-
-from fontknife.utils import cache
+from fontknife.utils import cache, ordered_calc_missing
 from fontknife.formats import RasterFont
 from fontknife.iohelpers import OutputHelper, padded_hex, exit_error
-from fontknife.custom_types import HasWrite, GlyphSequence
+from fontknife.custom_types import HasWrite, GlyphSequence, MissingGlyphError
 
 
 class OctoStream(OutputHelper):
@@ -88,7 +87,8 @@ class OctoStream(OutputHelper):
 def emit_octo(
     out_file,
     font_data: RasterFont,
-    glyph_sequence: Optional[GlyphSequence] = None
+    glyph_sequence: Optional[GlyphSequence] = None,
+    allow_missing: bool = False,
 ):
 
     # if glyphs is None:
@@ -100,6 +100,16 @@ def emit_octo(
     #font_width, font_height = find_max_dimensions(font_data, glyphs_to_check=glyphs)
 
     font_width, font_height = font_data.max_glyph_size
+
+    if glyph_sequence:
+        missing = ordered_calc_missing(glyph_sequence, font_data.provided_glyphs)
+    else:
+        glyph_sequence = font_data.provided_glyphs
+        missing = tuple()
+
+    if missing and not allow_missing:
+        raise MissingGlyphError.default_msg(missing)
+
     glyph_sequence = tuple(glyph_sequence or font_data.provided_glyphs)
     first_glyph = glyph_sequence[0]
     last_glyph = glyph_sequence[-1]
@@ -110,6 +120,7 @@ def emit_octo(
         exit_error("Font width larger than 8 pixels, not yet supported")
     if font_height > 8:
         exit_error("Font height larger than 8 pixels, not yet supported")
+
 
     # ugly, TextIO seems to be incorrectly treated as if it's not a
     # subclass of TextIOBase by some linters.
@@ -222,14 +233,15 @@ def emit_octo(
     octo.write_queued_data_with_label(widthtable_name)
 
     # calculate and output the glyph data
-    for glyph_code, glyph in font_data.glyph_table.items():
+    for glyph_code in glyph_sequence:
+        glyph = font_data.getmask(glyph_code, mode='1')
         glyph_width, glyph_height = font_data.get_glyph_metadata(glyph_code).glyph_bbox.size
         pixels = bytes(glyph)
 
         if not compact_glyphtable:
             print()
             pad = pad_for_label(widthtable_name)
-            print(f" {pad}# {glyph_code} \'{chr(glyph_code)}\': gl{glyph_code}  {pad}", end='')
+            print(f" {pad}#  \'{glyph_code}\': gl{glyph_code}  {pad}", end='')
 
         # only supports up to eight right now
         char_size = 8

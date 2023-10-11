@@ -14,12 +14,17 @@ from __future__ import annotations
 from array import array
 from collections import namedtuple
 from pathlib import Path
-from typing import Tuple, Protocol, Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence, \
-    overload, Iterator, cast, Iterable
+from typing import (
+    Tuple, Protocol,
+    Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence,
+    overload, Iterator, cast, Iterable, Hashable)
+
 from typing_extensions import Self
 
 
 T = TypeVar('T')
+H = TypeVar('H', bound=Hashable)
+
 ValidatorFunc = Callable[[Any, ], bool]
 
 
@@ -30,7 +35,7 @@ BytesLike = Union[ByteString, array]
 PathLike = Union[Path, str, bytes]
 StreamTypeVar = TypeVar('StreamTypeVar')
 
-GlyphSequence = Iterable[str]
+GlyphSequence = Sequence[str]
 
 class StarArgsLengthError(TypeError):
     def __init__(
@@ -458,3 +463,5 @@ class ModeConflictError(ImageModeError):
     def __init__(self, message: str, *mismatched: str):
         super().__init__(message, *mismatched)
         self.mismatched = mismatched
+
+

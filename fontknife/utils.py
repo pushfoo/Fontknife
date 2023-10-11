@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import re
 import sys
 from collections import defaultdict
 from dataclasses import asdict
 from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, TypeVar, Hashable, \
-    Pattern, Generator, MutableMapping
+    Pattern, Generator, MutableMapping, List, AbstractSet as SetABC
 from collections.abc import Mapping as MappingABC
 from functools import lru_cache as _lru_cache
 
@@ -15,7 +17,7 @@ from fontknife.custom_types import (
     T, Size, SizeFancy, BoundingBox, BboxFancy,
     ImageFontLike, ValidatorFunc,
     ImageCoreLike,
-    StarArgsLengthError
+    StarArgsLengthError, H
 )
 
 
@@ -32,6 +34,76 @@ def dashes_to_underscores(s: str) -> str:
 def get_bbox_size(bbox: BoundingBox) -> Size:
     left, top, right, bottom = bbox
     return right - left, bottom - top
+
+def passthrough(a: Any) -> Any:
+    return a
+
+
+def _dict_fake_ordered_set(
+        source: Iterable[H],
+        condition: Optional[Callable[[H], bool]] = passthrough
+) -> Dict[H, bool]:
+    return {k: True for k in filter(condition, source)}
+
+
+def ordered_unique(
+        items: Iterable[H],
+        condition: Optional[Callable[[H], bool]] = passthrough
+) -> List[H]:
+    return list(_dict_fake_ordered_set(
+        items,
+        condition=condition
+    ).keys())
+
+
+def ordered_calc_missing(
+        required: Iterable[H],
+        source: Iterable[H]
+) -> List[H]:
+    """Return a list of ``required`` items missing from ``source``.
+
+    The current implementation is built with the following in mind:
+
+    #. Preserve the original ordering to make UX better
+    #. Minimize external dependencies
+
+    :param required: A sequence to check for presence in-order.
+    :param source: The source to check against.
+    :returns: A list of items. May be empty.
+    """
+    if not isinstance(source, (MappingABC, SetABC)):
+        source = _dict_fake_ordered_set(source)
+
+    return ordered_unique(required, condition=lambda k: k not in source)
+
+
+def steps(
+        start: T,
+        stop: T,
+        num_steps: int,
+        end_inclusive: bool = False
+) -> Generator[T, None, None]:
+    """
+    Return ``num_steps`` between ``start`` and ``stop``.
+
+    By default, there will actually be ``num_steps - 1`` steps the
+    same as :py:class:`range`. Pass ``end_inclusive=True`` to include
+    the last step.
+
+    For simplicity in handling ints, ``start``'s type is used to cast
+    the return value.
+
+    :param start: The start value.
+    :param stop: The value at the end.
+    :param num_steps: The number of steps.
+    :param end_inclusive: Set this to ``True`` to do ``num_steps``
+    instead of the default ``num_steps - 1`` steps.
+    """
+    type_ = start.__class__
+    end_inclusive = int(end_inclusive)
+    step_distance = (stop - start) / (num_steps - end_inclusive)
+    for i in range(num_steps + end_inclusive):
+        yield type_(step_distance * i)
 
 
 def get_total_image_size_for_bbox(bbox: BoundingBox) -> Size:
