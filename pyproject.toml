@@ -29,7 +29,7 @@ classifiers=[
         "Topic :: Software Development :: Libraries",
     ]
 dependencies = [
-    'pillow~=10.1.0',
+    'pillow~=10.2.0',
     'regex==2022.10.31',  # Provides unicode grapheme support
     'typing_extensions'
 ]
@@ -46,8 +46,8 @@ Source = "https://github.com/pushfoo/fontknife"
 docs = [
     # Allows reading pyproject.toml in a forward-compatible way
     'tomli==2.0.1 ; python_version < "3.11"',
-    'sphinx<7',
-    'sphinx-rtd-theme==1.2.2',
+    'sphinx==7.2.6',
+    'sphinx-rtd-theme==2.0.0',
 ]
 # Local developer environment
 dev = [

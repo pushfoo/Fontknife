@@ -28,7 +28,7 @@ markupsafe==2.1.3
     # via jinja2
 packaging==23.1
     # via sphinx
-pillow==9.4.0
+pillow==10.2.0
     # via fontknife (pyproject.toml)
 pygments==2.16.1
     # via sphinx
@@ -38,7 +38,7 @@ requests==2.31.0
     # via sphinx
 snowballstemmer==2.2.0
     # via sphinx
-sphinx==6.2.1
+sphinx==7.2.6
     # via
     #   fontknife (pyproject.toml)
     #   sphinx-rtd-theme
@@ -48,7 +48,7 @@ sphinx==6.2.1
     #   sphinxcontrib-jquery
     #   sphinxcontrib-qthelp
     #   sphinxcontrib-serializinghtml
-sphinx-rtd-theme==1.2.2
+sphinx-rtd-theme==2.0.0
     # via fontknife (pyproject.toml)
 sphinxcontrib-applehelp==1.0.7
     # via sphinx
@@ -65,6 +65,8 @@ sphinxcontrib-qthelp==1.0.6
 sphinxcontrib-serializinghtml==1.1.9
     # via sphinx
 tomli==2.0.1 ; python_version < "3.11"
+    # via fontknife (pyproject.toml)
+typing-extensions==4.9.0
     # via fontknife (pyproject.toml)
 urllib3==2.0.4
     # via requests
