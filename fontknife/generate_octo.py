@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 import fileinput
+"""Old code from octofont.
+
+This definitely does not run. It needs to be replaced.
+"""
 import sys
 import getopt
 

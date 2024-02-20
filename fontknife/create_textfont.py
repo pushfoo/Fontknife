@@ -1,4 +1,8 @@
 #!/usr/bin/python3
+"""Old code from octofont.
+
+This might or might not run. It needs to be replaced.
+"""
 import sys
 import getopt
 

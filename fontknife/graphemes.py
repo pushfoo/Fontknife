@@ -21,10 +21,3 @@ def parse_graphemes(source: str, limit: Optional[int] = None) -> Optional[Tuple[
             raise ValueError(f'source has more matches ({num_matches} than passed limit allows ({limit})')
 
     return cast(Tuple[str], tuple(UNICODE_GRAPHEME_REGEX.findall(source)))
-
-
-def cli_grapheme_arg(source: Optional[str]) -> Optional[Tuple[str, ...]]:
-    if source is None:
-        return None
-    return parse_graphemes(source)
-

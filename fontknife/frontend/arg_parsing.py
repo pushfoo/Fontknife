@@ -1,3 +1,7 @@
+"""Helpers for arg parsing.
+
+Most of this module will probably be replaced at some point.
+"""
 import argparse
 import re
 import textwrap
@@ -5,7 +9,7 @@ from collections import ChainMap
 from typing import Pattern, Dict, Any, Union, Tuple, Mapping, Callable, Optional, Iterable
 
 from fontknife.formats import FormatReader
-from fontknife.graphemes import cli_grapheme_arg
+from fontknife.graphemes import parse_graphemes
 from fontknife.utils import (
     dashes_to_underscores,
     extract_matching_keys,
@@ -22,6 +26,12 @@ SOURCE_PREFIX = 'src'
 SOURCE_PREFIX_REGEX = make_prefix_regex(SOURCE_PREFIX)
 OUTPUT_PREFIX = 'out'
 OUTPUT_PREFIX_REGEX = make_prefix_regex(OUTPUT_PREFIX)
+
+
+def cli_grapheme_arg(source: Optional[str]) -> Optional[Tuple[str, ...]]:
+    if source is None:
+        return None
+    return parse_graphemes(source)
 
 
 # Used with a builder function to reliably display help on subcommands
