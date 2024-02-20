@@ -256,7 +256,7 @@ class RasterFont:
                 tile_max_bbox |= current
 
         self._max_tile_bbox: BboxFancy = BboxFancy(*tile_max_bbox)
-        self._notdef_glyph = generate_missing_character_core(self._max_tile_bbox[:2])
+        self._notdef_glyph = generate_missing_character_core(self._max_tile_bbox.size)
         self._notdef_glyph_metadata = GlyphMetadata.from_font_glyph(self._max_tile_bbox, self._notdef_glyph)
 
     def get_glyph_metadata(self, glyph: str) -> GlyphMetadata:
