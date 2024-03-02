@@ -17,8 +17,6 @@ See the [Practical Examples](#practical-examples) for examples with greater deta
 
 ## Install Instructions
 
-tl;dr:
-
 1. Have [Python](https://python.org) 3.8 or higher installed
 2. Make sure you've [created](https://docs.python.org/3/library/venv.html#creating-virtual-enviroments)
    and [activated](https://docs.python.org/3/library/venv.html#how-venvs-work)
