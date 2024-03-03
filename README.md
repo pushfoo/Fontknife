@@ -17,16 +17,22 @@ See the [Practical Examples](#practical-examples) for examples with greater deta
 
 ## Install Instructions
 
+### Users
+
+If you only want to convert fonts, follow these steps:
+
 1. Have [Python](https://python.org) 3.8 or higher installed
 2. Make sure you've [created](https://docs.python.org/3/library/venv.html#creating-virtual-enviroments)
    and [activated](https://docs.python.org/3/library/venv.html#how-venvs-work)
    a virtual environemnt (or use [pipx](https://pypa.github.io/pipx/))
-3. `pip install fontknife`
+3. `pip install
+4. Run `fontknife convert --help`
 
-`fontknife convert --help` will provide an overview of supported arguments.
+If the last command print help text, you're ready to go! Read it for a descirption of supported arguments.
 
-*See [CONTRIBUTING.md](https://github.com/pushfoo/fontknife/blob/master/CONTRIBUTING.md)
-for development install instructions & requirements*
+### Developers / Contributors
+
+See [CONTRIBUTING.md](https://github.com/pushfoo/fontknife/blob/master/CONTRIBUTING.md).
 
 ## Current Features
 
