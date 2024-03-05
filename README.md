@@ -13,7 +13,7 @@
 | Rasterize a font's ASCII glyphs |            ![Tom Thumb's ASCII Characters](./docs/tom-thumb.png)             | `fontknife convert supported.font spritesheet.png`                     |
 | Generate filler assets          | ![The cool sunglasses and flexed bicep emoji as a png](./docs/flex_cool.png) | `fontknife convert -P 48 -G "💪😎" NotoEmoji-Regular.ttf arm_cool.png` |
 
-See the [Practical Examples](#practical-examples) for examples with greater detail.
+For more detailed explanations, see [Practical Examples](#practical-examples).
 
 ## Install Instructions
 
