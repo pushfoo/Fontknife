@@ -27,10 +27,10 @@ MODE_TO_BYTE_SIZE: Dict[ColorMode, int] = {
 }
 
 MODES: FrozenSet[str] = frozenset(MODE_TO_BYTE_SIZE)
-TUPLE_MODES: Final[FrozenSet[str]] =\
-    frozenset([k for k, v in MODE_TO_BYTE_SIZE.items() if v >= 1])
-INT_MODES: Final[FrozenSet[str]] =\
-    frozenset([k for k, v in MODE_TO_BYTE_SIZE.items() if v == 1])
+TUPLE_MODES: Final[FrozenSet[str]] = frozenset(
+    mode for mode, size in MODE_TO_BYTE_SIZE.items() if size >= 1)
+INT_MODES: Final[FrozenSet[str]] = frozenset(
+    mode for mode, size in MODE_TO_BYTE_SIZE.items() if size == 1)
 
 
 ColorRGBA = Tuple[int, int, int, int]

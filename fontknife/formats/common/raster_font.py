@@ -6,6 +6,7 @@ from typing import Iterable, Dict, Optional, KeysView, Union, Mapping, Tuple, Pr
 
 from PIL import Image, ImageDraw
 
+from fontknife.colors import Mode1
 from fontknife.custom_types import ImageFontLike, ImageCoreLike, BboxFancy, PathLike, \
     Size, BoundingBox, SizeFancy, MissingGlyphError, ModeConflictError
 from fontknife.graphemes import parse_graphemes
@@ -62,13 +63,13 @@ class GlyphRasterizerCallable(Protocol):
             self,
             font: ImageFontLike,
             glyph: str,
-            mode: str = '1'
+            mode: str = Mode1
     ) -> Tuple[BoundingBox, ImageCoreLike]:
         ...
 
 
 def copy_glyph_data_from_bitmap_format(
-    font: ImageFontLike, glyph: str, mode: str = '1'
+    font: ImageFontLike, glyph: str, mode: str = Mode1
 ) -> Tuple[BoundingBox, ImageCoreLike]:
     """
     Copy a single glyph's data from a bitmap (non-TTF) font.
