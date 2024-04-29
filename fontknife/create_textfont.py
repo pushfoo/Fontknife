@@ -5,10 +5,21 @@ This might or might not run. It needs to be replaced.
 """
 import sys
 import getopt
+from typing import Iterable, Dict
 
-from fontknife import calculate_alignments
 from fontknife.formats import load_font
 from fontknife.formats.writers.textfont import FontRenderer
+
+
+def calculate_alignments(vert_center: Iterable[str] = None, vert_top: Iterable[str] = None) -> Dict:
+    alignments = {}
+    vert_center = set(vert_center) if vert_center else set(r"~=%!#$()*+/<>@[]{}|")
+    alignments["center"] = vert_center
+
+    vert_top = set(vert_top) if vert_top else set("^\"\'`")
+    alignments["top"] = vert_top
+
+    return alignments
 
 
 def main():
@@ -54,5 +65,7 @@ def main():
     renderer.emit_textfont(font, glyph_sequence, actual_source_path=font_file)
     pass
 
+
 if __name__ == "__main__":
    main()
+

@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Iterable, Dict, Optional, KeysView, Union, Mapping, Tuple, Protocol
+from typing import Iterable, Dict, Optional, KeysView, Union, Mapping, Tuple, Protocol, cast
 
 from PIL import Image, ImageDraw
 
-from fontknife.colors import Mode1
 from fontknife.custom_types import ImageFontLike, ImageCoreLike, BboxFancy, PathLike, \
-    Size, BoundingBox, SizeFancy, MissingGlyphError, ModeConflictError
+    Size, BoundingBox, SizeFancy, MissingGlyphError, ModeConflictError, Mode1, ModeAny
 from fontknife.graphemes import parse_graphemes
 from fontknife.utils import ordered_unique, ordered_calc_missing
 
@@ -63,13 +62,13 @@ class GlyphRasterizerCallable(Protocol):
             self,
             font: ImageFontLike,
             glyph: str,
-            mode: str = Mode1
+            mode: ModeAny = Mode1
     ) -> Tuple[BoundingBox, ImageCoreLike]:
         ...
 
 
 def copy_glyph_data_from_bitmap_format(
-    font: ImageFontLike, glyph: str, mode: str = Mode1
+    font: ImageFontLike, glyph: str, mode: ModeAny = Mode1
 ) -> Tuple[BoundingBox, ImageCoreLike]:
     """
     Copy a single glyph's data from a bitmap (non-TTF) font.
@@ -93,7 +92,7 @@ def copy_glyph_data_from_bitmap_format(
 def rasterize_font_to_tables(
     source_font: ImageFontLike,
     glyphs: Iterable[str],
-    mode: str = '1',
+    mode: ModeAny = Mode1,
     glyph_rasterizer: GlyphRasterizerCallable = copy_glyph_data_from_bitmap_format
 ) -> Dict[str, Union[GlyphMetadataMapping, GlyphMaskMapping]]:
     """
@@ -132,7 +131,7 @@ def optional_mapping_to_dict(optional: Optional[Mapping]) -> Dict:
 def generate_missing_character_core(
     image_size: Size,
     rectangle_bbox: Optional[BoundingBox] = None,
-    mode: str = '1',
+    mode: ModeAny = Mode1,
     rectangle_margins_px: int = 1,
     color=255,
     background=0
@@ -331,7 +330,7 @@ class RasterFont:
 
         return total_width, total_height
 
-    def getmask(self, text: str, mode: str = '1') -> ImageCoreLike:
+    def getmask(self, text: str, mode: ModeAny = Mode1) -> ImageCoreLike:
         """
         Get an imaging core object to use as a drawing mask.
 
@@ -349,7 +348,10 @@ class RasterFont:
         size = self.getsize(text)
         last_index = len(graphemes) - 1
 
-        mask_image = Image.new(self.mode, size)
+        mask_image = Image.new(
+            self.mode,  # type: ignore
+            cast(size, tuple[int, int])
+        )
 
         current_x, current_y = 0, 0
         for grapheme_index, grapheme in enumerate(graphemes):
@@ -358,9 +360,12 @@ class RasterFont:
 
             # Does this need an offset calculated for the image and stored?
             # Don't really have one now...
+            paste_bbox: Tuple[int, int, int, int] = (
+                current_x, current_y, current_x + width, current_y + height)
             mask_image.paste(
-                char_image,
-                (current_x, current_y, current_x + width, current_y + height))
+                cast(char_image, Image),
+                paste_bbox
+            )
             current_x += width
 
             if grapheme_index < last_index:

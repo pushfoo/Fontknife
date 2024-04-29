@@ -1,8 +1,8 @@
-from typing import Union, Optional, Iterable, Tuple, cast
+from typing import Union, Optional, Tuple, cast
 
 from PIL import ImageFont, ImageDraw, Image
 
-from fontknife.custom_types import PathLike, HasRead, BoundingBox, ImageCoreLike, Size, GlyphSequence
+from fontknife.custom_types import PathLike, HasRead, BoundingBox, ImageCoreLike, Size, GlyphSequence, Mode1, ModeAny
 from fontknife.formats import RasterFont, rasterize_font_to_tables
 from fontknife.formats.common import BinaryReader
 from fontknife.formats.common.raster_font import GlyphRasterizerCallable
@@ -10,10 +10,11 @@ from fontknife.graphemes import ASCII_COMMON_SHEET_MEMBERS
 from fontknife.iohelpers import StdOrFile, get_resource_filesystem_path
 
 
+# todo: combine with parts of show_image_for_text
 def ttf_bbox_and_mask_getter(
     font: ImageFont.FreeTypeFont,
     glyph: str,
-    mode: str = '1',
+    mode: ModeAny = Mode1,
     topleft_offset: Size = (10, 10),
     scratch_image_size: Size = (100, 100)
 ) -> Tuple[BoundingBox, ImageCoreLike]:

@@ -17,13 +17,13 @@ from pathlib import Path
 from typing import (
     Tuple, Protocol,
     Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence,
-    overload, Iterator, cast, Iterable, Hashable)
+    overload, Iterator, cast, Iterable, Hashable, NamedTuple, NewType, Final)
 
 from typing_extensions import Self
 
-
 T = TypeVar('T')
 H = TypeVar('H', bound=Hashable)
+
 
 ValidatorFunc = Callable[[Any, ], bool]
 
@@ -34,6 +34,9 @@ BytesLike = Union[ByteString, array]
 
 PathLike = Union[Path, str, bytes]
 StreamTypeVar = TypeVar('StreamTypeVar')
+S_co = TypeVar('S_co', covariant=True)
+S_contra = TypeVar('S_contra', contravariant=True)
+
 
 GlyphSequence = Sequence[str]
 
@@ -58,21 +61,21 @@ class StarArgsLengthError(TypeError):
 
 # Generic stream method Protocols
 @runtime_checkable
-class HasWrite(Protocol[StreamTypeVar]):
-    def write(self, b: StreamTypeVar) -> int:
+class HasWrite(Protocol[S_contra]):
+    def write(self, b: S_contra) -> int:
         ...
 
 
 @runtime_checkable
-class HasRead(Protocol[StreamTypeVar]):
-    def read(self, hint: int = -1) -> StreamTypeVar:
+class HasRead(Protocol[S_co]):
+    def read(self, hint: int = -1) -> S_co:
         ...
 
 
 @runtime_checkable
-class HasReadline(Protocol[StreamTypeVar]):
+class HasReadline(Protocol[S_co]):
 
-    def readline(self) -> StreamTypeVar:
+    def readline(self) -> S_co:
         ...
 
 
@@ -83,15 +86,17 @@ class HasBytesWrite(Protocol):
         ...
 
 
+PathLikeOr = Union[PathLike, T]
+
 # Combined path + stream types for resources / loading
-PathLikeOrHasRead = Union[HasRead[StreamTypeVar], PathLike]
-PathLikeOrHasReadline = Union[HasReadline[StreamTypeVar], PathLike]
-PathLikeOrHasWrite = Union[HasWrite[StreamTypeVar], PathLike]
-PathLikeOrHasStreamFunc = Union[
-    PathLike,
-    HasRead[StreamTypeVar],
-    HasWrite[StreamTypeVar],
-    HasReadline[StreamTypeVar]]
+PathLikeOrHasRead = PathLikeOr[HasRead[S_co]]
+PathLikeOrHasReadline = PathLikeOr[HasReadline[S_co]]
+PathLikeOrHasWrite = PathLikeOr[HasWrite[S_co]]
+PathLikeOrHasStreamFunc = PathLikeOr[Union[
+    HasRead[S_co],
+    HasWrite[S_co],
+    HasReadline[S_co]]
+]
 
 
 @runtime_checkable
@@ -121,13 +126,15 @@ class SequenceLike(Protocol[T]):
 
 
 @runtime_checkable
-class Coord(SequenceLike[int], Protocol):
+class CoordLike(SequenceLike[int], Protocol):
 
     def __len__(self) -> int:
         return 2
 
 
-CoordFancy = namedtuple('CoordFancy', ['x', 'y'])
+class Coord(NamedTuple):
+    x: int
+    y: int
 
 
 @runtime_checkable
@@ -351,9 +358,9 @@ class BboxFancy(HashAsTupleMixin, CompareByLenAndElementsMixin, tuple):
     def height(self) -> int:
         return self._size.height
 
-    def encloses(self, other: Union[Coord, BoundingBox]) -> bool:
+    def encloses(self, other: Union[CoordLike, BoundingBox]) -> bool:
         """
-        True if the Coord or BoundingBox fits inside this Bbox.
+        True if the CoordLike or BoundingBox fits inside this Bbox.
 
         Coordinates will be treated as a bounding box with their starts
         and ends equal to the coordinate.
@@ -465,3 +472,9 @@ class ModeConflictError(ImageModeError):
         self.mismatched = mismatched
 
 
+ColorMode = NewType('ColorMode', str)
+ModeRGBA: Final[ColorMode] = ColorMode('RGBA')
+ModeRGB: Final[ColorMode] = ColorMode('RGB')
+ModeL: Final[ColorMode] = ColorMode('L')
+Mode1: Final[ColorMode] = ColorMode('1')
+ModeAny: Final[ColorMode] = Union[ModeRGBA, ModeRGB, ModeL, Mode1]

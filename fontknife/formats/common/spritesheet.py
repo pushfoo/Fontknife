@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Union, Optional, Sequence, Generator
 from typing import Mapping as MappingABC
 
-from fontknife.custom_types import BoundingBox, Size, BboxFancy, Coord, SizeFancy
+from fontknife.custom_types import BoundingBox, Size, BboxFancy, CoordLike, SizeFancy
 from fontknife.utils import attrs_eq
 
 
@@ -134,7 +134,7 @@ class GridMapper(MappingABC):
         return self._tile_size_px
 
     @property
-    def offset(self) -> Coord:
+    def offset(self) -> CoordLike:
         return self._bounds_px[0], self._bounds_px[1]
 
     def _check_for_raw_index_bound_error(self, index: int) -> Optional[KeyError]:
@@ -142,7 +142,7 @@ class GridMapper(MappingABC):
             return KeyError(f'Index {index} not in grid')
         return None
 
-    def bbox_for_tile_coord(self, coord: Coord) -> BoundingBox:
+    def bbox_for_tile_coord(self, coord: CoordLike) -> BoundingBox:
         """
         Calculate the bounding box for a given tile col, row coord
 
@@ -159,7 +159,7 @@ class GridMapper(MappingABC):
             top + self._tile_size_px.height
         )
 
-    def coord_for_sheet_index(self, index: int) -> Coord:
+    def coord_for_sheet_index(self, index: int) -> CoordLike:
         """
 
         Get col, row corresponding to a linear index in the grid.

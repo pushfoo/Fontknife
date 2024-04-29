@@ -52,6 +52,9 @@ docs = [
 # Local developer environment
 dev = [
     'pytest>=7.1,<8',
+    'mypy',
+    'types-pillow',
+    'types-regex',
     # Allows rebuilding docs/requirements.txt with this command
     # pip-compile --extra=docs --output-file=docs/requirements.txt pyproject.toml
     'pip-tools==7.3.0'
@@ -69,3 +72,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 norecursedirs = ["doc", ".venv", "env", "dist"]
+
+[tool.mypy]
+exclude = [
+    'fontknife/generate_octo.py',
+    'fontknife/create_textfont.py'
+]

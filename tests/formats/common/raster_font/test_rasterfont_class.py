@@ -4,10 +4,10 @@ from string import ascii_letters, ascii_uppercase, hexdigits
 import pytest
 from PIL import Image
 
-from fontknife.custom_types import ModeConflictError, MissingGlyphError
+from fontknife.custom_types import ModeConflictError, MissingGlyphError, ModeAny
 from fontknife.formats import RasterFont
 from fontknife.formats.common.raster_font import GlyphMetadata, GlyphMaskMapping, GlyphMetadataMapping
-from fontknife.colors import int_as_mode_color, MODES, ColorAny, ModeAny
+from fontknife.colors import int_as_mode_color, MODES, ColorAny
 
 
 @pytest.fixture(params=(ascii_letters, ascii_uppercase, hexdigits))

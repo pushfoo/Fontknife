@@ -17,7 +17,7 @@ from fontknife.custom_types import (
     T, Size, SizeFancy, BoundingBox, BboxFancy,
     ImageFontLike, ValidatorFunc,
     ImageCoreLike,
-    StarArgsLengthError, H
+    StarArgsLengthError, H, ModeRGBA, ModeAny, Mode1
 )
 
 
@@ -34,6 +34,7 @@ def dashes_to_underscores(s: str) -> str:
 def get_bbox_size(bbox: BoundingBox) -> Size:
     left, top, right, bottom = bbox
     return right - left, bottom - top
+
 
 def passthrough(a: Any) -> Any:
     return a
@@ -106,7 +107,7 @@ def steps(
         yield type_(step_distance * i)
 
 
-def get_total_image_size_for_bbox(bbox: BoundingBox) -> Size:
+def get_total_image_size_for_bbox(bbox: BoundingBox) -> SizeFancy:
     """
     Return the size of the image that would fit this bounding box.
 
@@ -114,12 +115,25 @@ def get_total_image_size_for_bbox(bbox: BoundingBox) -> Size:
     :return:
     """
     x0, y0, x1, y1 = bbox
-    return x1, y1
+    return SizeFancy(x1, y1)
 
 
-def show_image_for_text(font, text, mode="RGBA"):
+def show_image_for_text(
+    font: Any,  # todo: define a protocol for this?
+    text: str,
+    mode: ModeAny = ModeRGBA
+) -> None:
+    """Preview a ``font`` with the given ``text`` & displaying it.
+
+    :param font: A PIL font-like object.
+    :param text: A string with graphemes.
+    :param mode: A valid PIL mode string.
+    """
     bbox = font.getbbox(text)
-    im = Image.new(mode, get_total_image_size_for_bbox(bbox))
+    im = Image.new(
+        mode,  # type: ignore
+        get_total_image_size_for_bbox(bbox)
+    )
     draw = ImageDraw.Draw(im, mode=mode)
     draw.text((0, 0), text, font=font)
 
@@ -184,14 +198,18 @@ def tuplemap(callable: Callable, iterable: Iterable[ValueT]) -> Tuple:
     return tuple(map(callable, iterable))
 
 
-def empty_image(size: Size, mode: str = '1', fill=0) -> Image.Image:
-    return Image.new(mode, size, fill)
+def empty_image(size: Size, mode: ModeAny = Mode1, fill=0) -> Image.Image:
+    return Image.new(
+        mode,  # type: ignore
+        tuple(*size),
+        fill
+    )
 
 
 def image_from_core(
     core: ImageCoreLike,
     image_size: Optional[Size] = None,
-    mode: Optional[str] = None,
+    mode: Optional[ModeAny] = None,
     fill=0
 ) -> Image.Image:
     """
@@ -231,7 +249,12 @@ def image_from_core(
     return composite
 
 
-def show_core(core: ImageCoreLike, image_size: Size = None, mode: Optional[str] = None, fill = 0) -> None:
+def show_core(
+        core: ImageCoreLike,
+        image_size: Size | None = None,
+        mode: Optional[ModeAny] = None,
+        fill=0
+) -> None:
     """
     Preview the contents of a core using a system image viewer.
 
@@ -253,8 +276,8 @@ def show_core(core: ImageCoreLike, image_size: Size = None, mode: Optional[str] 
     image_from_core(core, image_size=image_size, mode=mode or core.mode, fill=fill).show()
 
 
-def empty_core(width: int = 0, height: int = 0, mode: str = '1') -> ImageCoreLike:
-    return Image.new(mode, (width, height), 0).im
+def empty_core(size: Size = (0, 0), mode: ModeAny = Mode1) -> ImageCoreLike:
+    return Image.new(mode, tuple(size), 0).im
 
 
 def first_attribute_present(obj: Any, attr_iterable: Iterable[str]) -> Optional[str]:

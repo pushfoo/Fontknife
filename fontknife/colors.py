@@ -1,5 +1,4 @@
 from typing import (
-    NewType,
     Dict,
     FrozenSet,
     Tuple,
@@ -8,16 +7,9 @@ from typing import (
     Iterable
 )
 
+
+from fontknife.custom_types import ColorMode, ModeRGBA, ModeRGB, ModeL, Mode1, ModeAny
 from fontknife.utils import cache, steps
-
-ColorMode = NewType('ColorMode', str)
-
-ModeRGBA: Final[ColorMode] = ColorMode('RGBA')
-ModeRGB: Final[ColorMode] = ColorMode('RGB')
-ModeL: Final[ColorMode] = ColorMode('L')
-Mode1: Final[ColorMode] = ColorMode('1')
-ModeAny: Final[ColorMode] = Union[ModeRGBA, ModeRGB, ModeL, Mode1]
-
 
 MODE_TO_BYTE_SIZE: Dict[ColorMode, int] = {
     ModeRGBA: 4,

@@ -144,7 +144,7 @@ class TextFontParser:
 
         # Exit early on anomalous glyph data
         if glyph_size == (0, 0):
-            return empty_core(0, 0)
+            return empty_core()
 
         # Create a zeroed buffer of the needed length
         data_buffer = bytearray(glyph_width * glyph_height)
