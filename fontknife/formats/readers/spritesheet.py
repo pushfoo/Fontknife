@@ -30,7 +30,7 @@ class SpritesheetGridReader(BinaryReader):
 
         glyph_sequence = glyph_sequence or DEFAULT_SHEET_GLYPHS
         if bounds_px is None:
-            bounds_px = BboxFancy(source_image.size)
+            bounds_px = BboxFancy.from_size(source_image.size)
 
         grid_mapper = GridMapper(
             sheet_bounds_px=bounds_px,
@@ -44,7 +44,7 @@ class SpritesheetGridReader(BinaryReader):
 
         for index, glyph in enumerate(glyph_sequence):
             glyph_image = source_image.crop(cast(tuple, grid_mapper[index]))
-            glyph_bbox = BboxFancy(glyph_image.size)
+            glyph_bbox = BboxFancy.from_size(glyph_image.size)
             glyph_mask = glyph_image.im
 
             glyph_masks[glyph] = glyph_mask

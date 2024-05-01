@@ -61,7 +61,10 @@ def build_tables(
     for glyph, image in source.items():
         image_core = image.im
         bitmaps[glyph] = image.im
-        metadata[glyph] = GlyphMetadata.from_font_glyph(image.size, image_core)
+        metadata[glyph] = GlyphMetadata.from_font_glyph(
+            (0, 0, *image.size),
+            image_core
+        )
 
     return bitmaps, metadata
 

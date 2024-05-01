@@ -67,13 +67,23 @@ class GridMapper(MappingABC):
         # Calculate & set required parameters
         self._tile_spacing_px = SizeFancy(*tile_spacing_px)
         if sheet_bounds_px is None:
-            self._bounds_px = BboxFancy((
+            self._bounds_px = BboxFancy(
                 0, 0,
                 sheet_size_tiles[0] * tile_size_px[0],
                 sheet_size_tiles[1] * tile_size_px[1]
-            ))
+            )
         else:
-            self._bounds_px = BboxFancy(sheet_bounds_px)
+            sheet_bounds_len = len(sheet_bounds_px)
+
+            if sheet_bounds_len == 2:
+                self._bounds_px = BboxFancy(0, 0, *sheet_bounds_px)
+            elif sheet_bounds_len == 4:
+                self._bounds_px = BboxFancy(*sheet_bounds_px)
+            else:
+                raise ValueError(
+                    f"Expected a sheet_bounds_px of length 2 or 4, not"
+                    f"{sheet_bounds_len} (got {sheet_bounds_px}"
+                )
 
         if sheet_size_tiles is None:
             self._sheet_size_tiles = SizeFancy(

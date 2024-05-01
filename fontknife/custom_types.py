@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import (
     Tuple, Protocol,
     Optional, Union, runtime_checkable, Any, TypeVar, Callable, ByteString, Sequence,
-    overload, Iterator, cast, Iterable, Hashable, NamedTuple, NewType, Final)
+    overload, Iterator, cast, Iterable, Hashable, NamedTuple, NewType, Final, List)
 
 from typing_extensions import Self
 
@@ -283,56 +283,68 @@ class HashAsTupleMixin:
         return hash(tuple(self))
 
 
-class BboxFancy(HashAsTupleMixin, CompareByLenAndElementsMixin, tuple):
+def sort_ltrb(left: int, top: int, right: int, bottom: int) -> tuple[int, int, int, int]:
+    left, right = sorted((left, right))
+    top, bottom = sorted((top, bottom))
+    return left, top, right, bottom
 
-    @overload
-    def __new__(cls, left: int, top: int, right: int, bottom: int) -> BboxFancy:
-        return cls.__new__(cls, left, top, right, bottom)
 
-    @overload
-    def __new__(cls, right: int, bottom: int) -> BboxFancy:
-        return cls.__new__(cls, 0, 0, right, bottom)
+class BboxFancy(Tuple[int, int, int, int]):
+    """Nicer abstraction for PIL's ltrb bounding boxes.
 
-    @overload
-    def __new__(cls, size: Size):
-        return cls.__new__(cls, 0, 0, size[0], size[1])
+    .. warning:: This destructively reorders data.
 
-    @overload
-    def __new__(cls, bbox_sequence: BoundingBox) -> BboxFancy:
-        return cls.__new__(cls, bbox_sequence)
+    Width and height are not currently included as main data to make
+    type checking and interfacing with PIL easier. Instead, there's
+    a size property to return those.
+    """
 
-    def __new__(cls, *args):
-        args = _validate_and_unpack_bbox_like_args((0, 0), args)
-        return super(BboxFancy, cls).__new__(cls, args)
+    def __hash__(self) -> int:
+        return hash(self[:4])
 
-    # __init__ must be overloaded to match __new__ to make
-    # autocomplete to work in IDEs such as PyCharm.
-    @overload
-    def __init__(self, left: int, top: int, right: int, bottom: int):
-        self.__init__(left, right, top, bottom)
+    def __eq__(self, other: Any) -> bool:
+        try:
+            left, top, right, bottom = sort_ltrb(*other)
+        except:
+            return False
+        return self.left == left and self.top == top and self.right == right and self.bottom == bottom
 
-    @overload
-    def __init__(self, right: int, bottom: int):
-        self.__init__(right, bottom)
+    def __ne__(self, other) -> bool:
+        return not self == other
 
-    @overload
-    def __init__(self, size: Size):
-        self.__init__(size)
+    def __new__(cls, left: int, top: int, right: int, bottom: int):
+        raw = (left, top, right, bottom)
+        bad: List[str] = []
 
-    @overload
-    def __init__(self, bbox_sequence: BoundingBox):
-        self.__init__(bbox_sequence)
+        for name, value in zip(BBOX_EDGE_NAMES, raw):
+            if value < 0:
+                bad.append(f"{name}={value}")
+        if bad:
+            raise ValueError(
+                f"Coordinates cannot be negative, but got"
+                f"{', '.join(bad)}")
 
-    # Setting the indexed values is done by __new__ since this is a
-    # tuple subclass, but the other values must be set by __init__
-    def __init__(self, *args):
-        self._size = SizeFancy(
-            self.right - self.left,
-            self.bottom - self.top)
+        # Don't trust the args to be well-ordered
+        return super().__new__(cls, sort_ltrb(*raw))
 
-    @property
-    def size(self) -> Size:
-        return self._size
+    @classmethod
+    def from_size(cls, size: Size) -> Self:
+        try:
+            width, height, *_etc = size
+        except ValueError:
+            raise ValueError(
+                f"from_size takes 2-length tuple values, but"
+                f"got fewer.")
+        if len(_etc) > 0:
+            raise ValueError(
+                f"from_size takes 2-length tuples values, but"
+                f"got {len(_etc)} extra values: {_etc}")
+        if width < 0 or height < 0:
+            raise ValueError(
+                f"Negative size values are not allowed,"
+                f" but got ({width=}, {height=}."
+            )
+        return cls.__new__(cls, 0, 0, width, height)
 
     @property
     def left(self) -> int:
@@ -352,13 +364,17 @@ class BboxFancy(HashAsTupleMixin, CompareByLenAndElementsMixin, tuple):
 
     @property
     def width(self) -> int:
-        return self._size.width
+        return abs(self.right - self.left)
 
     @property
     def height(self) -> int:
-        return self._size.height
+        return abs(self.bottom - self.top)
 
-    def encloses(self, other: Union[CoordLike, BoundingBox]) -> bool:
+    @property
+    def size(self) -> Size:
+        return SizeFancy(self.width, self.height)
+
+    def encloses(self, other: BoundingBox) -> bool:
         """
         True if the CoordLike or BoundingBox fits inside this Bbox.
 
@@ -368,20 +384,28 @@ class BboxFancy(HashAsTupleMixin, CompareByLenAndElementsMixin, tuple):
         :param other: The object to check for enclosure.
         :return:
         """
-        unpacked = _validate_and_unpack_bbox_like_args(other, other)
-        left, top, right, bottom = unpacked
-        return self.left <= left and self.top <= top and right <= self.right and bottom <= self.bottom
+        try:
+            if not isinstance(other, BboxFancy):
+                other = BboxFancy(*other)
+            left, top, right, bottom = other
+            return self.left <= left and self.top <= top and right <= self.right and bottom <= self.bottom
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"Expected 4-length ltrb bbox, but got {len(other)}: {other}"
+            )
 
-    def __or__(self, other: Union[BoundingBox, Size]) -> BboxFancy:
-        args = _validate_and_unpack_bbox_like_args((0, 0), other)
-        return BboxFancy(
-            # Casting is necessary because zip has ongoing issues with
-            # detection as an iterable:
-            # https://github.com/python/mypy/issues/8454
-            # https://github.com/python/typeshed/pull/3830 (reverted)
-            *map(min, cast(Iterable, zip(self[:2], args[:2]))),
-            *map(max, cast(Iterable, zip(self[2:], args[2:])))
+    def __or__(self, other: BoundingBox) -> BboxFancy:
+        o_left, o_top, o_right, o_bottom, *_etc = other
+        return self.__class__(
+            min(self.left, o_left),
+            min(self.top, o_top),
+            max(self.right, o_right),
+            max(self.bottom, o_bottom)
         )
+
+    def __and__(self, other: BoundingBox | None) -> Optional[BboxFancy]:
+        if other is None:
+            return None
 
 
 @runtime_checkable

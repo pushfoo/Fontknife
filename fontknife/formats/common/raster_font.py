@@ -350,7 +350,7 @@ class RasterFont:
 
         mask_image = Image.new(
             self.mode,  # type: ignore
-            cast(size, tuple[int, int])
+            cast(tuple[int, int], size)
         )
 
         current_x, current_y = 0, 0
@@ -363,7 +363,7 @@ class RasterFont:
             paste_bbox: Tuple[int, int, int, int] = (
                 current_x, current_y, current_x + width, current_y + height)
             mask_image.paste(
-                cast(char_image, Image),
+                cast(Image, char_image),
                 paste_bbox
             )
             current_x += width

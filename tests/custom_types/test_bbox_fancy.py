@@ -2,33 +2,41 @@ from itertools import combinations_with_replacement
 
 import pytest
 
-from fontknife.custom_types import BboxFancy, BBOX_EDGE_NAMES
+from fontknife.custom_types import BboxFancy, BBOX_EDGE_NAMES, sort_ltrb
 from fontknife.utils import tuplemap
 
 
-# Named functions of lambdas to increase readability in the pytest
-# results. Lambdas print as lambda\d+ , which is hard to read.
-def bare_args(a):
-    return a
-
-
-def wrapped_args(a):
-    return a,
-
-
-@pytest.fixture(scope='session', params=[bare_args, wrapped_args])
-def bare_or_wrapped(request):
-    return request.param
-
-
-BBOX_TYPE_FACTORIES = (
+BBOX_LIKE_TYPES = (
     tuple,
     list,
-    BboxFancy,
+    lambda arg: BboxFancy(*arg),
 )
 
 
-@pytest.fixture(scope='session', params=BBOX_TYPE_FACTORIES)
+def alt_sorting_logic(raw: tuple[int, int, int, int]) -> tuple[int, int, int, int]:
+    """Alternate version of x & sorting logic for tests.
+
+    Bboxes are directionless, so it makes sense to normalize the order
+    on creation for convenience.
+    """
+    # We don't need C-style efficiency / swapping since this test code,
+    # so we unpack and use if statements instead of using temp vars.
+    _left, _top, _right, _bottom = raw
+
+    if _left > _right:
+        left, right = _right, _left
+    else:
+        left, right = _left, _right
+
+    if _top > _bottom:
+        top, bottom = _bottom, _top
+    else:
+        top, bottom = _top, _bottom
+
+    return left, top, right, bottom
+
+
+@pytest.fixture(scope='session', params=BBOX_LIKE_TYPES)
 def bbox_arg_source_type(request):
     return request.param
 
@@ -49,50 +57,52 @@ def bad_args_containing_negatives(request):
 
 @pytest.fixture(
     scope='session',
-    params=(0, ) + tuple(range(1, 7, 2)))
+    params=(0, 1, 2, 3, 5, 6, 7)
+)
 def bad_args_of_wrong_length(request):
     return tuple(range(request.param))
 
 
-def test_creation_rejects_negative_values(bad_args_containing_negatives, bare_or_wrapped):
+def test_creation_rejects_negative_values(bad_args_containing_negatives):
     with pytest.raises(ValueError):
-        BboxFancy(*bare_or_wrapped(bad_args_containing_negatives))
+        BboxFancy(*bad_args_containing_negatives)
 
 
-def test_creation_rejects_wrong_length_args(bad_args_of_wrong_length, bare_or_wrapped, ):
-    with pytest.raises(ValueError):
-        BboxFancy(*bare_or_wrapped(bad_args_of_wrong_length))
+def test_creation_rejects_wrong_length_args(bad_args_of_wrong_length):
+    with pytest.raises(TypeError):
+        BboxFancy(*bad_args_of_wrong_length)
 
 
 @pytest.fixture(scope='session', params=[
-    ((5, 6), (4, 4)),
+    ((0, 0, 1, 1), (0, 0, 0, 0)),
+    ((0, 0, 1, 1), (1, 1, 1, 1)),
     ((3, 4, 5, 6), (4, 4, 5, 6))
 ])
 def pair_valid_bbox_and_base_value_inside(request):
     return request.param
 
 
-@pytest.fixture(scope='session', params=BBOX_TYPE_FACTORIES)
+@pytest.fixture(scope='session', params=BBOX_LIKE_TYPES)
 def value_inside_bbox(request, pair_valid_bbox_and_base_value_inside):
     return request.param(pair_valid_bbox_and_base_value_inside[1])
 
 
 @pytest.fixture(scope='session', params=[
-    (10, 10),
-    (10, 11, 12, 13)
+    (10, 11, 12, 13),
+    (100, 0, 0, 0)
 ])
 def value_outside_bbox(request, bbox_arg_source_type):
     return bbox_arg_source_type(request.param)
 
 
-@pytest.fixture(scope='session', params=BBOX_TYPE_FACTORIES)
+@pytest.fixture(scope='session', params=BBOX_LIKE_TYPES)
 def base_valid_args(request, pair_valid_bbox_and_base_value_inside):
     return request.param(pair_valid_bbox_and_base_value_inside[0])
 
 
 @pytest.fixture(scope='session')
-def valid_args(bare_or_wrapped, base_valid_args, bbox_arg_source_type):
-    return bare_or_wrapped(bbox_arg_source_type(base_valid_args))
+def valid_args(base_valid_args, bbox_arg_source_type):
+    return bbox_arg_source_type(base_valid_args)
 
 
 @pytest.fixture(scope='session')
@@ -102,19 +112,30 @@ def bbox_fancy_for_valid_args(valid_args):
 
 @pytest.fixture(scope='session')
 def tuple_equivalent_to_bbox_for_valid_args(valid_args):
-    actual_vals = tuple(valid_args if len(valid_args) > 1 else valid_args[0])
-    return actual_vals if len(actual_vals) == 4 else (0, 0) + actual_vals
+    return alt_sorting_logic(valid_args)
+
+
+@pytest.mark.parametrize("raw", (
+        (1, 1, 0, 0),
+        (0, 1, 1, 0),
+        (1, 0, 0, 1),
+        (0, 0, 1, 1)
+))
+def test_sorting_logic(raw: tuple[int, int, int, int]):
+    assert sort_ltrb(*raw) == alt_sorting_logic(raw)
 
 
 def test_bbox_fancy_compares_as_tuple(
     bbox_fancy_for_valid_args,
     tuple_equivalent_to_bbox_for_valid_args
 ):
-    assert bbox_fancy_for_valid_args == tuple_equivalent_to_bbox_for_valid_args
+    assert bbox_fancy_for_valid_args == alt_sorting_logic(tuple_equivalent_to_bbox_for_valid_args)
 
 
+# A pair of an index + property name
 @pytest.fixture(scope='session', params=enumerate(BBOX_EDGE_NAMES))
 def index_edge_name_pair(request):
+    """A pair of (index, property_name)"""
     return request.param
 
 
@@ -134,16 +155,19 @@ def test_bbox_fancy_sets_edge_props_correctly(
     tuple_equivalent_to_bbox_for_valid_args,
     bound_index
 ):
-    assert getattr(bbox_fancy_for_valid_args, bound_name) == tuple_equivalent_to_bbox_for_valid_args[bound_index]
+    fancy_value = getattr(bbox_fancy_for_valid_args, bound_name)
+    equi_value  = tuple_equivalent_to_bbox_for_valid_args[bound_index]
+    assert fancy_value == equi_value
 
 
 def test_bbox_fancy_sets_size_correctly(
     bbox_fancy_for_valid_args,
     tuple_equivalent_to_bbox_for_valid_args
 ):
+    other_left, other_top, other_right, other_bottom = tuple_equivalent_to_bbox_for_valid_args
     assert bbox_fancy_for_valid_args.size == (
-        tuple_equivalent_to_bbox_for_valid_args[2] - tuple_equivalent_to_bbox_for_valid_args[0],
-        tuple_equivalent_to_bbox_for_valid_args[3] - tuple_equivalent_to_bbox_for_valid_args[1]
+        other_right - other_left,
+        other_bottom - other_top
     )
 
 
@@ -151,8 +175,8 @@ def test_bbox_fancy_sets_width_correctly(
     bbox_fancy_for_valid_args,
     tuple_equivalent_to_bbox_for_valid_args
 ):
-    assert bbox_fancy_for_valid_args.width ==\
-        tuple_equivalent_to_bbox_for_valid_args[2] - tuple_equivalent_to_bbox_for_valid_args[0]
+    other_left, _, other_right, _ = tuple_equivalent_to_bbox_for_valid_args
+    assert bbox_fancy_for_valid_args.width == other_right - other_left
 
 
 def test_bbox_fancy_sets_height_correctly(
@@ -189,29 +213,23 @@ def test_bbox_encloses_returns_true_for_values_inside(
 
 def test_bbox_encloses_returns_false_for_values_outside(bbox_fancy_for_valid_args, value_outside_bbox):
     enclosed = bbox_fancy_for_valid_args.encloses(value_outside_bbox)
-    assert not enclosed
+    assert enclosed is False
 
 
-@pytest.fixture(
-    scope='session',
-    params=combinations_with_replacement(BBOX_TYPE_FACTORIES, 3)
-)
-def bboxes_of_mixed_types(request):
-    return tuple(func(box) for func, box in zip(request.param, (
-        (0, 5, 2, 3),
-        (4, 0, 10, 7),
-        (8, 9, 6, 11)
-    )))
+def test_bbox_or_stretches_bboxes_correctly():
+    # Base all-zero bbox
+    current  = BboxFancy(0, 0,  0,  0)  # flake8: noqa
+    # Union with a tuple
+    current |=          (0, 5,  2,  3)  # flake8: noqa
+    # Union with a list
+    current |=          [4, 0, 10,  7]  # flake8: noqa
+    # Union with another BboxFancy
+    current |= BboxFancy(8, 9,  6, 11)  # flake8: noqa
 
+    # expected =         0, 0, 10, 11
 
-@pytest.fixture(scope='session')
-def expected_bbox_or_result():
-    return 0, 0, 10, 11
-
-
-def test_bbox_or_stretches_bboxes_correctly(bboxes_of_mixed_types, expected_bbox_or_result):
-    current = BboxFancy(0, 0)
-    for bbox in bboxes_of_mixed_types:
-        current |= bbox
-    assert current == expected_bbox_or_result
-
+    # Unrolled for max visibility
+    assert current[0] == 0
+    assert current[1] == 0
+    assert current[2] == 10
+    assert current[3] == 11
