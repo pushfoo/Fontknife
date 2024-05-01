@@ -1,21 +1,24 @@
-name: GitHub Ubuntu Tests
+name: GitHub based tests
 
 on:
   # Template the default branch rather than hard-coding it
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
+  workflow_dispatch:
+
 
 jobs:
 
   build:
     name: test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        architecture: ['x64']
 
     steps:
       - uses: actions/checkout@v3
@@ -24,15 +27,16 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.architecture }}
 
-      - name: Environment update install
+      - name: Environment update
         run: |
           python -m pip install --upgrade pip wheel setuptools
 
-      - name: Package install
+      - name: Install package
         run: |
-          python -m pip install -e .[dev]
+          python -m pip install -Ie .[dev]
 
       - name: Test with pytest
         run: |
-          pytest
+          pytest fontknife
