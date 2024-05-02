@@ -20,7 +20,7 @@ else:
 
 
 COMMIT_SIMPLE_REGEX = re.compile(
-    r'(?P<unix_timestamp>\d+) +\(HEAD( -> (?P<branch>\S+))?\) +(?P<full_hash>[a-fA-F0-9]+)'
+    r'(?P<unix_timestamp>\d+) +(?P<branch>\([^)]*\)) +(?P<full_hash>[a-fA-F0-9]+)'
 )
 
 
