@@ -53,13 +53,20 @@ def get_commit_metadata() -> GitCommitMetadata:
 
     Zero configurable input means no injected shell command nonsense :)
     """
+    # Don't use text=True because it adds nasty extra formatting
     result = subprocess.run(
         ['git', 'log', '-1', '--format="%at %d %H"'],
         capture_output=True,
     )
-    print("code", repr(result.returncode))
     cleaned = result.stdout.decode('utf-8').strip(" \n\"")
+    exit_code = result.returncode
+    if exit_code != 0:
+        raise RuntimeError(f"git failed with exit status {exit_code}: {cleaned!r}")
+
     match = COMMIT_SIMPLE_REGEX.match(cleaned)
+    if match is None:
+        raise RuntimeError(f"git output seems malformed: {cleaned!r}")
+
     kwargs = match.groupdict()
 
     if (t := kwargs.get('unix_timestamp')) is not None:
