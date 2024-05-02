@@ -4,7 +4,7 @@
 Contributor Install Instructions
 ================================
 
-These instructions are for readers who want to improve ``fontknife`` by
+These instructions are for readers who want to improve |project_name| by
 
 #. Fixing bugs
 #. Adding new features

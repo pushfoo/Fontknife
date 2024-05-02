@@ -1,10 +1,8 @@
-Fontknife
-#########
+|project_name|
+##############
 
-TL;DR
-=====
-
-Remember that weird font you found? Use ``fontknife`` to...
+Remember that weird font?
+*************************
 
 .. raw:: html
 
@@ -18,8 +16,8 @@ Remember that weird font you found? Use ``fontknife`` to...
 
 .. _home_sprite_sheet:
 
-Make it a sprite sheet
-^^^^^^^^^^^^^^^^^^^^^^
+Make it a sprite sheet!
+-----------------------
 
 ``fontknife convert tom-thumb.bdf sheet.png``
 
@@ -35,8 +33,9 @@ Make it a sprite sheet
 
 .. _home_filler_assets:
 
-Extract glyphs as filler assets
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Make Filler Assets!
+-------------------
+
 ``fontknife convert -P 48 -G "💪😎" NotoEmoji-Regular.ttf sheet.png``
 
 .. figure:: ./flex_cool.png
@@ -44,7 +43,8 @@ Extract glyphs as filler assets
 
 
 Contents
-========
+********
+
 .. toctree::
    :maxdepth: 2
    :titlesonly:

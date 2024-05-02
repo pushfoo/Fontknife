@@ -8,13 +8,12 @@ User Install Instructions
 Overview
 --------
 
-These instructions are for people who want to use ``fontknife`` without
-changing it. Examples include:
+These instructions are for people who want to use |project_name| to
+do things like:
 
-#. Converting assets for a specific Python-based project
-#. Use ``fontknife`` as a dependency for one of your projects
-#. Try fontknife without installing it for your computer's user
-   account
+* converting assets for a specific Python-based project
+* as dependency for one of your projects
+* trying it without installing it for your entire user account
 
 See :ref:`install_contributor` if you'd like to contribute bug fixes or
 new features.
@@ -101,7 +100,6 @@ User Install Steps
 #. `Make sure it's activated <how_venvs_work_>`_
 #. ``pip install fontknife`` to install the latest version
 #. ``fontknife convert --help`` to make sure it runs.
-
 
 
 .. _install_user_instructions_test:
