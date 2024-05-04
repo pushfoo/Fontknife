@@ -36,9 +36,10 @@ dependencies = [
 
 
 [project.urls]
-Homepage = "https://github.com/pushfoo/fontknife"
-Issues = "https://github.com/pushfoo/fontknife/issues"
-Source = "https://github.com/pushfoo/fontknife"
+Homepage = "https://github.com/pushfoo/Fontknife"
+Documentation = "https://fontknife.readthedocs.io/en/latest"
+Issues = "https://github.com/pushfoo/Fontknife/issues"
+Source = "https://github.com/pushfoo/Fontknife"
 
 
 [project.optional-dependencies]
