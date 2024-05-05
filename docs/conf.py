@@ -57,10 +57,10 @@ def debug(msg: str, *args, **kwargs) -> None:
 
 
 def info(msg: str, *args, **kwargs) -> None:
-    """Force-prefix INFO since Sphinx doesn't us to have nice things.
+    """Force-prefix INFO since Sphinx won't let us have nice things.
 
-    This is the best we can do since colum aligment is too much to ask
-    for. See above comment block. :(
+    This is the best we can do for now since column alignment is too
+    much to ask for. See above comment block. :(
     """
     logger.info(f"INFO: {msg}", *args, **kwargs)
 
@@ -90,17 +90,17 @@ def critical(
 
 @contextmanager
 def attempt_to(
-        action: str,  # with attempt_to("perform a specific action"): ...
-        on_fail: Callable = critical,  # fn(msg, e: Exception | None = None)
-        on_attempt: Callable = lambda a: info(f"Attempting to {a}..."),
-        on_success: Callable = lambda _: info("Success!"),
+    action: str,  # with attempt_to("perform a specific action"): ...
+    on_attempt: Callable = lambda a: info(f"Attempting to {a}..."),
+    on_failure: Callable = lambda a, e: critical(f"Failed to {a}!", e),
+    on_success: Callable = lambda _: info("Success!"),
 ) -> Generator[str, None, None]:
     """Organize task results in code & logs, including traceback."""
     on_attempt(action)
     try:
         yield action
     except Exception as e:
-        on_fail(f"Failed to {action}!", e)
+        on_failure(action, e)
     on_success(action)
 
 
@@ -133,7 +133,9 @@ def run_and_regex(
     match = named_group_extractor.match(cleaned)
 
     # Raise a ValueError if the data we got seems malformed
-    # TIP: if you suddenly get this, double check the regex you passed
+    # TIP: if you suddenly get this, double-check:
+    # 1. The format flags you passed the CLI command
+    # 2. The regex you passed this function to parse it
     if match is None:
         cmd_name = repr(command) if isinstance(command, str) else command[0]
         raise ValueError(f"{cmd_name} output seems malformed: {cleaned!r}")
@@ -169,11 +171,15 @@ else:
 #                     Git Metadata Parsing Helpers                     #
 ########################################################################
 
-COMMIT_SIMPLE_REGEX = re.compile(
-    r'(?P<isodate>[^\s]+) +(?P<branch>\([^)]+\)) +(?P<full_hash>[a-fA-F0-9]+)'
-)
+COMMIT_SIMPLE_REGEX = re.compile(r"""
+(?P<isodate>[^\s]+)         # Any non-whitespace for date format info
+[ ]+                        # Space between data fields
+(?P<branch>\([^)]+\))       # Anything in parens (e.g. '(main -> HEAD)')
+[ ]+                        # Space between data fields
+(?P<full_hash>[a-fA-F0-9]+) # A hash output
+""", re.VERBOSE)
 # The full_hash is used to:
-# 1. Template a bleeding edge zipball dependency line in the install guide.
+# 1. Template a bleeding edge zipball install example
 # 2. Allow fuller debug info if we want it
 #
 # It's also used for the same reasons the timestamp is:
