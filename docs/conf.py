@@ -198,7 +198,7 @@ def extract_branch_name(
     regexes: Iterable[Pattern] = tuple(
         re.compile(p) for p in (
             # The readthedocs build runner shows git's branch like this
-            r'HEAD, origin\/(?P<branch>\w+), origin\/HEAD, (?P&branch)',
+            r'\(HEAD, origin\/(?P<branch>\w+), origin\/HEAD, (?P&branch)\)',
             # Local dev machines seem to favor this form
             r'\(HEAD -> (?P<branch>[a-zA-Z0-9_\-]+)(, \w+)*\)'
         )
