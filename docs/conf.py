@@ -21,31 +21,22 @@ HERE = Path(__file__).parent
 logger = nasty_sphinx_logging.getLogger(__name__)
 
 ########################################################################
-# -- Sphinx has some odd logging choices, so let's try to fix some! -- #
+# TL;DR: Sphinx's logging forces wrapper functions & unaligned columns #
 #                                                                      #
-# What's been tried & doesn't work for fixing those odd decisions:     #
+# 1. SphinxLoggingAdapter breaks logging config like the call below:   #
 #                                                                      #
-# 1. base_python_logging.basicConfig(                                  #
+#    base_python_logging.basicConfig(                                  #
 #       format="%(levelname)-8s: %(created)s : %(message)", style="%") #
 #                                                                      #
-#    For some reason, Sphinx thought it'd be a good idea to hardcode   #
-#    prefixes. This overrides any formatting config to helpfully       #
-#    'ensure consistency'. Okay... :/                                  #
+# 2. Sphinx uses unprefixed & no-newline info logging. This breaks it: #
 #                                                                      #
-# 2. logging.SphinxInfoLogRecord.prefix = 'INFO: '                     #
+#    logging.SphinxInfoLogRecord.prefix = 'INFO: '                     #
 #                                                                      #
-#    Even worse, we can't override SphinxInfoLogRecord.prefix because  #
-#    Sphinx seems to using its own logging functions without a newline #
-#    at the end. This would be fine if it didn't clobber formatting.   #
-#                                                                      #
-# So what can we do about this nasty SphinxLoggingAdapter we get? For  #
-# now, not much. Too many things are unfinished or broken to spend any #
-# time polishing this build script to perfection. Afterwards, we will  #
-# probably have to live with our hideously unaligned columns for years #
-# like filthy animals. After all, there's no fix more permanent than a #
-# temporary fix! Since you made it through this entire block, here are #
-# some more aesthetic shorthand functions to make your life a bit more #
-# tolerable after reading all of this.                                 #
+# What can we do about SphinxLoggingAdapter's rudeness? For now, we'll #
+# settle for the wrapper functions below. We need to spend time on our #
+# features and doc, not build script perfection. We'll have to live    #
+# with hideously unaligned log columns like filthy animals. After all, #
+# no fix is more permanent than a temporary one!                       #
 #                                                                      #
 #                              ¯\_(ツ)_/¯                              #
 #                                                                      #
