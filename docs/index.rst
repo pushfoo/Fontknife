@@ -1,16 +1,6 @@
 |project_name|
 ##############
 
-.. ifconfig:: unstable_branch is not None
-
-   .. warning:: This doc is a preview of the unstable |branch_github_link|!
-
-                If you need a safer doc version, please check the
-                :docbuildfor:`stable`. If you're feeling very
-                adventurous, you can proceed with caution. Just be aware
-                things may change unexpectedly!
-
-
 Remember that weird font?
 *************************
 

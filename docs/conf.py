@@ -4,6 +4,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 from __future__ import annotations  # Partial | support on Python 3.8+
 
+import os
 import sys
 import traceback
 import subprocess  # Sphinx's git rev-parse only gets HEAD's short hash
@@ -248,9 +249,8 @@ with attempt_to("read git HEAD"):
     git_head_datetime: datetime = convert(git_head, 'isodate', datetime.fromisoformat)
     branch = convert(git_head, 'branch', extract_branch_name)
     full_commit_hash = git_head['full_hash']
-
-    stable = branch.startswith('stable')
-    info(f"Detected {'stable' if stable else 'UNSTABLE'} branch, {stable=}")
+    short_commit_hash = full_commit_hash[:8]
+    info(f"Detected branch {branch=}, {full_commit_hash=}")
 
 
 with attempt_to("read pyproject.toml for Sphinx config pre-reqs"):
@@ -270,9 +270,20 @@ with attempt_to("template core Sphinx config variables"):
     author = f"{project} contributors"
     copyright = f'{git_head_datetime.year}, {author}'
 
-    # -- Handle stable vs dev boilerplate --
-    version = project_section['version']
+    # -- Start version & warning display --
+    # https://docs.readthedocs.io/en/stable/reference/environment-variables.html
+    on_readthedocs = 'True' == os.environ.get('READTHEDOCS', None)
+    readthedocs_name = os.environ.get('READTHEDOCS_VERSION_NAME', None)
+    stable_build = on_readthedocs and readthedocs_name == 'stable'
+
+    if on_readthedocs:
+        version = project_section['version']
+    else:
+        version = f"[LOCAL] {branch} {short_commit_hash}"
+
     release = version
+    html_title = f"{project} {version}"
+
 
 # -- External & inter-version doc links --
 
@@ -326,6 +337,7 @@ extlinks = {
     ),
 }
 
+
 ########################################################################
 #                   Single-Sourced Truth Definitions                   #
 ########################################################################
@@ -339,6 +351,7 @@ with attempt_to('get minimum python version'):
 # the values of the variables with the same names defined above.
 # https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html#substitutions
 with attempt_to("template rst_prolog"):
+
     rst_prolog = dedent(f"""
         .. |project_name| replace:: {project}
         .. |package_name| replace:: {package_name}
@@ -351,7 +364,26 @@ with attempt_to("template rst_prolog"):
         .. |dependency_pypi_line| replace:: '|package_name| == |release|'
         .. |dependency_zipball_line| replace:: '|package_name| @ {source_url}/zipball/{full_commit_hash}'
         """).strip()
-#       .. |ZWJ| replace:: :codepoint:`ZWJ (U+200D) <200D>`
+    #       .. |ZWJ| replace:: :codepoint:`ZWJ (U+200D) <200D>`
+
+    # -- Add warning to top of all pages on local & unstable builds --
+    # NOTE: You can override this with env vars or ./fake_stable.sh
+    if stable_build:
+        build_warning = None
+    elif on_readthedocs:
+        build_warning = "an unstable |branch_github_link| preview build"
+        html_title = f"[{readthedocs_name}] {html_title}"
+    else:
+        build_warning = f"a local build of the {branch} branch"
+        html_title = f"[LOCAL: {branch}] {html_title}"
+
+    if build_warning:
+        rst_prolog += dedent(f"""
+            .. warning:: This page is {build_warning}!
+
+                        See the :docbuildfor:`stable` for a safer version.
+            """).rstrip()
+
 
 # -- Log our config generation win to console. :) --
 info("Finished processing git HEAD & pyproject.toml into the rst_prolog below:")
@@ -363,8 +395,7 @@ print()
 
 
 def setup(app):
-    app.add_config_value(
-        'unstable_branch', None if stable else branch, 'env')
+    app.add_config_value('unstable_branch', None if stable_build else branch, 'env')
 
 
 info("Proceeding to output phase")
