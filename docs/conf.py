@@ -103,24 +103,37 @@ def attempt_to(
 # Some light typing to help things along
 T = TypeVar('T')
 R = TypeVar('R')
-# Used to process the return values of the ugly function below
+# Used to process the return values of functions
 Converter = Callable[[T], R]
 
 
-def run_and_regex(
+def strip_run_stdout(raw_output: str) -> str:
+    """Strip annoying cruft from current subprocess runs"""
+    return raw_output.strip(" \n\"")
+
+
+def run_with_post(
+    command: str | Iterable[str],
+    converter: Converter = strip_run_stdout
+) -> R:
+    raw = subprocess.run(
+        command, check=True,  # Auto-raise on non-zero error codes
+        # Open stdout in text mode and decode the underlying stream as utf-8
+        capture_output=True, encoding='utf-8', text=True)
+    converted = converter(raw.stdout)
+    return converted
+
+
+def run_with_regex(
         command: str | Iterable[str],
         named_group_extractor: Pattern,  # MUST use named groups!
 ) -> dict[str, str]:
-    """Run console progams & extract data via regex"""
+    """Run console programs & extract data via regex"""
     if "(?P<" not in named_group_extractor.pattern:
         raise ValueError("This pattern MUST use named groups!")
 
     # Run & attempt to match with the extractor pattern
-    result = subprocess.run(
-        command, check=True,  # Auto-raise on non-zero error codes
-        # Open stdout in text mode and decode the underlying stream as utf-8
-        capture_output=True, encoding='utf-8', text=True)
-    cleaned = result.stdout.strip(" \n\"")
+    cleaned = run_with_post(command)
     info(f"Got cleaned info {cleaned!r}")
     match = named_group_extractor.match(cleaned)
 
@@ -166,8 +179,6 @@ else:
 COMMIT_SIMPLE_REGEX = re.compile(r"""
 (?P<isodate>[^\s]+)         # Any non-whitespace for date format info
 [ ]+                        # Space between data fields
-(?P<branch>\([^)]+\))       # Anything in parens (e.g. '(main -> HEAD)')
-[ ]+                        # Space between data fields
 (?P<full_hash>[a-fA-F0-9]+) # A hash output
 """, re.VERBOSE)
 # The full_hash is used to:
@@ -180,28 +191,6 @@ COMMIT_SIMPLE_REGEX = re.compile(r"""
 #    * Around holidays or other times devs may be distracted
 #    * The first 2-3 months after New Year's Eve
 #    * Builds of historic / maintenance versions for comparison
-
-
-# The raw branch output of git varies for unclear reasons. Figuring out
-# why doesn't seem worth the time when more important things need to be
-# fixed & finished. Trying patterns in series is faster than regex golf.
-def extract_branch_name(
-    raw: str,
-    regexes: Iterable[Pattern] = tuple(
-        re.compile(p) for p in (
-            # The readthedocs build runner shows git's branch like this
-            r'\(HEAD, origin\/(?P<branch>\w+), origin\/HEAD, (?P&branch)\)',
-            # Local dev machines seem to favor this form
-            r'\(HEAD -> (?P<branch>[a-zA-Z0-9_\-]+)(, \w+)*\)'
-        )
-    )
-) -> str | None:
-    for pattern in regexes:
-        debug(f"Trying pattern r'{pattern.pattern}'")
-        match = pattern.match(raw)
-        if match:
-            return match.group('branch')
-    return None
 
 
 ########################################################################
@@ -239,18 +228,30 @@ intersphinx_mapping = dict(
         'https://pillow.readthedocs.io/en/stable', None))
 
 
-# --  Read git HEAD & pyproject.toml to start configuring the build --
+# --  Read git state & pyproject.toml to start configuring the build --
 
 with attempt_to("read git HEAD"):
-    git_head = run_and_regex(
-        ['git', 'log', '-1', '--format="%aI %d %H"'],
+    git_head = run_with_regex(
+        ['git', 'log', '-1', '--format="%aI %H"'],
         COMMIT_SIMPLE_REGEX)
-
     git_head_datetime: datetime = convert(git_head, 'isodate', datetime.fromisoformat)
-    branch = convert(git_head, 'branch', extract_branch_name)
     full_commit_hash = git_head['full_hash']
     short_commit_hash = full_commit_hash[:8]
-    info(f"Detected branch {branch=}, {full_commit_hash=}")
+
+    # -- Try to parse branch, but give up if in detached head state --
+    raw_branch = run_with_post(
+        ['git', 'status', '-s', '-b'],
+        converter=lambda s: s.strip("\"").split("\n")[0])
+    info(f"Got raw status 1st line: status={raw_branch!r}")
+
+    # No need to guess since we can use the READTHEDOCS(_*)? env vars
+    if "no branch" in raw_branch:
+        branch = None
+        _branch_reported = 'detached HEAD state'
+    else:
+        branch = raw_branch[2:].strip().split('.')[0]
+        _branch_reported = f"{branch=}"
+    info(f"Detected {_branch_reported}, {full_commit_hash=}")
 
 
 with attempt_to("read pyproject.toml for Sphinx config pre-reqs"):
