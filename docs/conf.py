@@ -243,15 +243,14 @@ with attempt_to("read git HEAD"):
         ['git', 'status', '-s', '-b'],
         converter=lambda s: s.strip("\"").split("\n")[0])
     info(f"Got raw status 1st line: status={raw_branch!r}")
-
     # No need to guess since we can use the READTHEDOCS(_*)? env vars
     if "no branch" in raw_branch:
         branch = None
-        _branch_reported = 'detached HEAD state'
+        display_branch = 'detached HEAD'
     else:
         branch = raw_branch[2:].strip().split('.')[0]
-        _branch_reported = f"{branch=}"
-    info(f"Detected {_branch_reported}, {full_commit_hash=}")
+        display_branch = f"{branch=}"
+    info(f"Detected {display_branch}, {full_commit_hash=}")
 
 
 with attempt_to("read pyproject.toml for Sphinx config pre-reqs"):
@@ -280,7 +279,7 @@ with attempt_to("template core Sphinx config variables"):
     if on_readthedocs:
         version = project_section['version']
     else:
-        version = f"[LOCAL] {branch} {short_commit_hash}"
+        version = f"[LOCAL] {branch or '(detached HEAD)'} {short_commit_hash}"
 
     release = version
     html_title = f"{project} {version}"
@@ -357,7 +356,7 @@ with attempt_to("template rst_prolog"):
         .. |project_name| replace:: {project}
         .. |package_name| replace:: {package_name}
         .. |branch_name| replace:: ``{branch}``
-        .. |branch_github_link| replace:: :ghbranch:`{branch}`
+        .. |branch_github_link| replace:: :ghbranch:`{branch or readthedocs_name}`
         .. |full_commit_hash| replace:: {full_commit_hash}
         .. |min_python_version| replace:: {min_python_version}
         .. |min_python_version_cli_name| replace:: ``python{min_python_version}``
@@ -375,7 +374,7 @@ with attempt_to("template rst_prolog"):
         build_warning = "an unstable |branch_github_link| preview build"
         html_title = f"[{readthedocs_name}] {html_title}"
     else:
-        build_warning = f"a local build of the {branch} branch"
+        build_warning = f"a local build of {display_branch} ({short_commit_hash})"
         html_title = f"[LOCAL: {branch}] {html_title}"
 
     if build_warning:
