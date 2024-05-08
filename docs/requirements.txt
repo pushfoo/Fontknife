@@ -4,7 +4,7 @@
 #
 #    pip-compile --extra=docs --output-file=docs/requirements.txt pyproject.toml
 #
-alabaster==0.7.13
+alabaster==0.7.16
     # via sphinx
 babel==2.12.1
     # via sphinx
@@ -38,7 +38,7 @@ requests==2.31.0
     # via sphinx
 snowballstemmer==2.2.0
     # via sphinx
-sphinx==7.2.6
+sphinx==7.3.7
     # via
     #   fontknife (pyproject.toml)
     #   sphinx-rtd-theme
@@ -65,7 +65,9 @@ sphinxcontrib-qthelp==1.0.6
 sphinxcontrib-serializinghtml==1.1.9
     # via sphinx
 tomli==2.0.1 ; python_version < "3.11"
-    # via fontknife (pyproject.toml)
+    # via
+    #   fontknife (pyproject.toml)
+    #   sphinx
 typing-extensions==4.9.0
     # via fontknife (pyproject.toml)
 urllib3==2.0.4

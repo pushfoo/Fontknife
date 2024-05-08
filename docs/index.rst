@@ -1,8 +1,6 @@
 |project_name|
 ##############
 
-Remember that weird font?
-*************************
 
 .. raw:: html
 
@@ -14,10 +12,11 @@ Remember that weird font?
    </style>
 
 
+.. rubric:: Remember that weird font?
+
 .. _home_sprite_sheet:
 
 Make it a sprite sheet!
------------------------
 
 ``fontknife convert tom-thumb.bdf sheet.png``
 
@@ -34,27 +33,37 @@ Make it a sprite sheet!
 .. _home_filler_assets:
 
 Make Filler Assets!
--------------------
 
 ``fontknife convert -P 48 -G "💪😎" NotoEmoji-Regular.ttf sheet.png``
 
 .. figure:: ./flex_cool.png
    :alt: The cool sunglasses and flexed bicep emoji as a png
 
-
-Contents
-********
-
 .. toctree::
    :maxdepth: 2
-   :titlesonly:
-   :glob:
+   :caption: Getting Started
 
-   install/index
-   usage/index
+   install/requirements
+   install/user
+   install/library
+   install/contributor
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Usage Guide
+
+   usage/command_line
+   filler_assets/index
+   font_kinds/index
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Theory
+
+   text_rendering_is_really_hard
+   glossary
 
 .. this is a comment, and it wraps everything below
-   * :ref:`genindex`
+   * :ref:`genindexFor `
    * :ref:`modindex`
    * :ref:`search`
-

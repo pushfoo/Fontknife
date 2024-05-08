@@ -1,8 +1,8 @@
 
 .. _install_contributor:
 
-Contributor Install Instructions
-================================
+Contributor Install
+===================
 
 These instructions are for readers who want to improve |project_name| by
 
@@ -11,7 +11,6 @@ These instructions are for readers who want to improve |project_name| by
 #. Testing or reviewing the above
 
 See :ref:`install_user` if you only want to convert files.
-
 
 .. _install_contributor_requirements:
 

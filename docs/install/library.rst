@@ -7,13 +7,16 @@ Library Install
 
 .. _install_pin_versions: https://pip.pypa.io/en/stable/topics/repeatable-installs/
 
-This page is for developers who want to use |project_name| from the
-Python code of a project.
+This page is for developers who want to use |project_name| from
+Python code.
+
+If you only want a command line utility, see please see
+:ref:`install_user`.
 
 Overview: Pin Your Packages!
 ----------------------------
 
-**TL;DR: Keep your code working by telling ``pip`` to use specific
+**TL;DR: Keep your code working by telling pip to use specific
 package versions.**
 
 What's Pinning?
@@ -25,9 +28,8 @@ By default, ``pip install`` will install the latest version of a
 package released. This can break your code if the latest release
 of a package changes features your code relies on.
 
-You can **pin** your project's package versions so ``pip`` only
-uses the exact version you tell it. This is called **pinning** a
-package.
+To keep your code working, you can tell ``pip`` to use a specific
+version. This is called **pinning** a package.
 
 .. _usage_library_why_pin:
 
@@ -35,17 +37,15 @@ Why Pin Packages?
 ^^^^^^^^^^^^^^^^^
 
 Before version 1.0, projects often change unexpectedly. |project_name|
-is no exception! Once it reaches 1.0, it will follow
-`semantic versioning <semver>`_. Until then:
+is no exception. Things **will** break until it reaches 1.0:
 
 * Large changes may release without warning
-* When that happens, projects without pinned package versions
-  may break!
+* Doc may end up lacking features or become incorrect
 
 .. _usage_library_how_pin:
 
 How do I Pin?
--------------
+^^^^^^^^^^^^^
 
 .. _requirements_txt: https://pip.pypa.io/en/latest/user_guide/#requirements-files
 .. _Rye: https://rye-up.com/
@@ -53,23 +53,41 @@ How do I Pin?
 
 
 If you're using a tool like `Rye`_ or `Poetry`_, consult their
-documentation. Otherwise, the following steps may help:
+documentation. Otherwise, continue reading.
+
 
 1. Find where you specify dependencies
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--------------------------------------
 
-The simplest and oldest way is a ``requirements.txt`` file with
-one package per line.
+In requirements.txt
+^^^^^^^^^^^^^^^^^^^
+The simplest and oldest way is a ``requirements.txt`` file. These
+have one package per line. Example:
 
-However, many projects now use a ``pyproject.toml`` file instead.
-If you aren't using a tool which generates it for you, then you
-can edit it directly:
+.. code-block::
+
+   example_package_name == 1.0
+   another_example_name == 2.1
+
+In pyproject.toml
+^^^^^^^^^^^^^^^^^
+It's often better to use a ``pyproject.toml`` file instead of
+``requirements.txt``. Although the TOML-based format is more complex, it
+adds features which are often worth it for most projects. You can create
+or edit it directly if you aren't using a tool which generates it for you
+like `Poetry`_ does.
+
+To add |project_name| as a dependency:
 
 #. Open ``pyproject.toml``
-#. Search for a ``[project]]`` heading
+#. Search for a ``[project]`` heading
 #. Look for a ``dependencies``  variable under it which looks like this
 
-   .. code-block:: toml
+   .. The example below isn't a code-block:: because it'd syntax
+   .. highlight and become inconsistent with the templated example
+   .. .. parsed-literal:: blocks below. TODO: Fix this flaw ;_;
+
+   .. parsed-literal::
 
       [project]
       dependencies = [
@@ -77,74 +95,128 @@ can edit it directly:
         'another_example_name == 1.1'
       ]
 
+Other Options
+^^^^^^^^^^^^^
 
-2. Choose Your Version
-^^^^^^^^^^^^^^^^^^^^^^
+If you haven't chosen an option, consider ``pyproject.toml`` or
+`Poetry`_. If you're working on an existing project and it's using
+another dependency management approach, consult the relevant
+documentation.
 
-.. _pypi_history: https://pypi.org/project/fontknife/#history
+2. Choose: Safety or Freshness?
+-------------------------------
 
 Safe & Stable
-"""""""""""""
+^^^^^^^^^^^^^
+
+.. _PyPI Release history:  https://pypi.org/project/fontknife/#history
 
 The current latest version is specified by this string:
 
    .. parsed-literal::
 
-             |dependency_pypi_line|
+      |package_as_dep_latest_stable|
 
-You can choose from other versions on PyPI by checking the
-`Release history tab <pypi_history>`_.
+You can choose from other versions on PyPI by checking |project_name|'s
+`PyPI Release history`_.
 
 
 Advanced: Straight from GitHub
-""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. warning:: These versions **will** be buggy!
 
              Even if builds pass tests, this is a pre-release WIP unless it's
-             a release commit. Things **will break!**
+             a release commit. Again, things **will break!**
 
 Very adventurous users can install directly from the latest commit
 at the time of build by using the following:
 
    .. parsed-literal::
 
-            |dependency_zipball_line|
+      |dependency_zipball_line|
 
 
-3. Add it to your dependencies
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+3. Add |project_name| to your dependencies
+------------------------------------------
 
-   .. list-table::
-      :header-rows: 1
+Adding it to requirements.txt
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-      * - Where your dependencies are kept
-        - Where to put it
-        - Example
+Let's say your ``requirements.txt`` looks like the example from
+earlier:
 
-      * - `requirements.txt <requirements_txt_>`_
+.. code-block::
 
-        - At the end of ``requirements.txt``
+   example_package_name == 1.0
+   another_example_name == 2.1
 
-        - .. parsed-literal::
+To add a released version of |project_name|, add it at the end
+as shown below:
 
-             |dependency_pypi_line|
+.. parsed-literal::
+
+   example_package_name == 1.0
+   another_example_name == 2.1
+   |package_as_dep_latest_stable|
+
+You can also choose any other version listed in |project_name|'s
+`PyPI Release history`_.
+
+If you want a zipball for a specific commit regardless of stability,
+you can add it like this:
+
+.. parsed-literal::
+
+   example_package_name == 1.0
+   another_example_name == 2.1
+   |dependency_zipball_line|
 
 
-      * - ``pyproject.toml``
+Adding it to pyproject.toml
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-        - Under ``[project]`` section in the ``dependencies`` list
+Assume your ``pyproject.toml``'s dependencies are simple and
+looks like this:
 
-        - .. parsed-literal::
+.. parsed-literal::
 
-            [project]
-            dependencies =[
-                'example_package_name == 1.0',
-                'another_example_name == 1.1'
-                |dependency_pypi_line|
-            ]    'texture/generate.py': ['Texture Management', 'texture.rst'],
+   [project]
+   dependencies =[
+       'example_package_name == 1.0',
+       'another_example_name == 2.2'
+   ]
 
+To add a released version to ``pyproject.toml``, add it to the
+dependencies list you found earlier:
 
+.. parsed-literal::
 
-Now ``pip install -Ie .`` or use your preferred project management tool
-to install dependencies!
+   [project]
+   dependencies =[
+       'example_package_name == 1.0',
+       'another_example_name == 2.1'
+       '|package_as_dep_latest_stable|'
+   ]
+
+To install from a specific commit on GitHub, you'd add it like this:
+
+.. parsed-literal::
+
+   [project]
+   dependencies =[
+       'example_package_name == 1.0',
+       'another_example_name == 2.1'
+       '|dependency_zipball_line|'
+   ]
+
+For more complicated situations, like dev and doc dependencies, you may
+need to add similar lines to other sections. This may be either in addition
+or instead of the onies shown here.
+
+4. Update & Resolve Any Conflicts
+----------------------------------
+
+Assuming you don't need dev or docs dependencies, re-install packages by
+running ``pip install -Ie .``. If you get conflicts, you'll need to resolve
+these. This is outside the scope of this document.

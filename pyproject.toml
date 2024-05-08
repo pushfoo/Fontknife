@@ -47,7 +47,7 @@ Source = "https://github.com/pushfoo/Fontknife"
 docs = [
     # Allows reading pyproject.toml in a forward-compatible way
     'tomli==2.0.1 ; python_version < "3.11"',
-    'sphinx==7.2.6',
+    'sphinx==7.3.7',
     'sphinx-rtd-theme==2.0.0',
 ]
 # Local developer environment
@@ -58,7 +58,7 @@ dev = [
     'types-regex',
     # Allows rebuilding docs/requirements.txt with this command
     # pip-compile --extra=docs --output-file=docs/requirements.txt pyproject.toml
-    'pip-tools==7.3.0'
+    'pip-tools==7.4.1'
 ]
 
 [project.scripts]

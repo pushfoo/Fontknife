@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from typing import Iterable, Generator, Callable, Pattern, TypeVar
 
 import regex as re  # Supports repeating groups :)
+import requests
 from sphinx.util import logging as nasty_sphinx_logging  # See below :(
 
 HERE = Path(__file__).parent
@@ -253,12 +254,25 @@ with attempt_to("read git HEAD"):
     info(f"Detected {display_branch}, {full_commit_hash=}")
 
 
-with attempt_to("read pyproject.toml for Sphinx config pre-reqs"):
+with attempt_to("read committed pyproject.toml for Sphinx config pre-reqs"):
     pyproject_toml = tomllib.loads((HERE.parent / "pyproject.toml").read_text())
     project_section = pyproject_toml['project']
     source_url = project_section['urls']['Source']
     doc_url = project_section['urls']['Documentation']
     doc_base_url = doc_url[:-len('latest')]  # Trim end, but leave the slash
+
+with attempt_to("read stable pyproject.toml directly from GitHub"):
+    # This avoids working with the git tree directly because:
+    # 1. Dev systems won't be in a clean state when we run build
+    # 2. The ReadTheDocs custom build spec API is marked as unstable as
+    #    of the time this comment was written
+    # 3. Microsoft can afford the tiny API hit since there aren't many
+    #    contributors yet.
+    # If it becomes a problem, there's always a filesystem caching layer:
+    # https://requests-cache.readthedocs.io/en/stable/user_guide/backends.html
+    stable_toml_response = requests.get("https://github.com/pushfoo/Fontknife/raw/stable/pyproject.toml")
+    stable_toml = tomllib.loads(stable_toml_response.text)
+    stable_version = stable_toml['project']['version']
 
 
 # -- Configuration variables read by Sphinx from the values in this file --
@@ -359,10 +373,15 @@ with attempt_to("template rst_prolog"):
         .. |branch_github_link| replace:: :ghbranch:`{branch or readthedocs_name}`
         .. |full_commit_hash| replace:: {full_commit_hash}
         .. |min_python_version| replace:: {min_python_version}
-        .. |min_python_version_cli_name| replace:: ``python{min_python_version}``
+        .. |min_py_git_tag_v| replace:: ``v{min_python_version}.0``
+        .. |min_py_git_tag_latest| replace:: ``{min_python_version}``
+        .. |min_py_git_tag_latest_example| replace:: ``git checkout {min_python_version}``
+        .. |min_py_cli_command| replace:: ``python{min_python_version}``
         .. |min_python_version_plus| replace:: Python {min_python_version}+
-        .. |dependency_pypi_line| replace:: '|package_name| == |release|'
-        .. |dependency_zipball_line| replace:: '|package_name| @ {source_url}/zipball/{full_commit_hash}'
+        .. |cli_pip_install_gh_branch_main| replace:: {source_url}/archive/main.zip
+        .. |cli_pip_install_gh_commit_curr| replace:: {source_url}/archive/{full_commit_hash}.zip
+        .. |package_as_dep_latest_stable| replace:: {package_name} == {stable_version}
+        .. |dependency_zipball_line| replace:: {package_name} @ {source_url}/zipball/{full_commit_hash}
         """).strip()
     #       .. |ZWJ| replace:: :codepoint:`ZWJ (U+200D) <200D>`
 
