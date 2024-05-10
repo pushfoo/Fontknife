@@ -6,7 +6,6 @@ from __future__ import annotations  # Partial | support on Python 3.8+
 
 import os
 import sys
-import traceback
 import subprocess  # Sphinx's git rev-parse only gets HEAD's short hash
 
 from pathlib import Path
@@ -20,7 +19,7 @@ import requests
 from sphinx.util import logging as nasty_sphinx_logging  # See below :(
 
 HERE = Path(__file__).parent
-logger = nasty_sphinx_logging.getLogger(__name__)
+log = nasty_sphinx_logging.getLogger(__name__)
 
 ########################################################################
 # TL;DR: Sphinx's logging forces wrapper functions & unaligned columns #
@@ -45,8 +44,8 @@ logger = nasty_sphinx_logging.getLogger(__name__)
 ########################################################################
 
 
-def debug(msg: str, *args, **kwargs) -> None:
-    logger.debug(msg, *args, **kwargs)
+# -- Monkeypatch our local sphinx log adapter, but not the base class --
+_old_info = log.info
 
 
 def info(msg: str, *args, **kwargs) -> None:
@@ -55,46 +54,33 @@ def info(msg: str, *args, **kwargs) -> None:
     This is the best we can do for now since column alignment is too
     much to ask for. See above comment block. :(
     """
-    logger.info(f"INFO: {msg}", *args, **kwargs)
+    _old_info(f"INFO: {msg}", *args, **kwargs)
 
 
-def warn(msg: str, *args, **kwargs) -> None:
-    logger.warning(msg, *args, **kwargs)
-
-
-def error(msg: str, *args, **kwargs) -> None:
-    logger.error(msg, *args, **kwargs)
-
-
-def critical(
-        failure_msg: str,  # Will be prefixed with CRITICAL:
-        exception: Exception | None = None,  # Log traceback if != None
-        exit_code: int = -1,  # The only cross-platform error exit code
-        **kwargs  # See LoggingAdapter.critical & SphinxLoggingAdapter
-) -> None:
-    """Log a failure message & any exception traceback, then exit."""
-    logger.critical(failure_msg, **kwargs)
-    if exception is not None:
-        print()
-        print(traceback.format_exc())
-
-    exit(exit_code)
+log.info = info
 
 
 @contextmanager
 def attempt_to(
     action: str,  # with attempt_to("perform a specific action"): ...
-    on_attempt: Callable = lambda a: info(f"Attempting to {a}..."),
-    on_failure: Callable = lambda a, e: critical(f"Failed to {a}!", e),
-    on_success: Callable = lambda _: info("Success!"),
-) -> Generator[str, None, None]:
-    """Organize task results in code & logs, including traceback."""
+    on_attempt: Callable = lambda a: log.info(f"Attempting to {a}..."),
+    on_success: Callable = lambda a: log.info("Success!"),
+    on_failure: Callable = lambda a, _: log.error(f"Failed to {a}!"),
+) -> Generator[None, None, None]:
+    """Organize task results in code & logs, including traceback.
+
+    Since Sphinx doesn't use ``critical`` for build issues, our
+    default failure handling also uses ``error``.
+    """
     on_attempt(action)
     try:
-        yield action
+        yield None
+        on_success(action)
+
+    # Pass-through logging of the error
     except Exception as e:
         on_failure(action, e)
-    on_success(action)
+        raise e
 
 
 ########################################################################
@@ -135,7 +121,7 @@ def run_with_regex(
 
     # Run & attempt to match with the extractor pattern
     cleaned = run_with_post(command)
-    info(f"Got cleaned info {cleaned!r}")
+    log.info(f"Got cleaned info {cleaned!r}")
     match = named_group_extractor.match(cleaned)
 
     # Raise a ValueError if the data we got seems malformed
@@ -162,15 +148,15 @@ def convert(
 ########################################################################
 #     Preflight Python Version & TOML Compatibility Parsing Checks     #
 ########################################################################
-info(f"Detected Python {sys.version.split()[0]}")
+log.info(f"Detected Python {sys.version.split()[0]}")
 
 # This file's toml needs are simple enough to count tomli as a backport
 if sys.version_info <= (3, 11):
     import tomli as tomllib  # any breaking changes are irrelevant here
-    warn("Full tomllib isn't in this Python version! Using tomli fallback")
+    log.warning("Full tomllib isn't in this Python version! Using tomli fallback")
 else:
     import tomllib  # noqa  # PyCharm can't understand the version check
-    info("using built-in tomllib")
+    log.info("using built-in tomllib")
 
 
 ########################################################################
@@ -243,7 +229,7 @@ with attempt_to("read git HEAD"):
     raw_branch = run_with_post(
         ['git', 'status', '-s', '-b'],
         converter=lambda s: s.strip("\"").split("\n")[0])
-    info(f"Got raw status 1st line: status={raw_branch!r}")
+    log.info(f"Got raw status 1st line: status={raw_branch!r}")
     # No need to guess since we can use the READTHEDOCS(_*)? env vars
     if "no branch" in raw_branch:
         branch = None
@@ -251,7 +237,7 @@ with attempt_to("read git HEAD"):
     else:
         branch = raw_branch[2:].strip().split('.')[0]
         display_branch = f"{branch=}"
-    info(f"Detected {display_branch}, {full_commit_hash=}")
+    log.info(f"Detected {display_branch}, {full_commit_hash=}")
 
 
 with attempt_to("read committed pyproject.toml for Sphinx config pre-reqs"):
@@ -405,7 +391,7 @@ with attempt_to("template rst_prolog"):
 
 
 # -- Log our config generation win to console. :) --
-info("Finished processing git HEAD & pyproject.toml into the rst_prolog below:")
+log.info("Finished processing git HEAD & pyproject.toml into the rst_prolog below:")
 print()
 print('rst_prolog = f"""')
 print(rst_prolog)
@@ -417,7 +403,7 @@ def setup(app):
     app.add_config_value('unstable_branch', None if stable_build else branch, 'env')
 
 
-info("Proceeding to output phase")
+log.info("Proceeding to output phase")
 
 # -- Options for HTML output --
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
