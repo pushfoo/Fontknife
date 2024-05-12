@@ -34,19 +34,19 @@ down the page.
 
    * - :ref:`font_kinds-dingbat_fonts`
      - :term:`Dingbats <dingbat>` (various symbols)
-     - Often by hijacking :term:`code points <code point>`
+     - May hijack :term:`code points <code point>`
 
    * - :ref:`Emoji Fonts`
      - Emoji
-     - Mostly at proper :term:`code points <code point>`
+     - Mostly proper :term:`code points <code point>`
 
    * - :ref:`Math fonts`
      - Math operators, arrows, etc
-     - Mostly at proper :term:`code points <code point>`
+     - Mostly proper :term:`code points <code point>`
 
    * - :ref:`Music fonts`
      - Notes and other glyphs
-     - Mostly at proper :term:`code points <code point>`
+     - Mostly proper :term:`code points <code point>`
 
 
 .. _font_kinds-dingbat_fonts:
@@ -89,6 +89,12 @@ To learn more, please see:
 Decorative Dingbats
 ^^^^^^^^^^^^^^^^^^^
 
+.. On this page, an issue with link text overrides means that link
+.. targets such as the ones below are fully spelled out instead of using
+.. short names. Some combination of plugins and emoji is breaking link
+.. text overrides. Since it's only affecting this page, it's being left
+.. as-is for the moment.
+
 .. _Teranoptia: https://www.tunera.xyz/fonts/teranoptia/
 .. _Tunera Type Foundry: https://www.tunera.xyz/
 
@@ -96,8 +102,12 @@ Some :term:`dingbat` fonts stick closer to the term's decorative
 origins.
 
 For example, `Teranoptia`_ is a font by `Tunera Type Foundry`_'s Ariel
-Martin Perez. The font allows you to draw imaginary creatures with
-standard :term:`ASCII` characters through custom :term:`glyphs <glyph>`:
+Martin Perez. Visit the font's page to try their interactive preview.
+It's fun!
+
+If you can't right now, that's okay. The font allows you to draw
+imaginary creatures with standard :term:`ASCII` characters through
+custom :term:`glyphs <glyph>`:
 
 .. list-table::
    :header-rows: 1
@@ -139,11 +149,8 @@ into graphics:
 * No :gfonts-gloss:`color font (Google Fonts link) <color_fonts>`
   characters are known to work
 
-Multi-Character Emoji
-^^^^^^^^^^^^^^^^^^^^^
-
-.. _recommended ZWJ sequences: https://unicode.org/emoji/charts/emoji-zwj-sequences.html
-.. _unicode_modifiers: https://www.unicode.org/emoji/charts/full-emoji-modifiers.html
+Simple Emoji
+^^^^^^^^^^^^
 
 For simple emoji like 😊 (:codepoint:`1F60A`), things are exactly as they
 seem:
@@ -151,8 +158,17 @@ seem:
 * A single :term:`code point` represents the :term:`character`
 * A single :term:`glyph` is chosen based on that code point
 
-However, many emoji aren't simple. Instead, they're composed of
-multiple :term:`code point <code point>` which combine in at least
+
+Multi-Character Emoji
+^^^^^^^^^^^^^^^^^^^^^
+
+.. _recommended ZWJ sequences: https://unicode.org/emoji/charts/emoji-zwj-sequences.html
+.. _unicode_modifiers: https://www.unicode.org/emoji/charts/full-emoji-modifiers.html
+
+
+Many emoji aren't simple. Instead, they're composed of
+multiple :term:`code points <code point>`. Some of these
+represent unprintable characters whuch can combine in at least
 two ways.
 
 .. tip:: It's okay to be overhelmed by this.
@@ -171,9 +187,19 @@ can also be the base for another zwj sequence formed by appending to it.
 Color Emoji
 ^^^^^^^^^^^
 
-**TL;DR: Not officially supported due to PIL unreliability.**
+**TL;DR: These won't be supported for the foreseeable future**
 
-Although :gfonts-gloss:`color fonts <color_fonts>` are a recent addition.
+There are at least three mutually incompatible ways to describe
+color data for a specific :term:`glyph` in a :term:`TTF` or :term:`OTF`
+font:
+
+* The :gfonts-gloss:`Google Fonts <color font>` implementation
+* Apple's custom :term:`TTF` extension
+* At least two different approaches by Microsoft
+
+None of these are reliably well-supported by the :py:mod:`PIL` module
+which |project_name| uses. This makes offering support for them hard.
+
 
 .. _Math fonts:
 
