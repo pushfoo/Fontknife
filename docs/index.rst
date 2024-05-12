@@ -12,32 +12,28 @@
    </style>
 
 
-.. rubric:: Remember that weird font?
+.. rubric:: TL;DR: Rasterize & export only the :term:`glyphs <glyph>` you need
 
-.. _home_sprite_sheet:
+You can make sprite sheets of entire fonts:
 
-Make it a sprite sheet!
+#. ``fontknife convert tom-thumb.bdf sheet.png``
+#. Use the resulting image file:
 
-``fontknife convert tom-thumb.bdf sheet.png``
+   .. figure:: ./tom-thumb.png
+      :class: nearest-neighbor
+      :width: 200
+      :height: 200
+      :alt: The contents of tom-thumb.bdf converted to a sprites sheet
 
+      *(Shown at 200% size)*
 
-.. figure:: ./tom-thumb.png
-   :class: nearest-neighbor
-   :width: 200
-   :height: 200
-   :alt: The contents of tom-thumb.bdf converted to a sprites sheet
+Only need some of the glyphs? Sure:
 
-   *(Shown at 200% size)*
+#. ``fontknife convert -P 48 -G "💪😎" NotoEmoji-Regular.ttf sheet.png``
+#. Use the sheet in your project:
 
-
-.. _home_filler_assets:
-
-Make Filler Assets!
-
-``fontknife convert -P 48 -G "💪😎" NotoEmoji-Regular.ttf sheet.png``
-
-.. figure:: ./flex_cool.png
-   :alt: The cool sunglasses and flexed bicep emoji as a png
+   .. figure:: ./flex_cool.png
+      :alt: The cool sunglasses and flexed bicep emoji as a png
 
 .. toctree::
    :maxdepth: 2
@@ -46,7 +42,7 @@ Make Filler Assets!
    install/requirements
    install/user
    install/library
-   install/contributor
+   install/testing
 
 .. toctree::
    :maxdepth: 3
@@ -57,13 +53,16 @@ Make Filler Assets!
    font_kinds/index
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
    :caption: Theory
 
    text_rendering_is_really_hard
    glossary
 
-.. this is a comment, and it wraps everything below
-   * :ref:`genindexFor `
-   * :ref:`modindex`
-   * :ref:`search`
+.. toctree::
+   :maxdepth: 1
+   :caption: Contributing
+
+   contributing/setup
+   contributing/testing
+   contributing/substitutions

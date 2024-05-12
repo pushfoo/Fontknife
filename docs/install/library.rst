@@ -1,23 +1,37 @@
-
-.. _install_library:
-
+.. _library-install:
 
 Library Install
 ===============
 
 .. _install_pin_versions: https://pip.pypa.io/en/stable/topics/repeatable-installs/
 
-This page is for developers who want to use |project_name| from
+This page you use |project_name|'s current features from your own
 Python code.
 
-If you only want a command line utility, see please see
-:ref:`install_user`.
+.. list-table::
+   :header-rows: 1
+
+   * - |if_need_to|
+     - |may_want|
+
+   * - Convert font data in the terminal
+     - |redir_to_use|
+
+   * - Contribute fixes or new features
+     - |redir_contributing|
+
 
 Overview: Pin Your Packages!
 ----------------------------
 
 **TL;DR: Keep your code working by telling pip to use specific
 package versions.**
+
+.. toctree::
+   :hidden:
+
+   ./choosing_a_dependency_approach
+
 
 What's Pinning?
 ^^^^^^^^^^^^^^^
@@ -49,26 +63,90 @@ Many of them could break your code:
 How do I Pin?
 ^^^^^^^^^^^^^
 
-.. _Rye: https://rye-up.com/
-.. _Poetry: https://python-poetry.org/
+This depends on how you manage dependencies.
+
+.. list-table::
+   :header-rows: 1
+
+   * - If you're...
+     - |may_want_to|:
+
+   * - Not using any dependency management
+     - :ref:`library-install-choosing_dependency-approach`
+
+   * - Using ``requirements.txt`` or ``pyproject.toml``
+     - Skip to :ref:`install-library-find_deps_section`
+
+   * - Automating dependency management with a tool like:
+
+       * `Rye`_
+       * `Poetry`_
+
+     - See the next section
 
 
-If you're using a tool like `Rye`_ or `Poetry`_, consult their
-documentation. Otherwise, continue reading.
+My Favorite Tool Manages Dependencies
+"""""""""""""""""""""""""""""""""""""
 
+.. _rye_deps_intro: https://rye-up.com/guide/basics/#adding-dependencies
+.. _rye_deps_full: https://rye-up.com/guide/deps/
+.. _poetry_deps_intro: https://python-poetry.org/docs/managing-dependencies/
+.. _poetry_deps_full: https://python-poetry.org/docs/basic-usage/#installing-dependencies
+
+That's okay too. It means you can :wikipedia:`speedrun <Speedrunning>`
+this page. Start with the table below and copying down the dependency
+line which sounds preferable.
+
+.. list-table::
+   :header-rows: 1
+
+   * - |if_need|
+     - |may_want|
+
+   * - Safety
+     - |dep_line_latest_stable|
+
+   * - New Features
+     - |dep_line_commit_zipball|
+
+
+You'll want to consult your tool's documentation from this point. For
+your convenience, links for Rye and Poetry's documentation are provided
+below.
+
+.. list-table::
+   :header-rows: 1
+
+   * - `Rye`_
+     - `Poetry`_
+
+   * - `Rye's Dependency Intro <rye_deps_intro>`_
+     - `Rye's Dependency Guide <rye_deps_full>`_
+
+   * - `Poetry's Dependency Intro <poetry_deps_intro>`_
+     - `Poetry's Dependency Guide <poetry_deps_guide>`_
+
+If you're using another tool, please consult its documentation.
+
+
+.. _install-library-find_deps_section:
 
 1. Find where you specify dependencies
 --------------------------------------
 
+.. tip:: If you don't specify them anywhere yet, that's okay.
+
+.. _library-install-requirements.txt:
+
 In requirements.txt
 ^^^^^^^^^^^^^^^^^^^
 
-.. _requirements_txt: https://pip.pypa.io/en/latest/user_guide/#requirements-files
+.. _requirements.txt: https://pip.pypa.io/en/latest/user_guide/#requirements-files
 
-The simplest and oldest way is a ``requirements.txt`` file. These
-have one package per line. Example:
+The simplest way is a ``requirements.txt`` file. These have one package
+per line. For example:
 
-.. None of the examples on this page don't use .. code-block:: because:
+.. None of the examples on this page use .. code-block:: because:
 .. 1. It triggers more auto-highlighting on them than it already does
 .. 2. Those will be even more inconsistent with the style of the ones
 ..    which include a replacement.
@@ -79,39 +157,20 @@ have one package per line. Example:
    example_package_name == 1.0
    another_example_name == 2.1
 
-To learn more, see
-`the pip documentation on requirements.txt <requirements_txt>`_.
+
+To learn more, see ``pip``'s
+`documentation on requirements.txt <requirements.txt>`_.
+
+.. _library-install-pyproject.toml:
 
 In pyproject.toml
 ^^^^^^^^^^^^^^^^^
-.. _writing_toml: https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
-.. _The pyproject.toml specification: https://packaging.python.org/en/latest/specifications/pyproject-toml/
-.. _TOML: https://toml.io/en/
 
-It's often better to use a ``pyproject.toml`` file instead of
-``requirements.txt``. Although the `TOML`_-based format is more complex,
-it adds features which are often worth it.
+If you have a ``pyproject.toml``, it's probably at the root of your
+project's repo folder.
 
-
-To learn more about ``pyproject.toml``, please see:
-
-* The Python Packaging User Guide's doc on
-  `Writing your pyproject.toml <writing_toml>`_
-* `The pyproject.toml specification`_
-* `The TOML specification <TOML>`_
-
-
-Where Inside the TOML Do I Add It?
-""""""""""""""""""""""""""""""""""
-
-First, double-check to make sure you aren't using `Poetry`_ or
-another tool which automatically regenerates the file for you.
-
-Once you're sure, you can find the right place by:
-
-#. Open ``pyproject.toml``
-#. Search for a ``[project]`` heading
-#. Look for a ``dependencies`` array beneath it which looks like this
+If you see it, open it and search for a ``[project]`` section. It should
+have a ``dependencies`` value which looks something like this:
 
    .. parsed-literal::
 
@@ -121,13 +180,7 @@ Once you're sure, you can find the right place by:
         'another_example_name == 2.1'
       ]
 
-Other Options
-^^^^^^^^^^^^^
-
-If you haven't chosen an option, consider ``pyproject.toml`` or
-`Poetry`_. If you're working on an existing project and it's using
-another dependency management approach, consult the relevant
-documentation.
+This is where you'll be adding the dependency line.
 
 2. Choose: Safety or Freshness?
 -------------------------------
@@ -141,7 +194,7 @@ The current latest version is specified by this string:
 
 .. parsed-literal::
 
-   |package_as_dep_latest_stable|
+   |dep_line_latest_stable|
 
 You can choose from other versions on PyPI by checking |project_name|'s
 `PyPI Release history`_.
@@ -160,11 +213,13 @@ at the time of build by using the following:
 
 .. parsed-literal::
 
-   |dependency_zipball_line|
+   |dep_line_commit_zipball|
 
 
 3. Add |project_name| to your dependencies
 ------------------------------------------
+
+.. _install-library-requirements.txt:
 
 Adding it to requirements.txt
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -184,7 +239,7 @@ as shown below:
 
    example_package_name == 1.0
    another_example_name == 2.1
-   |package_as_dep_latest_stable|
+   |dep_line_latest_stable|
 
 You can also choose any other version listed in |project_name|'s
 `PyPI Release history`_.
@@ -196,7 +251,7 @@ you can add it like this:
 
    example_package_name == 1.0
    another_example_name == 2.1
-   |dependency_zipball_line|
+   |dep_line_commit_zipball|
 
 
 Adding it to pyproject.toml
@@ -222,7 +277,7 @@ dependencies list you found earlier:
    dependencies =[
        'example_package_name == 1.0',
        'another_example_name == 2.1'
-       '|package_as_dep_latest_stable|'
+       '|dep_line_latest_stable|'
    ]
 
 To install from a specific commit on GitHub, you'd add it like this:
@@ -233,7 +288,7 @@ To install from a specific commit on GitHub, you'd add it like this:
    dependencies =[
        'example_package_name == 1.0',
        'another_example_name == 2.1'
-       '|dependency_zipball_line|'
+       '|dep_line_commit_zipball|'
    ]
 
 For more complicated situations, like dev and doc dependencies, you may

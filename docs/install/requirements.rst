@@ -5,12 +5,12 @@ Install Requirements
 
 .. _dep_python: https://python.org/
 
-1. |min_python_version_plus|
-----------------------------
+1. |min_py_fullname|\+
+----------------------
 
 
-Checking Your Python Version
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Check Your Python Version
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To check if you have a high enough version of Python:
 
@@ -19,7 +19,7 @@ To check if you have a high enough version of Python:
 #. If it says the command was not found, try the following:
 
    #. ``python3``
-   #. |min_py_cli_command| or later minor version numbers
+   #. |cli_command_min_py| or later minor version numbers
 
 At least one of them should show something like the output below:
 
@@ -36,7 +36,7 @@ If it does, then:
 
 #. type ``exit()``
 #. press enter
-#. skip to :ref:`install_user_instructions_venv`
+#. skip to :ref:`install-instructions-user-your_needs`
 
 
 .. _install_requirements_python:
@@ -102,7 +102,7 @@ Your distro's package manager is usually the best place to look.
           #. Performance issues compared to ``.deb``
 
 
-If you don't have |min_python_version| or higher in your distro's
+If you don't have |min_py_version| or higher in your distro's
 package manager, see :ref:`linux-alt-python`.
 
 

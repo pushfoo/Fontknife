@@ -87,10 +87,11 @@ For the cpython repo, tags take one of two forms:
    * - ``vMajor.Minor.Point``
        per `semantic versioning <https://semver.org/>`_
 
-     - |min_py_git_tag_v|
+     - |git_tag_min_py_specific_point|
 
    * - Latest point release of a minor version
-     - |min_py_git_tag_latest|
+
+     - |git_tag_min_py_latest_point|
 
 
 If you're comfortable with the terminal,  you can browse a full list of
@@ -103,7 +104,13 @@ tags by following the steps below:
 #. Scroll or type into the search box
 
 Once you've selected a tag, use ``git checkout`` to switch to it. For
-example, |min_py_git_tag_latest_example|.
+example, the following command checks out the latest commit for
+|min_py_fullname|:
+
+.. parsed-literal::
+
+   |cli_command_git_checkout_tag_latest_point|
+
 
 Building Python
 ^^^^^^^^^^^^^^^
@@ -168,7 +175,7 @@ Run ``sudo make altinstall`` to set up your Python version alongside your
 system version.
 
 Once it finishes, try running it. For example, if you built tag
-|min_py_git_tag_latest|, try running |min_py_cli_command|.
+|git_tag_min_py_latest_point|, try running |cli_command_min_py|.
 
 You should see a Python prompt which looks something like this:
 
