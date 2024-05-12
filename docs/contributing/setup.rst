@@ -15,12 +15,12 @@ documentation This includes:
    :header-rows: 1
 
    * - |if_need_to|
-     - |may_want|
+     - |may_want_see|
 
-   * - Convert font data in the terminal
+   * - |task_convert|
      - |redir_to_use|
 
-   * - ``import fontknife`` in Python code
+   * - |task_import|
      - |redir_library|
 
 

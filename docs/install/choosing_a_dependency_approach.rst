@@ -1,23 +1,34 @@
 .. _library-install-choosing_dependency-approach:
 
-Help! What's Dependency Management?!
-------------------------------------
+Choosing a Dependency Approach
+------------------------------
 
 .. _TOML: https://toml.io/en/
-.. _writing_toml: https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
-.. _pypa_sampleproject: https://github.com/pypa/sampleproject/blob/main/pyproject.toml
 .. _The pyproject.toml specification: https://packaging.python.org/en/latest/specifications/pyproject-toml/
 
 It's okay if you haven't chosen a dependency management approach yet.
 
-This page will help you get started by going from simplest to most
-complicated. Skim the page, then pick whatever option appeals to you.
+This page will help you choose one.
 
 A Text File: the Simplest Option
 """"""""""""""""""""""""""""""""
 
-If you feel intimidated or overwhelmed, remember that even a simple
-``requirements.txt`` is better than nothing!
+.. tip:: Pick this if the other sections seem overwhelming
+
+To start using a ``requirements.txt`` to manage dependencies:
+
+#. Go to your project's top-level folder
+#. Save an empty file to it with the name ``requirements.txt``
+#. Copy-and-paste a line from
+   :ref:`library-install-requirements.txt`
+
+If everything works after ``pip install -r requirements.txt``, then add
+the new file to any version control you're using. That's it. You're
+done!
+
+You can always upgrade to another approach if you end up needing
+more features.
+
 
 The TOML: Power Without Too Much Magic
 """"""""""""""""""""""""""""""""""""""
@@ -38,15 +49,13 @@ The TOML configuration language:
 
 To learn more, please see:
 
-* The Python Packaging User Guide's doc on
-  `writing your pyproject.toml <writing_toml>`_
-* `The Python Packaging Authority's Sample Project <pypa_sampleproject>`_
+* The Python Packaging User Guide's doc on `guide to writing a pyproject.toml`_
+* The Python Packaging Authority's `sample project`_
 * The `tomli <https://github.com/hukkin/tomli>`_ library
 * `The pyproject.toml specification`_
 * `The TOML specification <TOML>`_
 
-.. tip:: If you like examples, skip to the
-         `sample project <pypa_sampleproject>`_!
+.. tip:: If you like examples, skip to the `sample project`_ !
 
          Its ``pyproject.toml`` is very thoroughly commented!
 

@@ -12,12 +12,12 @@ For other purposes, you should see the following:
    :header-rows: 1
 
    * - |if_need_to|
-     - |may_want|
+     - |may_want_see|
 
-   * - ``import fontknife`` in Python code
+   * - |task_import|
      - |redir_library|
 
-   * - Contribute fixes or new features
+   * - |task_contribute|
      - |redir_contributing|
 
 

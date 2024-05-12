@@ -12,12 +12,12 @@ Python code.
    :header-rows: 1
 
    * - |if_need_to|
-     - |may_want|
+     - |may_want_see|
 
-   * - Convert font data in the terminal
+   * - |task_convert|
      - |redir_to_use|
 
-   * - Contribute fixes or new features
+   * - |task_contribute|
      - |redir_contributing|
 
 
@@ -68,21 +68,17 @@ This depends on how you manage dependencies.
 .. list-table::
    :header-rows: 1
 
-   * - If you're...
-     - |may_want_to|:
+   * - If you...
+     - |may_want_see|
 
-   * - Not using any dependency management
+   * - Don't track dependencies yet
      - :ref:`library-install-choosing_dependency-approach`
 
-   * - Using ``requirements.txt`` or ``pyproject.toml``
-     - Skip to :ref:`install-library-find_deps_section`
+   * - Use ``requirements.txt`` or ``pyproject.toml``
+     - :ref:`install-library-find_deps_section`
 
-   * - Automating dependency management with a tool like:
-
-       * `Rye`_
-       * `Poetry`_
-
-     - See the next section
+   * - Use automatic tools (`Rye`_, `Poetry`_)
+     - The heading directly below this line
 
 
 My Favorite Tool Manages Dependencies
@@ -136,6 +132,14 @@ If you're using another tool, please consult its documentation.
 
 .. tip:: If you don't specify them anywhere yet, that's okay.
 
+         Try skimming through
+         :ref:`library-install-choosing_dependency-approach`.
+         If you feel overwhelmed:
+
+         #. Save an empty ``requirements.txt`` file in your project's
+            folder
+         #. See the heading directly below this sentence
+
 .. _library-install-requirements.txt:
 
 In requirements.txt
@@ -143,8 +147,10 @@ In requirements.txt
 
 .. _requirements.txt: https://pip.pypa.io/en/latest/user_guide/#requirements-files
 
-The simplest way is a ``requirements.txt`` file. These have one package
-per line. For example:
+The simplest way to manage dependencies is a ``requirements.txt`` file.
+
+These have one package per line. If yours isn't empty, it may look like
+this:
 
 .. None of the examples on this page use .. code-block:: because:
 .. 1. It triggers more auto-highlighting on them than it already does
@@ -158,8 +164,9 @@ per line. For example:
    another_example_name == 2.1
 
 
-To learn more, see ``pip``'s
-`documentation on requirements.txt <requirements.txt>`_.
+To add a dependency right away, skip to
+:ref:`library-install-safe_or_features`. To learn more first, please
+see ``pip``'s `guide to requirements.txt <requirements.txt>`_.
 
 .. _library-install-pyproject.toml:
 
@@ -182,6 +189,9 @@ have a ``dependencies`` value which looks something like this:
 
 This is where you'll be adding the dependency line.
 
+
+.. _library-install-safe_or_features:
+
 2. Choose: Safety or Freshness?
 -------------------------------
 
@@ -196,17 +206,24 @@ The current latest version is specified by this string:
 
    |dep_line_latest_stable|
 
-You can choose from other versions on PyPI by checking |project_name|'s
-`PyPI Release history`_.
+To add it right away:
+
+#. Select the text
+#. Copy it to your clipboard
+#. Skip to :ref:`install-library-adding-requirements.txt`
+
+
+You can also choose from other stable versions on PyPI by checking
+|project_name|'s `PyPI Release history`_.
 
 
 Advanced: Straight from GitHub
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. warning:: These versions **will** be buggy!
+.. warning:: Non-release commits **will** break things!
 
-             Even if builds pass tests, this is a pre-release WIP unless
-             it's a release commit. Again, things **will break!**
+             Even if they seem to pass tests, its no guarantee they
+             haven't changed behavior your code relies on.
 
 Very adventurous users can install directly from the latest commit
 at the time of build by using the following:
@@ -219,21 +236,22 @@ at the time of build by using the following:
 3. Add |project_name| to your dependencies
 ------------------------------------------
 
-.. _install-library-requirements.txt:
+.. _install-library-adding-requirements.txt:
 
 Adding it to requirements.txt
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Let's say your ``requirements.txt`` looks like the example from
-earlier:
+If your ``requirements.txt`` is empty, then:
 
-.. parsed-literal::
+#. Paste your line
+#. Hit save
+#. Scroll to the end of this section to finish up
 
-   example_package_name == 1.0
-   another_example_name == 2.1
+Otherwise, you'll want to add the new line it at the end of the file as
+shown below.
 
-To add a released version of |project_name|, add it at the end
-as shown below:
+A Stable Version in requirements.txt
+""""""""""""""""""""""""""""""""""""
 
 .. parsed-literal::
 
@@ -241,11 +259,8 @@ as shown below:
    another_example_name == 2.1
    |dep_line_latest_stable|
 
-You can also choose any other version listed in |project_name|'s
-`PyPI Release history`_.
-
-If you want a zipball for a specific commit regardless of stability,
-you can add it like this:
+An unstable zipball in requirements.txt
+"""""""""""""""""""""""""""""""""""""""
 
 .. parsed-literal::
 
@@ -268,8 +283,10 @@ looks like this:
        'another_example_name == 2.1'
    ]
 
-To add a released version to ``pyproject.toml``, add it to the
-dependencies list you found earlier:
+Paste your dependency line at the end.
+
+Stable Version
+""""""""""""""
 
 .. parsed-literal::
 
@@ -280,7 +297,8 @@ dependencies list you found earlier:
        '|dep_line_latest_stable|'
    ]
 
-To install from a specific commit on GitHub, you'd add it like this:
+Unstable Zipball from GitHub
+""""""""""""""""""""""""""""
 
 .. parsed-literal::
 
@@ -291,16 +309,50 @@ To install from a specific commit on GitHub, you'd add it like this:
        '|dep_line_commit_zipball|'
    ]
 
-For more complicated situations, like dev and doc dependencies, you may
-need to add similar lines to other sections. This may be either in
-addition or instead of the onies shown here.
+For more complicated situations such as dev or doc dependencies,
+you may need to add similar lines to other sections. If it's required
+for both dev and docs, you may need to add it to both the dev and docs
+dependency lists.
+
+Consult the following reference from the Python Packaging Authority
+to learn more:
+
+* Their `guide to writing a pyproject.toml`_
+* Their well-commented `sample project`_
+
+.. _post-install:
 
 Cleanup: Update & Resolve Any Conflicts
 ---------------------------------------
 
-Assuming you don't need dev or docs dependencies, re-install packages by
-running ``pip install -Ie .``. If you get conflicts, you'll need to
-resolve these. This is outside the scope of this document.
+You're nearly done.
 
-Otherwise, run any tests once the conflicts are resolved. If they pass,
-you're done!
+Your next steps are telling ``pip`` to reinstalling and upgrade
+packages. If there are version conflicts, you might have to make
+soem choices to resolve them. The details of how are outside this
+document's scope.
+
+For requirements.txt
+^^^^^^^^^^^^^^^^^^^^
+
+.. _report a bug: https://github.com/pushfoo/Fontknife/issues/new
+
+Run ``pip install -r requirements.txt``.
+
+If your requirements file only has |project_name| in it:
+
+* There should be no dependency conflicts
+* If there are, `report a bug`_!
+
+For pyproject.toml
+^^^^^^^^^^^^^^^^^^
+
+
+Run ``pip install -Ie .`` to reinstall anything and everything
+which needs it.
+
+Any Tests?
+----------
+
+You may want to run any unit tests your project has. If nothing broke
+or if you don't have any tests yet, then you're done!

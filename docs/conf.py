@@ -437,11 +437,15 @@ with attempt_to("template rst_prolog"):
         .. |if_need_to| replace:: If you need to...
         .. |may_want| replace:: ...you may want:
         .. |may_want_to| replace:: ...you may want to:
+        .. |may_want_see| replace:: ...you may want to see:
 
         .. # #### Re-usable nudges for the top of install pages
-        .. |redir_to_use| replace:: See :ref:`user-install`
-        .. |redir_library| replace:: See :ref:`library-install`
-        .. |redir_contributing| replace:: See :ref:`contributing-setup`
+        .. |task_convert| replace:: Convert font data in the terminal
+        .. |task_import| replace:: ``import fontknife`` in Python code
+        .. |task_contribute| replace:: Contribute fixes or new features
+        .. |redir_to_use| replace:: :ref:`user-install`
+        .. |redir_library| replace:: :ref:`library-install`
+        .. |redir_contributing| replace:: :ref:`contributing-setup`
 
         .. # ### UNIX cpython Source Build Helpers
         .. # Consider these a test for integrating a tag-based release
@@ -466,6 +470,10 @@ with attempt_to("template rst_prolog"):
         .. # word used throughout the codebase.
         .. _Rye: https://rye-up.com/
         .. _Poetry: https://python-poetry.org/
+
+        .. # ### TOML doc
+        .. _guide to writing a pyproject.toml: https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
+        .. _sample project: https://github.com/pypa/sampleproject/
         """))
     #       .. |ZWJ| replace:: :codepoint:`ZWJ (U+200D) <200D>`
 
