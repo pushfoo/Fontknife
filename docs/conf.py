@@ -507,29 +507,15 @@ print('"""')
 print()
 
 
-def prefix_nonblank_lines(raw_source: str, prefix: str = '   ') -> str:
-    """Prefix non-blank lines for use in a .. code-block:: directive."""
-
-    # This approach is so clean it's worth the overhead for now
-    in_stream = StringIO(raw_source)
-    out_stream = StringIO()
-
-    for line in in_stream.readlines():
-        if not (len(line) == 0 or line.isspace()):
-            out_stream.write(prefix)
-        out_stream.write(line)
-
-    return out_stream.getvalue()
-
-
 # -- Begin HTML output configuration and writing --
 
 # This might be a mandatory name for access from extensions? Setting
 # custom values didn't seem to work well with the custom jinja_my_rst
 # plugin.
 html_context = dict(
-    substitution_rules=prefix_nonblank_lines(substitution_rules)
+    substitution_rules=substitution_rules
 )
+
 
 def setup(app):
     # app.add_config_value('substitution_rules', substitution_rules, 'env')

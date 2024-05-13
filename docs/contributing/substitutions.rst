@@ -69,14 +69,13 @@ good idea.
 
 .. tip:: Be sure to read the comment at the top!
 
-.. # The double curly braces below are a Jinja templating marker.
-.. # We leave the Jinja substitution unindented because:
-.. # 1. The first line is already indented by the preprocessor
-.. # 2. Leaving it this way makes the preprocessing logic simpler
+.. # The curly braces below are Jinja2 templating.
 
 .. code-block:: rst
 
-{{ substitution_rules }}
+   {% filter indent(width=3) %}
+   {{ substitution_rules }}
+   {% endfilter %}
 
 
 Adding New Substitutions
