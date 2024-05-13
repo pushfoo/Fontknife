@@ -8,7 +8,6 @@ import os
 import sys
 import subprocess  # Sphinx's git rev-parse only gets HEAD's short hash
 
-from io import StringIO
 from pathlib import Path
 from textwrap import dedent
 from datetime import datetime
@@ -216,14 +215,11 @@ extensions = [
 
 
 intersphinx_mapping = dict(
-    python=(
-        'https://docs.python.org/3', None),
-    PIL=(
-        'https://pillow.readthedocs.io/en/stable', None))
+    python=('https://docs.python.org/3', None),
+    PIL=('https://pillow.readthedocs.io/en/stable', None))
 
 
 # --  Read git state & pyproject.toml to start configuring the build --
-
 with attempt_to("read git HEAD"):
     git_head = run_with_regex(
         ['git', 'log', '-1', '--format="%aI %H"'],
@@ -253,6 +249,7 @@ with attempt_to("read committed pyproject.toml for Sphinx config pre-reqs"):
     source_url = project_section['urls']['Source']
     doc_url = project_section['urls']['Documentation']
     doc_base_url = doc_url[:-len('latest')]  # Trim end, but leave the slash
+
 
 with attempt_to("read stable pyproject.toml directly from GitHub"):
     # This avoids working with the git tree directly because:
@@ -349,6 +346,12 @@ extlinks = {
 #                   Single-Sourced Truth Definitions                   #
 ########################################################################
 
+# Some of the variables in this section are sphinx config while others
+# are intermediate values used to generate them. Note that the Python
+# packaging documentation recommends avoiding specifying maximum Python
+# versions, so we omit it for now:
+# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#requires-python-upper-bounds
+
 def clean_templated(
         multi_line_string: str,
         postprocess: Callable[[str], str] = lambda s: s.strip()
@@ -357,16 +360,11 @@ def clean_templated(
     return postprocess(dedent(multi_line_string))
 
 
-# Some of the variables in this section are sphinx config while others
-# intermediate values used to generate them. Note that the Python
-# packaging documentation recommends avoiding specifying maximum Python
-# versions, so we omit it for now:
-# https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#requires-python-upper-bounds
-
 # This isn't Sphinx config variable. We use it to generate substitution
 # rules which let us avoid brittle manual updates in the documentation.
 with attempt_to('get minimum python version'):
     min_py_version = project_section['requires-python'].strip('>=')
+
 
 # -- Prefix header for with substitutions and warnings --
 
@@ -498,8 +496,9 @@ with attempt_to("template rst_prolog"):
 
     rst_prolog = "\n\n".join(prolog_parts) + "\n"
 
+
 # -- Log our config generation win to console. :) --
-log.info("Finished processing git HEAD & pyproject.toml into the rst_prolog below:")
+log.info("Finished processing config.")
 print()
 print('rst_prolog = f"""')
 print(rst_prolog)
@@ -507,7 +506,12 @@ print('"""')
 print()
 
 
-# -- Begin HTML output configuration and writing --
+########################################################################
+#                       Start of HTML Generation                       #
+########################################################################
+
+
+log.info("Proceeding to output phase")
 
 # This might be a mandatory name for access from extensions? Setting
 # custom values didn't seem to work well with the custom jinja_my_rst
@@ -516,14 +520,11 @@ html_context = dict(
     substitution_rules=substitution_rules
 )
 
-
+# -- Set up the environment & connect any events --
 def setup(app):
-    # app.add_config_value('substitution_rules', substitution_rules, 'env')
-    # app.add_config_value('substitution_rules', substitution_rules, 'env')
-    app.add_config_value('unstable_branch', None if stable_build else branch, 'env')
+    app.add_config_value(
+        'unstable_branch', None if stable_build else branch, 'env')
 
-
-log.info("Proceeding to output phase")
 
 # -- Options for HTML output --
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
