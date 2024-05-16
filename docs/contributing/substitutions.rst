@@ -20,19 +20,33 @@
 Substitutions for Doc
 =====================
 
-**TL;DR: We have mini-templates Sphinx fills in for you**
+**TL;DR: These are mini-templates Sphinx fills in for you**
 
+
+.. # This definition is local to this page per the global
+.. # vs local section covered further down in this file.
 
 .. |example_rule| replace:: "Actual Value Here"
 
+
 Each ``|rule_name|`` gets replaced with the value after ``replace::``.
-For example, let's consdier this rule:
+For example, let's consider this rule:
 
 .. code-block:: rst
 
    .. |example_rule| replace:: "Actual Value Here"
 
-It looks like this when used: |example_rule|.
+It looks like this when used:
+
+|example_rule|
+
+
+.. note:: This substitution is unique in |project_name|'s doc.
+
+          This one is the only
+          :ref:`local <contributing-substitutions-local_vs_global>`
+          substitution.
+
 
 Why Substitutions?
 ------------------
@@ -95,6 +109,8 @@ Adding New Substitutions
 
 If you can answer yes to all of the above, you have a new question to
 answer: global or local?
+
+.. _contributing-substitutions-local_vs_global:
 
 The Local, the Global, and the Ugly
 """""""""""""""""""""""""""""""""""
