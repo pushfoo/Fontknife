@@ -1,9 +1,11 @@
 # Fontknife
+[![License](https://img.shields.io/badge/License-BSD_3-Clause.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://makeapullrequest.com)
+[![Tests (main)](https://github.com/pushfoo/Fontknife/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/pushfoo/Fontknife/actions/workflows/test.yaml?branch=main)
+[![Documentation (main)](https://readthedocs.org/projects/fontknife/badge/?version=main)](https://fontknife.readthedocs.io/en/latest/?badge=main)
+[![Tests (stable)](https://github.com/pushfoo/Fontknife/actions/workflows/test.yaml/badge.svg?branch=stable)](https://github.com/pushfoo/Fontknife/actions/workflows/test.yaml?branch=stable)
+[![Documentation (stable)](https://readthedocs.org/projects/fontknife/badge/?version=stable)](https://fontknife.readthedocs.io/en/latest/?badge=stable)
 
-[![PyTest](https://github.com/pushfoo/Fontknife/actions/workflows/test.yaml/badge.svg)](https://github.com/pushfoo/Fontknife/actions/workflows/test.yaml)
-[![Documentation Status](https://readthedocs.org/projects/fontknife/badge/?version=latest)](https://fontknife.readthedocs.io/en/latest/?badge=latest)
-[![License](https://img.shields.io/badge/License-BSD_3--Clause-brightgreen.svg)](https://opensource.org/licenses/BSD-3-Clause)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
 
 **Q**: How do I convert a font into a sprite sheet?<br/>
 **A**: `fontknife convert`

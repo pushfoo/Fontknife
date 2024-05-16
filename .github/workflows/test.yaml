@@ -1,11 +1,19 @@
-name: GitHub based tests
+# IMPORTANT: Some top-level values might not have access to templating?
+# See the following page for more info:
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions
+name: Tests
+# Might only have access to github and inputs contexts? Also, some values aren't
+# set until later actions / phases of the build (i.e. github.head_ref). See:
+# https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
+run-name: Unit tests for ${{ github.head_ref }} triggered by @${{ github.actor }}
+
 
 on:
-  # Template the default branch rather than hard-coding it
+  # Template the branches for use with actions/checkout@vN below
   push:
-    branches: [ main ]
+    branches: [ main, stable ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, stable ]
   workflow_dispatch:
 
 
