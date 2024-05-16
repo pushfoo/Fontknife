@@ -1,7 +1,7 @@
 # IMPORTANT: Some top-level values might not have access to templating?
 # See the following page for more info:
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions
-name: Tests
+name: Tests (${{ github.head_ref }})
 # Might only have access to github and inputs contexts? Also, some values aren't
 # set until later actions / phases of the build (i.e. github.head_ref). See:
 # https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
