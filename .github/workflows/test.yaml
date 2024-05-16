@@ -1,33 +1,37 @@
 # IMPORTANT: Some top-level values might not have access to templating?
 # See the following page for more info:
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions
-name: Tests (${{ github.head_ref }})
+name: Tests
 # Might only have access to github and inputs contexts? Also, some values aren't
 # set until later actions / phases of the build (i.e. github.head_ref). See:
 # https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
 run-name: Unit tests for ${{ github.head_ref }} triggered by @${{ github.actor }}
 
 
-on:
-  # Template the branches for use with actions/checkout@vN below
-  push:
-    branches: [ main, stable ]
-  pull_request:
-    branches: [ main, stable ]
-  workflow_dispatch:
+on: [ push, pull_request ]
+#  # Template the branches for use with actions/checkout@vN below
+#  push:
+#    branches: [ main, stable ]
+#  pull_request:
+#    branches: [ main, stable ]
 
 
 jobs:
 
-  build:
-    name: test
-    runs-on: ${{ matrix.os }}
-
+  test:
+    # Although many fields support templating matrix values, they may
+    # limit what can be templated & when. To avoid pain and confusion:
+    # 1. Always double-check the doc for a field before templating
+    # 2. Avoid forward referencing whenever possible
     strategy:
       matrix:
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         architecture: ['x64']
         os: [ 'ubuntu-latest' ]
+
+    # Placed after the matrix block to avoid forward reference confusion
+    runs-on: ${{ matrix.os }}
+    name: Python ${{ matrix.python-version }} on ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
