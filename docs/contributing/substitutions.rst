@@ -4,7 +4,7 @@
     This is because Jinja templates part of it:
 
     1. This help keeps conf.py cleaner
-    2. It's niceer than the alternatives considered so far
+    2. It's nicer than the alternatives considered so far
 
     Alternatives considered and rejected include:
 
@@ -119,35 +119,41 @@ Substitutions exist in the same spaces as other Sphinx reST objects.
 
 **Local Substitutions**
 
-You can define local substitutions in a specific file. The example
-at the :ref:`top of this page <contributing-substitutions>` is also an
-example of a local substitution rule. Like all local substitutions:
+You can define local substitutions limited to a specific file.
 
-* Can only be used in the ``.rst`` file they're defined in
-* Was carefully considered to avoid conflicts with other substitution
+The example at the :ref:`top of this page <contributing-substitutions>`
+is one of these. Like all local substitutions, it:
+
+* can only be used in the ``.rst`` file they're defined in
+* was carefully considered to avoid conflicts with other substitution
   rules
 
 **Global Substitutions**
 
 |project_name|'s other substitutions are available in every ``.rst``
-file. This is because they're added to a special config value called
-the **rst_prolog**. It gets added before the contents of every ``.rst``
-file in the project.
+file.
+
+For the moment, the details of how that happens aren't important. You
+can think of it as copying and pasting before the source code of every
+``.rst`` file, both hand-written and generated API doc.
 
 **The Ugly Part: Conflicts**
 
-You can only define a substitution rule **once per given context!** This
-can include:
+You can define a substitution rule **once and only once!**
 
-* Per file
-* Globally
-* Any combination of the two
-
-Trying to redefine one anyway will cause a build error like the one below:
+Trying to redefine one anyway causes a build error which looks
+like the one below:
 
 .. code-block:: console
 
    /home/user/Projects/Fontknife/docs/install/substitutions.rst:10: WARNING: Duplicate explicit target name: "intro".
+
+
+This applies:
+
+* Per file
+* Globally
+* Any combination of the two
 
 
 Adding a Global Substitution Rule
@@ -170,7 +176,7 @@ To add a global substitution rule:
    #. Any necessary comments and spacing
 
 
-Now you need to build your doc locally to make sure it works:
+Now you need to make sure the doc works. Do so by building it locally:
 
 #. Switch to your terminal
 #. Make sure you're in the ``docs`` directory
@@ -179,22 +185,27 @@ Now you need to build your doc locally to make sure it works:
 Fixing Whitespace Problems
 """"""""""""""""""""""""""
 
+**TL;DR: Sphinx is even pickier about whitepsace than Python!**
+
 Did ``make html`` log a cryptic error like the one below?
 
 .. code-block:: console
 
    /home/user/Projects/Fontknife/docs/contributing/substitutions.rst:184: WARNING: Definition list ends without a blank line; unexpected unindent.
 
-**TL;DR: Sphinx is even pickier about whitepsace than Python!**
+This often happens when you've accidentally added whitespace. The most
+common places are also some of the most frustrating ones:
 
-You can often trigger this error by accidentally leaving extra on:
-
-* Otherwise blank lines
+* Lines which look blank
 * At the ends of certain non-blank lines
-* Accidentally pasting non-whitespace text where Sphinx expected whitespace
 
-There's may be a git trick to fix it automatically. In the meantime, the following
-steps often help:
+Others can be wherever you've accidentally pasted it due to mouse or keyboard
+hotkey accidents.
+
+There may be future git configuration tricks which may fix it automatically.
+For the moment, see if your editor has a way to enable whitespace visualization.
+
+If not, the following steps may help:
 
 #. run ``git diff``
 
@@ -218,16 +229,39 @@ How Doc Build Works Behind the Scenes
 .. _jinja_my_rst: https://github.com/pushfoo/Fontknife/blob/main/docs/_extensions/jinja_my_rst.py
 .. _source-read: https://www.sphinx-doc.org/en/master/extdev/appapi.html#sphinx-core-events
 
-The project's `conf.py`_ contains a custom ``substitution_rules``
-variable with all our rules. Moving it to a new file without making
-templating a headache is on the to-do list, but for now:
+.. warning:: These details may change in the near future.
 
-#. The `conf.py`_'s ``substitution_rules`` variable contains all our
-   substitution rule definitions
-#. It's used as the the first part of the `rst_prolog`_ configuration variable
-#. As Sphinx loads each ``.rst`` file into memory, it:
+The project's `conf.py`_ has a custom ``substitution_rules``
+variable containing all our rules.
 
-   #. Copies the `rst_prolog`_ into the page
-   #. Copes the file's raw contents in after the `rst_prolog`_ data
-   #. Applies any plugin transformations triggered by the `source-read`_
-      event.
+Sphinx doesn't use it directly. Instead, we use it to help set one of
+its configuration variables. The current approach is inelegant, but it
+gets the job done. Continue reading to learn more.
+
+Generating a Prolog
+"""""""""""""""""""
+
+#. Our `conf.py`_'s ``substitution_rules`` is templated from various
+   data sources:
+
+   * `pyproject.toml`
+   * git's HEAD
+   * a few API calls
+
+#. We build a number of other values
+#. We :py:func:`~str.join` them together to set a final
+   value for Sphinx's `rst_prolog`_ configuration variable
+
+How Sphinx Uses It
+""""""""""""""""""
+
+As Sphinx loads each ``.rst`` file into memory, it:
+
+#. Allocates a buffer to read source into
+#. Writes the `rst_prolog`_ into the buffer
+#. Copies the file's raw contents into the buffer
+#. Applies any plugin transformations bound to the `source-read`_ event
+#. Continues to the next file
+
+Once it has processed all files to build its index, it then generates final
+HTML from the full data. Note that it caches these unless you run ``make clean``.
