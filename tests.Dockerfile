@@ -1,15 +1,15 @@
-# Temporary local testing setup for Python 3.8
+# Helper for running arbitary Python versions
 #
 # It's easiest to run this with the included script (test_python38.sh)
 # See doc/DOCKER.md for more info.
-
-FROM python:3.8
+ARG PYTHON_VERSION
+FROM python:${PYTHON_VERSION} AS base
 
 WORKDIR /app
 
 # Core project files required to run the program / tests
 COPY ./fontknife/ ./fontknife/
-COPY ./tests/ ./tests/
+COPY ./tests/ ./testse/
 COPY ./pyproject.toml ./
 
 # A helper test script
@@ -23,4 +23,4 @@ RUN python -m pip install -e .[dev]
 
 # Set the container to run the helper script unless
 # otherwise specified by docker run -i -t $YOUR_COMMAND_HERE
-CMD bash container.sh
+CMD [ 'bash', 'container.sh' ]
