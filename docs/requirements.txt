@@ -28,7 +28,7 @@ markupsafe==2.1.3
     # via jinja2
 packaging==23.1
     # via sphinx
-pillow==10.2.0
+pillow==10.4.0
     # via fontknife (pyproject.toml)
 pygments==2.16.1
     # via sphinx
