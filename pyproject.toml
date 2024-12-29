@@ -7,14 +7,15 @@ authors = [
     {name="pushfoo"}
 ]
 license = {file = "LICENSE"}
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 classifiers=[
         "Development Status :: 3 - Alpha",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Intended Audience :: Developers",
@@ -29,8 +30,8 @@ classifiers=[
         "Topic :: Software Development :: Libraries",
     ]
 dependencies = [
-    'pillow~=10.4.0',
-    'regex==2022.10.31',  # Provides unicode grapheme support
+    'pillow~=11.0.0',
+    'regex~=2024.11.6',  # Provides unicode grapheme support
     'typing_extensions'
 ]
 
@@ -47,12 +48,12 @@ Source = "https://github.com/pushfoo/Fontknife"
 docs = [
     # Allows reading pyproject.toml in a forward-compatible way
     'tomli==2.0.1 ; python_version < "3.11"',
-    'sphinx==7.3.7',
-    'sphinx-rtd-theme==2.0.0',
+    'sphinx<9',
+    'sphinx-rtd-theme~=3.0.2',
 ]
 # Local developer environment
 dev = [
-    'pytest>=7.1,<8',
+    'pytest~=8.3.4',
     'mypy',
     'types-pillow',
     'types-regex',

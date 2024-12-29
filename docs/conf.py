@@ -2,7 +2,7 @@
 #
 # Full built-in configuration value doc can be found here:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
-from __future__ import annotations  # Partial | support on Python 3.8+
+from __future__ import annotations  # Partial | support on Python 3.9+
 
 import os
 import sys
