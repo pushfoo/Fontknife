@@ -3,7 +3,6 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://makeapullrequest.com)
 [![Tests (main)](https://github.com/pushfoo/Fontknife/actions/workflows/test.yaml/badge.svg?branch=main)](https://github.com/pushfoo/Fontknife/actions/workflows/test.yaml?branch=main)
 [![Documentation (main)](https://readthedocs.org/projects/fontknife/badge/?version=main)](https://fontknife.readthedocs.io/en/main/?badge=main)
-[![Tests (stable)](https://github.com/pushfoo/Fontknife/actions/workflows/test.yaml/badge.svg?branch=stable)](https://github.com/pushfoo/Fontknife/actions/workflows/test.yaml?branch=stable)
 [![Documentation (stable)](https://readthedocs.org/projects/fontknife/badge/?version=stable)](https://fontknife.readthedocs.io/en/stable/?badge=stable)
 
 
