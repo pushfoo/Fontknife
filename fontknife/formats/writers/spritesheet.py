@@ -8,6 +8,7 @@ from fontknife.colors import RGBA_WHITE, RGBA_BLACK
 from fontknife.custom_types import PathLikeOrHasWrite, GlyphSequence
 from fontknife.formats import RasterFont, FormatWriter
 from fontknife.formats.common.spritesheet import GridMapper
+from fontknife.graphemes import parse_graphemes
 
 
 class SpriteSheetGridWriter(FormatWriter):
@@ -26,10 +27,15 @@ class SpriteSheetGridWriter(FormatWriter):
         background_color=RGBA_BLACK,
         **kwargs
     ) -> None:
+        max_glyph_size = font.max_glyph_size
 
-        max_glyph_size=font.max_glyph_size
+        if isinstance(glyph_sequence, str):
+            raise TypeError("Expected a grapheme sequence as a non-string iterable.")
+        elif not glyph_sequence:
+            glyph_sequence = font.provided_glyphs
+
         default_columns = 16
-        default_rows = int(math.ceil(len(font.provided_glyphs) / default_columns))
+        default_rows = int(math.ceil(len(glyph_sequence) / default_columns))
 
         defaults = {
             'tile_size_px': max_glyph_size,
@@ -51,9 +57,6 @@ class SpriteSheetGridWriter(FormatWriter):
 
         grid_mapper = GridMapper(**reader_args)
 
-        if glyph_sequence is None:
-            glyph_sequence = font.provided_glyphs
-
         # Draw all glyphs into the sprite sheet
         dest_image = PIL.Image.new(mode, grid_mapper.sheet_bounds_px[2:], color=background_color)
         dest_draw = PIL.ImageDraw.Draw(dest_image)
@@ -74,4 +77,3 @@ class SpriteSheetGridWriter(FormatWriter):
                 ))
 
         dest_image.save(destination)
-

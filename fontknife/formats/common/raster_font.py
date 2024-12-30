@@ -222,6 +222,7 @@ class RasterFont:
         if self._glyph_metadata:
             self._update_max_tile_size_and_tofu()
 
+
     def _update_max_tile_size_and_tofu(self) -> None:
         """
         Calculate this font's maximum size and the filler glyph for it.
@@ -286,6 +287,9 @@ class RasterFont:
     def glyph_table(self) -> MappingProxyType:
         return MappingProxyType(self._glyph_bitmaps)
 
+    def __len__(self) -> int:
+        return len(self._glyph_bitmaps)
+
     def get_glyph(self, value: str, strict=False) -> ImageCoreLike:
         if value in self._glyph_bitmaps:
             return self._glyph_bitmaps[value]
@@ -330,7 +334,14 @@ class RasterFont:
 
         return total_width, total_height
 
-    def getmask(self, text: str, mode: ModeAny = Mode1) -> ImageCoreLike:
+    def getmask2(self, text: str, mode: ModeAny = Mode1, *args, **kwargs) -> tuple[ImageCoreLike, tuple[int, int]]:
+        """A temp kludge to work with Pillow 11.0.0+."""
+        return (
+            self.getmask(text, mode, *args, **kwargs),
+            (0, 0)  # temp trick which needs improvements
+        )
+
+    def getmask(self, text: str, mode: ModeAny = Mode1, *args, **kwargs) -> ImageCoreLike:
         """
         Get an imaging core object to use as a drawing mask.
 
@@ -387,4 +398,3 @@ class RasterFont:
         """
         width, height = self.getsize(text)
         return BboxFancy(0, 0, width, height)
-

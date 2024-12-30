@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from typing import Union, Optional, Sequence, Generator
 from typing import Mapping as MappingABC
 
@@ -87,19 +88,19 @@ class GridMapper(MappingABC):
 
         if sheet_size_tiles is None:
             self._sheet_size_tiles = SizeFancy(
-                self._bounds_px.width // tile_size_px[0],
-                self._bounds_px.height // tile_size_px[1]
+                math.ceil(self._bounds_px.width / tile_size_px[0]),
+                math.ceil(self._bounds_px.height / tile_size_px[1])
             )
 
         else:
             self._sheet_size_tiles = SizeFancy(*sheet_size_tiles)
-
+        print("tiles", self._sheet_size_tiles)
         self._number_of_tiles = self._sheet_size_tiles.width * self._sheet_size_tiles.height
 
         if tile_size_px is None:
             self._tile_size_px = SizeFancy(
-                self._bounds_px.width // sheet_size_tiles[0],
-                self._bounds_px.height // sheet_size_tiles[1]
+                math.ceil(self._bounds_px.width / sheet_size_tiles[0]),
+                math.ceil(self._bounds_px.height / sheet_size_tiles[1])
             )
         else:
             self._tile_size_px = SizeFancy(*tile_size_px)
