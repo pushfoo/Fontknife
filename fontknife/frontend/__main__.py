@@ -114,6 +114,11 @@ def main() -> int:
 
     # Generate requested output
     output_path, output_kwargs = get_output_path_and_args(raw_args_dict)
+
+    # default to using input glyph sequence if none specified
+    if output_kwargs.get('out_glyph_sequence', None) is None:
+        output_kwargs['out_glyph_sequence'] = source_kwargs['glyph_sequence']
+
     args.callback(font, output_path, output_kwargs)
 
     return 0

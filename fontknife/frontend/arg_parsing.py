@@ -131,9 +131,12 @@ COMMON_COMMAND_TEMPLATE = {
         'short_flag': '-g',
         'type': cli_grapheme_arg, 'default': None,
         'help': '''\
-            Manually override the order of the emitted glyphs.
+            This defaults to the value of the input glyph sequence.
 
-            Be careful when using this.
+            Pass it to manually override the order of the emitted glyphs.
+
+            Be careful when using this as OS-specific escaping can come into
+            play.
         '''
     },
 }
