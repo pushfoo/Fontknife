@@ -34,8 +34,10 @@ class SpriteSheetGridWriter(FormatWriter):
         elif not glyph_sequence:
             glyph_sequence = font.provided_glyphs
 
-        default_columns = 16
-        default_rows = int(math.ceil(len(glyph_sequence) / default_columns))
+        # Get our initial un-overridden number of columns
+        num_glyphs = len(glyph_sequence)
+        default_columns = min(16, num_glyphs)
+        default_rows = int(math.ceil(num_glyphs / default_columns))
 
         defaults = {
             'tile_size_px': max_glyph_size,
