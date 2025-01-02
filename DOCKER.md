@@ -1,12 +1,11 @@
-# Docker for a Python 3.8 Test Shim
+# I Want To Test on Python $VERSION!
 
-**TL;DR:** Run `./test_in_docker.sh 3.8` and look for red
+**TL;DR:** Run `./test_in_docker.sh 3.9` and look for red
 
-If you already know Docker well, pass a `PYTHON_VERSION` via Docker's
-`--build-arg` option like so:
+To specify a version, you can manually configure it via Docker's `--build-arg` option like so:
 
 ```console
-$ docker build -f tests.Dockerfile --build-arg="PY_VERSION=3.8" -t fontknife:3.8 .
+$ docker build -f tests.Dockerfile --build-arg="PY_VERSION=3.9" -t fontknife:3.9 .
 ```
 
 However, the helper script is shorter.
@@ -27,8 +26,8 @@ First, makes you're capable of running Docker containers. For a *NIX system (mac
 the steps will be roughly as follows:
 
 1. `cd` into the project root directory
-2. Read `run_tests_in_docker.sh` to make sure you understand it
-3. Run `sudo ./test_python38.sh` and watch the output
+2. Read `test_in_docker.sh` to make sure you understand it
+3. Run `sudo ./test_in_docker.sh` and watch the output
 
 ## I don't like Docker!
 

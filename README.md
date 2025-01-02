@@ -25,11 +25,11 @@ If you only want to convert fonts, follow these steps:
 1. Have [Python](https://python.org) 3.9+ installed
 2. Make sure you've [created](https://docs.python.org/3/library/venv.html#creating-virtual-enviroments)
    and [activated](https://docs.python.org/3/library/venv.html#how-venvs-work)
-   a virtual environemnt (or use [pipx](https://pypa.github.io/pipx/))
-3. `pip install
+   a virtual environment (or use [pipx](https://pypa.github.io/pipx/))
+3. `pip install`
 4. Run `fontknife convert --help`
 
-If the last command print help text, you're ready to go! Read it for a descirption of supported arguments.
+If the last command prints help text, you're ready to go! Read it for more information about supported features.
 
 ### Developers / Contributors
 

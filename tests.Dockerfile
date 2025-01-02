@@ -1,6 +1,6 @@
 # Helper for running arbitary Python versions
 #
-# It's easiest to run this with the included script (test_python38.sh)
+# It's easiest to run this with the included script (test_in_docker.sh)
 # See doc/DOCKER.md for more info.
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION} AS base
@@ -23,4 +23,4 @@ RUN python -m pip install -e .[dev]
 
 # Set the container to run the helper script unless
 # otherwise specified by docker run -i -t $YOUR_COMMAND_HERE
-CMD [ 'bash', 'container.sh' ]
+CMD [ "bash", "container.sh" ]
