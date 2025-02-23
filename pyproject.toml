@@ -30,7 +30,7 @@ classifiers=[
         "Topic :: Software Development :: Libraries",
     ]
 dependencies = [
-    'Pillow~=11.0.0',
+    'Pillow~=11.1.0',
     'regex~=2024.11.6',  # Provides unicode grapheme support
     'typing_extensions',
     'types-regex~=2024.11.6.20241221'
@@ -76,6 +76,7 @@ norecursedirs = ["doc", ".venv", "env", "dist"]
 
 [tool.mypy]
 exclude = [
+    # Currently broken + need replacement / deletion
     'fontknife/generate_octo.py',
     'fontknife/create_textfont.py'
 ]
