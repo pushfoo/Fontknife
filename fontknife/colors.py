@@ -1,3 +1,4 @@
+from functools import cache
 from typing import (
     Dict,
     FrozenSet,
@@ -9,7 +10,7 @@ from typing import (
 
 
 from fontknife.custom_types import ColorMode, ModeRGBA, ModeRGB, ModeL, Mode1, ModeAny
-from fontknife.utils import cache, steps
+from fontknife.utils import steps
 
 MODE_TO_BYTE_SIZE: Dict[ColorMode, int] = {
     ModeRGBA: 4,

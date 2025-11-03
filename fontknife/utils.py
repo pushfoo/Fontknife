@@ -7,7 +7,6 @@ from dataclasses import asdict
 from typing import Iterable, Tuple, Dict, Optional, Any, Callable, Union, Mapping, overload, TypeVar, Hashable, \
     Pattern, Generator, MutableMapping, List, AbstractSet as SetABC
 from collections.abc import Mapping as MappingABC
-from functools import lru_cache as _lru_cache
 
 from PIL import Image, ImageDraw
 
@@ -19,12 +18,6 @@ from fontknife.custom_types import (
     ImageCoreLike,
     StarArgsLengthError, H, ModeRGBA, ModeAny, Mode1
 )
-
-
-# Compatibility: functools.cache was only added in 3.9
-# https://docs.python.org/3/library/functools.html#functools.cache
-def cache(fn: Callable):
-    return _lru_cache(maxsize=None)(fn)
 
 
 def dashes_to_underscores(s: str) -> str:

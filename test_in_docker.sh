@@ -33,10 +33,10 @@ error() {
 if [[  "$1" == '--help' ]]; then
   Usage
   exit 0
-elif [[ "$1" =~ ^3\.(8|9|10|11|12) ]]; then
+elif [[ "$1" =~ ^3\.(9|10|11|12|13|14) ]]; then
   PYTHON_VERSION="$1"
 else
-  error "Expected a PYTHON_VERSION or --help"
+  error "Expected a supported PYTHON_VERSION or --help"
   exit 1
 fi
 

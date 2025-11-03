@@ -4,12 +4,13 @@ import sys
 from collections import deque
 from collections.abc import Mapping as MappingABC
 from contextlib import ExitStack
+from functools import cache
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from typing import Optional, Tuple, Iterable, Union, Mapping, Callable, Any, BinaryIO, TypeVar
 
 from fontknife.custom_types import PathLike, HasReadline, HasWrite, PathLikeOrHasRead, HasRead, PathLikeOrHasStreamFunc
-from fontknife.utils import cache, value_of_first_attribute_present
+from fontknife.utils import value_of_first_attribute_present
 
 
 PairTypeStr = Tuple[type, str]

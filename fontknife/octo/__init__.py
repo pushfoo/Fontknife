@@ -1,8 +1,9 @@
+from functools import cache
 from collections import deque
 from math import log
 from typing import Iterable, Optional
 
-from fontknife.utils import cache, ordered_calc_missing
+from fontknife.utils import ordered_calc_missing
 from fontknife.formats import RasterFont
 from fontknife.iohelpers import OutputHelper, padded_hex, exit_error
 from fontknife.custom_types import HasWrite, GlyphSequence, MissingGlyphError
