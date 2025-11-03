@@ -31,9 +31,9 @@ classifiers=[
     ]
 dependencies = [
     'Pillow~=12.0.0',
-    'regex~=2024.11.6',  # Provides unicode grapheme support
+    'regex~=2025.10.23',  # Provides unicode grapheme support
     'typing_extensions',
-    'types-regex~=2024.11.6.20241221'
+    'types-regex~=2025.10.23'
 ]
 
 
@@ -48,17 +48,19 @@ Source = "https://github.com/pushfoo/Fontknife"
 # Used to build doc, ie readthedocs.org
 docs = [
     # Allows reading pyproject.toml in a forward-compatible way
-    'tomli==2.0.1 ; python_version < "3.11"',
+    'tomli==2.3.0 ; python_version < "3.11"',
     'sphinx<9',
-    'sphinx-rtd-theme~=3.0.2',
+    'sphinx-rtd-theme~=3.0.2'
 ]
 # Local developer environment
 dev = [
-    'pytest~=8.3.4',
+    'pytest~=8.4.2',
     'mypy',
     # Allows rebuilding docs/requirements.txt with this command
     # pip-compile --extra=docs --output-file=docs/requirements.txt pyproject.toml
-    'pip-tools==7.4.1'
+    'pip-tools==7.5.1',
+    # IMPORTANT: 25.3+ seemms to cause issues with pip-compile
+    'pip~=25.2'
 ]
 
 [project.scripts]
