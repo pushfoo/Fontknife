@@ -22,7 +22,7 @@ For more detailed explanations, see [Practical Examples](#practical-examples).
 
 If you only want to convert fonts, follow these steps:
 
-1. Have [Python](https://python.org) 3.9+ installed
+1. Have [Python](https://python.org) 3.10+ installed
 2. Make sure you've [created](https://docs.python.org/3/library/venv.html#creating-virtual-enviroments)
    and [activated](https://docs.python.org/3/library/venv.html#how-venvs-work)
    a virtual environment (or use [pipx](https://pypa.github.io/pipx/))

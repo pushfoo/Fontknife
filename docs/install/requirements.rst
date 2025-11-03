@@ -24,9 +24,9 @@ To check if you have a high enough version of Python:
 At least one of them should show something like the output below:
 
    .. code-block:: console
+      :caption: Example Python prompt for version 3.10.12
 
-      Python 3.9.2 (default, Feb 28 2021, 17:03:44)
-      [GCC 10.2.1 20210110] on linux
+      Python 3.10.12+ (heads/3.10:f91dfdf5ff, Jul 20 2023, 21:32:15) [GCC 10.2.1 20210110] on linux
       Type "help", "copyright", "credits" or "license" for more information.
       >>>
 
@@ -190,7 +190,7 @@ python package which provides runnable named scripts across your entire
 user account. It works by creating package-specific virtual environments,
 then performing some routing work.
 
-After installing it, you can use `pipx` instead of `pip` when following
+After installing it, you can use ``pipx`` instead of ``pip`` when following
 install instructions.
 
 .. toctree::
